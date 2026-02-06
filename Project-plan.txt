@@ -1,0 +1,670 @@
+# Stoneman Photography Website - Project Plan
+
+## Project Overview
+A clean, simple multi-page portfolio website for Stoneman Photography, an emerging wildlife photographer. The site will serve as a living portfolio that grows with the photographer's career, showcasing wildlife photography work and providing a platform for writing.
+
+---
+
+## Target Audience
+- Nature enthusiasts
+- Potential clients or collaborators
+- Competition judges or galleries
+- Personal contacts interested in the photographer's work
+
+---
+
+## Core Goals
+1. Showcase wildlife photography in a professional, clean layout
+2. Provide a platform for blog writing about photography experiences
+3. Make it easy for people to contact the photographer
+4. Create a foundation that can grow and evolve over time
+5. Keep it simple and maintainable for a coding novice
+
+---
+
+## Technical Requirements
+
+### Technology Stack
+- **Pure HTML/CSS/JavaScript** (no frameworks, no build tools)
+- Reason: Easy to maintain, no dependencies, beginner-friendly
+- Single CSS file for consistent styling across all pages
+- Minimal JavaScript for interactive features
+
+### Browser Support
+- Modern browsers (Chrome, Firefox, Safari, Edge)
+- Full mobile responsiveness (mobile-first approach)
+
+### Hosting
+- Compatible with static hosting (GitHub Pages, Netlify, Vercel)
+- No server-side processing required
+- Can be deployed by simply uploading files
+
+---
+
+## Site Structure
+
+### Pages to Create
+
+#### 1. Home Page (`index.html`)
+**Purpose:** First impression, showcase best work, guide visitors to other sections
+
+**Content:**
+- Hero section with striking wildlife photo background
+- Site title: "Stoneman Photography"
+- Tagline: "Capturing the beauty of wildlife and nature"
+- Call-to-action button: "View Portfolio"
+- Featured work section (3 images)
+- Simple, clean design that lets imagery speak
+
+**Design Notes:**
+- Full-screen hero image with dark overlay for text readability
+- Minimal text - focus on visual impact
+- Clear navigation to portfolio
+
+---
+
+#### 2. Portfolio Page (`portfolio.html`)
+**Purpose:** Display photography work in organized, browsable format
+
+**Content:**
+- Page title: "Portfolio"
+- Introduction text: "A collection of wildlife and nature photography, from intimate bird portraits to sweeping landscapes."
+- Category filter buttons:
+  - "All" (default selected)
+  - "Wildlife"
+  - "Other"
+- Image gallery grid (responsive)
+- Lightbox/modal for full-screen image viewing
+
+**Functionality:**
+- Category filtering with JavaScript
+- Click image to open full-screen lightbox
+- Lightbox features:
+  - Close button (X)
+  - Click outside image to close
+  - ESC key to close
+  - Image fills screen while maintaining aspect ratio
+
+**Gallery Specs:**
+- Start with ~15 image placeholders
+- 3-column grid on desktop
+- 2-column on tablet
+- 1-column on mobile
+- Images maintain 4:3 aspect ratio
+- Hover effect: slight zoom on images
+
+**Image Distribution:**
+- Wildlife category: ~10-12 images (birds, insects, small mammals)
+- Other category: ~3-5 images (landscapes, abstract nature)
+
+---
+
+#### 3. Blog Page (`blog.html`)
+**Purpose:** List of blog posts about photography experiences
+
+**Content:**
+- Page title: "Blog"
+- Introduction: "Stories from the field, photography insights, and reflections on the natural world."
+- Blog post list (most recent first)
+
+**Each Blog Post Preview Includes:**
+- Post title (larger, bold)
+- Date published
+- Excerpt/preview text (2-3 sentences)
+- "Read more →" link
+
+**Sample Posts to Include:**
+1. "Finding Beauty in Small Subjects" - About macro photography
+2. "Patience in Wildlife Photography" - About waiting for the perfect shot
+3. "Preparing for My First Safari" - About upcoming Africa trip
+
+**Design Notes:**
+- Clean, readable typography
+- Plenty of white space
+- Posts separated by subtle lines
+- No images in preview (text-focused)
+
+**Future Consideration:**
+- Individual blog post pages can be added later
+- For now, "Read more" links can go to placeholder pages or be disabled
+
+---
+
+#### 4. About Page (`about.html`)
+**Purpose:** Tell the photographer's story, build connection with visitors
+
+**Content:**
+- Page title: "About"
+- 3-4 paragraphs about:
+  - Who the photographer is
+  - How they got into wildlife photography (just over a year)
+  - Their focus (birds, insects, small wildlife)
+  - Their approach and philosophy
+  - What's ahead (Africa trip, continued learning)
+  
+**Suggested Text Structure:**
+- Introduction: Brief overview of photographer
+- Journey: How they started, what drew them to wildlife photography
+- Focus: Main subjects (birds, insects, macro work)
+- Philosophy: Approach to capturing images, what they hope to convey
+- Future: Growth mindset, upcoming projects
+
+**Design Notes:**
+- Centered text column (max-width ~800px)
+- Larger, readable font size
+- Optional: Single portrait photo of photographer (placeholder for now)
+
+---
+
+#### 5. Contact Page (`contact.html`)
+**Purpose:** Provide easy way for people to get in touch
+
+**Content:**
+- Page title: "Get in Touch"
+- Introduction: "Interested in my work or have a project in mind? I'd love to hear from you."
+- Contact form with fields:
+  - Name (required)
+  - Email (required)
+  - Message (required, textarea)
+  - Submit button
+
+**Form Behavior:**
+- For initial version: Form submission shows alert/message
+- Note in code: "Form backend needs to be added (Formspree, Netlify Forms, etc.)"
+- Form validates required fields
+- Clean, centered layout
+
+**Optional Additional Info:**
+- Email address displayed
+- Social media links (if applicable)
+
+---
+
+## Design Specifications
+
+### Color Palette
+**Primary:** Black, white, and shades of gray
+- Background: White (#ffffff)
+- Text: Dark gray (#333333)
+- Navigation background: White (#ffffff)
+- Footer background: Dark gray (#333333)
+- Footer text: White (#ffffff)
+- Borders/dividers: Light gray (#e0e0e0)
+- Hover states: Medium gray (#666666)
+
+**Rationale:** Minimal, timeless, lets photography be the focus
+
+**Future:** Can add earthy accent colors later (forest green, warm brown)
+
+---
+
+### Typography
+**Fonts:**
+- System font stack for speed and compatibility:
+  ```css
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  ```
+
+**Hierarchy:**
+- Main heading (h1): 3rem (48px) on desktop, 2rem (32px) on mobile
+- Section headings (h2): 2rem (32px) on desktop, 1.5rem (24px) on mobile
+- Body text: 1rem (16px), line-height: 1.6
+- Navigation: 1rem (16px)
+
+**Font Weights:**
+- Headings: 300-400 (light to regular)
+- Body: 400 (regular)
+- Buttons/CTA: 500-600 (medium to semi-bold)
+
+---
+
+### Layout & Spacing
+**Max Content Width:** 1200px (centered)
+**Section Padding:** 4rem vertical, 2rem horizontal
+**Grid Gaps:** 1.5-2rem
+**Mobile Padding:** Reduce to 2rem vertical, 1rem horizontal
+
+---
+
+### Navigation
+**Desktop:**
+- Fixed top navigation bar
+- Logo on left: "Stoneman Photography"
+- Menu items on right: Home | Portfolio | Blog | About | Contact
+- White background with subtle shadow
+- Sticky/fixed to top of page
+
+**Mobile:**
+- Hamburger menu icon (☰)
+- Menu slides down or appears as overlay when clicked
+- Vertical list of links
+- Tap outside to close
+
+---
+
+### Responsive Breakpoints
+- Desktop: 1200px+
+- Tablet: 768px - 1199px
+- Mobile: Below 768px
+
+**Key Responsive Behaviors:**
+- Gallery: 3 columns → 2 columns → 1 column
+- Navigation: Horizontal → Hamburger menu
+- Hero text: Larger → Smaller
+- Padding: More generous → More compact
+
+---
+
+## File Structure
+
+```
+stoneman-photography/
+│
+├── index.html              # Home page
+├── portfolio.html          # Portfolio/gallery page
+├── blog.html              # Blog listing page
+├── about.html             # About page
+├── contact.html           # Contact page
+│
+├── css/
+│   └── style.css          # Main stylesheet (shared across all pages)
+│
+├── js/
+│   └── script.js          # Main JavaScript file (lightbox, menu toggle, filters)
+│
+├── images/
+│   ├── hero/              # Hero/banner images
+│   ├── portfolio/         # Portfolio images
+│   │   ├── wildlife/      # Wildlife category
+│   │   └── other/         # Other category
+│   └── featured/          # Featured images for home page
+│
+└── README.md              # Project documentation
+```
+
+---
+
+## Component Details
+
+### Shared Navigation (All Pages)
+**HTML Structure:**
+```html
+<nav>
+    <div class="nav-container">
+        <a href="index.html" class="logo">Stoneman Photography</a>
+        <button class="menu-toggle">☰</button>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="portfolio.html">Portfolio</a></li>
+            <li><a href="blog.html">Blog</a></li>
+            <li><a href="about.html">About</a></li>
+            <li><a href="contact.html">Contact</a></li>
+        </ul>
+    </div>
+</nav>
+```
+
+**Behavior:**
+- Highlight current page in navigation
+- Smooth transitions on hover
+- Mobile: toggle menu on button click
+
+---
+
+### Shared Footer (All Pages)
+**HTML Structure:**
+```html
+<footer>
+    <p>&copy; 2026 Stoneman Photography. All rights reserved.</p>
+</footer>
+```
+
+**Styling:**
+- Dark background (#333)
+- White text
+- Centered
+- Padding: 2rem
+
+---
+
+### Lightbox Component (Portfolio Page)
+**Features:**
+- Overlay covers entire screen (rgba(0,0,0,0.95))
+- Image centered and scaled to fit
+- Close button (×) in top-right corner
+- Click outside image to close
+- ESC key to close
+- Smooth fade-in/out transitions
+
+**JavaScript Functionality:**
+- Click gallery image → open lightbox with that image
+- Event listeners for close actions
+- Prevent body scroll when lightbox is open
+
+---
+
+### Category Filter (Portfolio Page)
+**Buttons:**
+- All (active by default)
+- Wildlife
+- Other
+
+**Behavior:**
+- Click button → filter gallery items
+- Active button highlighted (dark background)
+- Smooth show/hide transitions
+- Uses data-category attributes on images
+
+---
+
+## Content Guidelines
+
+### Image Placeholders
+For development, use:
+- Gray background rectangles with text labels
+- Aspect ratio: 4:3 for portfolio images
+- SVG placeholders or simple CSS backgrounds
+- Label each placeholder: "Wildlife Photo 1", "Bird Portrait", etc.
+
+**Actual Image Requirements (for later):**
+- Format: JPEG
+- Recommended size: 1200px wide (for web optimization)
+- Compressed for fast loading
+- Alt text: Descriptive (for accessibility and SEO)
+
+---
+
+### Text Content Placeholders
+
+**About Page Sample Text:**
+```
+I'm a wildlife photographer based in [Location], with a passion for capturing 
+the beauty and behavior of the natural world. What started as a hobby just over 
+a year ago has evolved into a deeply rewarding journey of discovery and creative 
+expression.
+
+My work primarily focuses on birds and smaller wildlife subjects—the intimate 
+moments and intricate details that often go unnoticed. From the iridescent 
+feathers of a hummingbird to the delicate patterns on an insect's wings, I'm 
+drawn to subjects that reveal the remarkable complexity of nature when we take 
+the time to look closely.
+
+I'm constantly learning and growing as a photographer, exploring new techniques 
+and pushing myself to capture images that not only document wildlife but also 
+convey the wonder and connection I feel when I'm out in the field. Each outing 
+is an opportunity to observe, learn, and hopefully bring back images that 
+inspire others to appreciate the natural world.
+
+This website serves as my evolving portfolio—a living collection that grows 
+alongside my skills and experiences. I'm excited about what lies ahead, 
+including an upcoming trip to Africa where I'll be photographing larger 
+wildlife for the first time.
+```
+
+---
+
+## JavaScript Features Required
+
+### 1. Mobile Menu Toggle
+```javascript
+// Toggle mobile navigation menu
+function toggleMenu() {
+    const menu = document.getElementById('nav-menu');
+    menu.classList.toggle('active');
+}
+
+// Close menu when clicking outside
+document.addEventListener('click', function(event) {
+    // Implementation details
+});
+```
+
+### 2. Portfolio Category Filter
+```javascript
+// Filter gallery items by category
+const categoryButtons = document.querySelectorAll('.category-btn');
+const galleryItems = document.querySelectorAll('.gallery-item');
+
+categoryButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        // Update active state
+        // Show/hide items based on category
+    });
+});
+```
+
+### 3. Lightbox Functionality
+```javascript
+// Open lightbox with clicked image
+galleryItems.forEach(item => {
+    item.addEventListener('click', () => {
+        // Get image source
+        // Display in lightbox
+        // Show lightbox overlay
+    });
+});
+
+// Close lightbox
+function closeLightbox() {
+    // Hide lightbox
+}
+
+// Close with ESC key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeLightbox();
+    }
+});
+```
+
+### 4. Smooth Scrolling (Optional)
+```javascript
+// Smooth scroll for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        // Smooth scroll to target
+    });
+});
+```
+
+### 5. Active Page Highlight
+```javascript
+// Highlight current page in navigation
+const currentPage = window.location.pathname;
+// Add 'active' class to corresponding nav link
+```
+
+---
+
+## Accessibility Considerations
+
+### Required Features:
+1. **Semantic HTML:** Use proper heading hierarchy (h1, h2, h3)
+2. **Alt Text:** All images must have descriptive alt attributes
+3. **Keyboard Navigation:** 
+   - All interactive elements accessible via Tab key
+   - Lightbox closeable with ESC key
+4. **ARIA Labels:** Add where appropriate (mobile menu, lightbox)
+5. **Focus States:** Visible focus indicators on interactive elements
+6. **Color Contrast:** Ensure sufficient contrast ratios (WCAG AA)
+7. **Form Labels:** All form inputs properly labeled
+
+---
+
+## SEO Basics
+
+### Meta Tags (Each Page):
+```html
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Wildlife photography portfolio by Stoneman Photography">
+<title>Page Title | Stoneman Photography</title>
+```
+
+### Page Titles:
+- Home: "Stoneman Photography - Wildlife & Nature"
+- Portfolio: "Portfolio | Stoneman Photography"
+- Blog: "Blog | Stoneman Photography"
+- About: "About | Stoneman Photography"
+- Contact: "Contact | Stoneman Photography"
+
+---
+
+## Future Enhancements (Phase 2+)
+
+### Potential Additions:
+1. **Blog Post Pages:** Individual pages for each blog post
+2. **Image Optimization:** Lazy loading, WebP format, responsive images
+3. **Contact Form Backend:** Integration with Formspree or Netlify Forms
+4. **Social Media Links:** Instagram, Twitter, etc.
+5. **Print Shop:** If selling prints becomes a goal
+6. **Search Functionality:** Search blog posts or portfolio
+7. **Admin Panel:** Simple CMS for easier content updates
+8. **Analytics:** Google Analytics or privacy-friendly alternative
+9. **Performance:** Image compression, minification
+10. **More Categories:** As photography collection grows
+
+---
+
+## Development Approach for Claude Code
+
+### Phase 1: Structure & Core Pages
+1. Create file structure
+2. Build shared CSS stylesheet
+3. Create navigation component
+4. Create footer component
+5. Build all 5 HTML pages with basic structure
+6. Ensure navigation links work between pages
+
+### Phase 2: Styling
+1. Apply design system (colors, typography, spacing)
+2. Style navigation (desktop and mobile)
+3. Style each page's unique elements
+4. Implement responsive design
+5. Test on different screen sizes
+
+### Phase 3: Interactivity
+1. Implement mobile menu toggle
+2. Build portfolio category filter
+3. Create lightbox functionality
+4. Add form validation
+5. Add smooth transitions and hover effects
+
+### Phase 4: Polish & Testing
+1. Test all interactive features
+2. Cross-browser testing
+3. Mobile testing
+4. Accessibility review
+5. Performance check
+6. Add placeholder content where needed
+
+---
+
+## Testing Checklist
+
+### Functionality:
+- [ ] All navigation links work correctly
+- [ ] Mobile menu opens and closes
+- [ ] Portfolio filter buttons work
+- [ ] Lightbox opens and closes properly
+- [ ] Lightbox ESC key works
+- [ ] Form validates required fields
+- [ ] All pages load without errors
+
+### Responsive Design:
+- [ ] Test on mobile (< 768px)
+- [ ] Test on tablet (768px - 1199px)
+- [ ] Test on desktop (1200px+)
+- [ ] Navigation adapts appropriately
+- [ ] Gallery grid adjusts columns
+- [ ] Images scale properly
+- [ ] Text remains readable at all sizes
+
+### Cross-Browser:
+- [ ] Chrome
+- [ ] Firefox
+- [ ] Safari
+- [ ] Edge
+
+### Accessibility:
+- [ ] Keyboard navigation works
+- [ ] Focus states visible
+- [ ] Alt text on all images
+- [ ] Form labels present
+- [ ] Color contrast sufficient
+- [ ] Screen reader friendly
+
+---
+
+## Deployment Instructions
+
+### Option 1: GitHub Pages (Free)
+1. Create GitHub repository
+2. Upload all files
+3. Enable GitHub Pages in repository settings
+4. Site will be live at: `username.github.io/repo-name`
+
+### Option 2: Netlify (Free)
+1. Create Netlify account
+2. Drag and drop project folder
+3. Automatic deployment
+4. Custom domain available
+
+### Option 3: Vercel (Free)
+1. Create Vercel account
+2. Import from GitHub or upload files
+3. Automatic deployment
+4. Custom domain available
+
+---
+
+## Maintenance & Updates
+
+### Adding New Portfolio Images:
+1. Save images to `images/portfolio/wildlife/` or `images/portfolio/other/`
+2. Open `portfolio.html`
+3. Copy existing gallery-item div
+4. Update image src and alt text
+5. Set correct data-category attribute
+
+### Adding New Blog Posts:
+1. Open `blog.html`
+2. Copy existing blog-post div
+3. Update title, date, and excerpt
+4. Add at top of blog-posts container (newest first)
+
+### Updating About Page:
+1. Open `about.html`
+2. Edit text in `.about-content` section
+3. Save and upload
+
+---
+
+## Summary for Claude Code
+
+**Create a simple, clean, multi-page portfolio website for Stoneman Photography with:**
+
+- 5 separate HTML pages (home, portfolio, blog, about, contact)
+- Shared CSS stylesheet for consistent design
+- JavaScript for interactivity (mobile menu, portfolio filter, lightbox)
+- Black/white/gray color scheme
+- Mobile-first responsive design
+- Easy to maintain for a beginner
+- No frameworks or build tools
+- Ready to deploy to static hosting
+
+**Key Features:**
+- Portfolio with category filtering and lightbox viewer
+- Blog post listing (no individual post pages yet)
+- Contact form (submission to be hooked up later)
+- Clean navigation that works on all devices
+- Professional but minimal design that showcases photography
+
+**Technical Stack:**
+- HTML5
+- CSS3
+- Vanilla JavaScript
+- No dependencies
+
+Start with the file structure, then build each page systematically, ensuring navigation works between all pages. Keep code clean, commented, and beginner-friendly.

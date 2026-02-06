@@ -1,0 +1,787 @@
+/* ==========================================================
+   STONEMAN PHOTOGRAPHY - Main Stylesheet
+
+   Table of Contents:
+   1. Reset & Base Styles
+   2. Typography
+   3. Navigation
+   4. Hero Section (Home Page)
+   5. Featured Work Section (Home Page)
+   6. Page Headers (Shared)
+   7. Portfolio Page
+   8. Lightbox
+   9. Blog Page
+   10. About Page
+   11. Contact Page
+   12. Footer
+   13. Responsive Design (Tablet)
+   14. Responsive Design (Mobile)
+   ========================================================== */
+
+
+/* ----------------------------------------------------------
+   1. RESET & BASE STYLES
+   Remove default browser spacing and set up box-sizing
+   so padding doesn't add to element widths.
+   ---------------------------------------------------------- */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                 Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    color: #333333;
+    background-color: #ffffff;
+    /* Push content below the fixed navigation bar */
+    padding-top: 70px;
+}
+
+
+/* ----------------------------------------------------------
+   2. TYPOGRAPHY
+   Heading sizes, weights, and spacing used across the site.
+   ---------------------------------------------------------- */
+
+h1 {
+    font-size: 3rem;
+    font-weight: 300;
+    margin-bottom: 1rem;
+}
+
+h2 {
+    font-size: 2rem;
+    font-weight: 300;
+    margin-bottom: 1rem;
+}
+
+h3 {
+    font-size: 1.25rem;
+    font-weight: 400;
+    margin-bottom: 0.5rem;
+}
+
+p {
+    margin-bottom: 1rem;
+}
+
+a {
+    color: #333333;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #666666;
+}
+
+
+/* ----------------------------------------------------------
+   3. NAVIGATION
+   Fixed top bar with logo on the left, links on the right.
+   Includes mobile hamburger menu styles.
+   ---------------------------------------------------------- */
+
+nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: #ffffff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 70px;
+}
+
+/* Site logo / name in the nav bar */
+.logo {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #333333;
+    letter-spacing: 0.5px;
+}
+
+.logo:hover {
+    color: #333333;
+}
+
+/* Desktop navigation links */
+.nav-links {
+    list-style: none;
+    display: flex;
+    gap: 2rem;
+}
+
+.nav-links a {
+    font-size: 1rem;
+    font-weight: 400;
+    color: #333333;
+    padding: 0.5rem 0;
+    transition: color 0.3s ease;
+    position: relative;
+}
+
+/* Underline animation on hover */
+.nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: #333333;
+    transition: width 0.3s ease;
+}
+
+.nav-links a:hover::after,
+.nav-links a.active::after {
+    width: 100%;
+}
+
+/* Highlight for the current page */
+.nav-links a.active {
+    font-weight: 600;
+}
+
+/* Hamburger menu button - hidden on desktop */
+.menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #333333;
+    padding: 0.5rem;
+}
+
+
+/* ----------------------------------------------------------
+   4. HERO SECTION (Home Page)
+   Full-screen banner with a dark overlay, title, and CTA.
+   ---------------------------------------------------------- */
+
+.hero {
+    position: relative;
+    height: 90vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background-color: #2a2a2a;
+    overflow: hidden;
+}
+
+/* Dark overlay so white text is readable over any background */
+.hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+
+/* Text content sits above the overlay */
+.hero-content {
+    position: relative;
+    z-index: 2;
+    color: #ffffff;
+    padding: 2rem;
+}
+
+.hero-content h1 {
+    font-size: 3.5rem;
+    font-weight: 300;
+    letter-spacing: 2px;
+    margin-bottom: 1rem;
+}
+
+.hero-content p {
+    font-size: 1.25rem;
+    font-weight: 300;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+}
+
+/* "View Portfolio" button */
+.cta-button {
+    display: inline-block;
+    padding: 0.875rem 2.5rem;
+    border: 2px solid #ffffff;
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.cta-button:hover {
+    background-color: #ffffff;
+    color: #333333;
+}
+
+
+/* ----------------------------------------------------------
+   5. FEATURED WORK SECTION (Home Page)
+   Three placeholder images shown in a row on the home page.
+   ---------------------------------------------------------- */
+
+.featured-section {
+    padding: 4rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.featured-section h2 {
+    margin-bottom: 2rem;
+}
+
+.featured-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+/* Each featured image placeholder */
+.featured-item {
+    /* 4:3 aspect ratio using padding trick */
+    position: relative;
+    padding-top: 75%;
+    background-color: #e0e0e0;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+/* Label text centered inside the placeholder */
+.featured-item span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #666666;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-align: center;
+}
+
+/* Slight zoom on hover */
+.featured-item:hover {
+    background-color: #d0d0d0;
+    transition: background-color 0.3s ease;
+}
+
+
+/* ----------------------------------------------------------
+   6. PAGE HEADERS (Shared)
+   Used on Portfolio, Blog, About, and Contact pages.
+   ---------------------------------------------------------- */
+
+.page-header {
+    text-align: center;
+    padding: 4rem 2rem 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.page-header h1 {
+    margin-bottom: 1rem;
+}
+
+.page-header p {
+    color: #666666;
+    font-size: 1.1rem;
+}
+
+
+/* ----------------------------------------------------------
+   7. PORTFOLIO PAGE
+   Category filter buttons and responsive image grid.
+   ---------------------------------------------------------- */
+
+/* Filter buttons container */
+.filter-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    padding: 0 2rem 2rem;
+    flex-wrap: wrap;
+}
+
+.category-btn {
+    padding: 0.5rem 1.5rem;
+    border: 2px solid #333333;
+    background-color: transparent;
+    color: #333333;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Active / selected filter button */
+.category-btn.active {
+    background-color: #333333;
+    color: #ffffff;
+}
+
+.category-btn:hover {
+    background-color: #333333;
+    color: #ffffff;
+}
+
+/* Image gallery grid */
+.gallery {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    padding: 0 2rem 4rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Each gallery image placeholder */
+.gallery-item {
+    position: relative;
+    padding-top: 75%; /* 4:3 aspect ratio */
+    background-color: #e0e0e0;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+/* Slight zoom effect on hover */
+.gallery-item:hover {
+    transform: scale(1.02);
+}
+
+/* Label text inside the placeholder */
+.gallery-item span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #666666;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-align: center;
+    padding: 0 0.5rem;
+}
+
+/* Hidden items (filtered out) */
+.gallery-item.hidden {
+    display: none;
+}
+
+
+/* ----------------------------------------------------------
+   8. LIGHTBOX
+   Full-screen overlay for viewing portfolio images.
+   ---------------------------------------------------------- */
+
+.lightbox {
+    display: none; /* Hidden by default */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.95);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* When lightbox is open */
+.lightbox.active {
+    display: flex;
+    opacity: 1;
+}
+
+/* The image/placeholder shown in the lightbox */
+.lightbox-content {
+    max-width: 90%;
+    max-height: 85vh;
+    background-color: #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 4rem;
+    min-width: 300px;
+    min-height: 225px;
+}
+
+.lightbox-content span {
+    color: #666666;
+    font-size: 1.25rem;
+    font-weight: 500;
+}
+
+/* Close button (X) in the top-right corner */
+.lightbox-close {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    color: #ffffff;
+    font-size: 2rem;
+    cursor: pointer;
+    background: none;
+    border: none;
+    line-height: 1;
+    padding: 0.5rem;
+    transition: opacity 0.3s ease;
+}
+
+.lightbox-close:hover {
+    opacity: 0.7;
+}
+
+
+/* ----------------------------------------------------------
+   9. BLOG PAGE
+   Blog post previews in a clean, text-focused layout.
+   ---------------------------------------------------------- */
+
+.blog-posts {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 2rem 4rem;
+}
+
+/* Each blog post preview card */
+.blog-post {
+    padding: 2rem 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+/* Remove the border from the last post */
+.blog-post:last-child {
+    border-bottom: none;
+}
+
+.blog-post h2 {
+    font-size: 1.5rem;
+    font-weight: 400;
+    margin-bottom: 0.5rem;
+}
+
+/* Date shown beneath the title */
+.blog-date {
+    color: #999999;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.blog-post p {
+    color: #555555;
+    margin-bottom: 1rem;
+}
+
+/* "Read more" link */
+.read-more {
+    font-weight: 500;
+    color: #333333;
+    transition: color 0.3s ease;
+}
+
+.read-more:hover {
+    color: #666666;
+}
+
+
+/* ----------------------------------------------------------
+   10. ABOUT PAGE
+   Centered text column with comfortable reading width.
+   ---------------------------------------------------------- */
+
+.about-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 2rem 4rem;
+}
+
+.about-content p {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    margin-bottom: 1.5rem;
+    color: #444444;
+}
+
+
+/* ----------------------------------------------------------
+   11. CONTACT PAGE
+   Centered contact form with clean styling.
+   ---------------------------------------------------------- */
+
+.contact-form-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 0 2rem 4rem;
+}
+
+.contact-form .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.contact-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #555555;
+}
+
+/* Text inputs and textarea */
+.contact-form input,
+.contact-form textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e0e0e0;
+    font-family: inherit;
+    font-size: 1rem;
+    color: #333333;
+    transition: border-color 0.3s ease;
+    background-color: #ffffff;
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus {
+    outline: none;
+    border-color: #333333;
+}
+
+.contact-form textarea {
+    min-height: 150px;
+    resize: vertical;
+}
+
+/* Submit button */
+.submit-btn {
+    display: inline-block;
+    padding: 0.875rem 2.5rem;
+    border: 2px solid #333333;
+    background-color: #333333;
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.submit-btn:hover {
+    background-color: transparent;
+    color: #333333;
+}
+
+/* Red border on invalid fields after attempted submit */
+.contact-form input.error,
+.contact-form textarea.error {
+    border-color: #cc0000;
+}
+
+/* Error message text below invalid fields */
+.error-message {
+    color: #cc0000;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    display: none;
+}
+
+/* Confirmation message shown after successful submit */
+.form-success {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+    background-color: #f5f5f5;
+    margin-top: 1rem;
+}
+
+.form-success p {
+    font-size: 1.1rem;
+    color: #333333;
+}
+
+
+/* ----------------------------------------------------------
+   12. FOOTER
+   Dark background bar at the bottom of every page.
+   ---------------------------------------------------------- */
+
+footer {
+    background-color: #333333;
+    color: #ffffff;
+    text-align: center;
+    padding: 2rem;
+}
+
+footer p {
+    font-size: 0.875rem;
+    margin: 0;
+    opacity: 0.8;
+}
+
+
+/* ----------------------------------------------------------
+   13. RESPONSIVE DESIGN - TABLET (768px - 1199px)
+   Adjust grid columns and spacing for medium screens.
+   ---------------------------------------------------------- */
+
+@media (max-width: 1199px) {
+    .gallery {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .featured-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+
+/* ----------------------------------------------------------
+   14. RESPONSIVE DESIGN - MOBILE (below 768px)
+   Single column layouts, hamburger menu, smaller text.
+   ---------------------------------------------------------- */
+
+@media (max-width: 767px) {
+
+    /* Reduce body padding for smaller nav */
+    body {
+        padding-top: 60px;
+    }
+
+    /* --- Navigation --- */
+
+    .nav-container {
+        height: 60px;
+        padding: 0 1rem;
+    }
+
+    /* Show the hamburger button */
+    .menu-toggle {
+        display: block;
+    }
+
+    /* Hide nav links by default on mobile */
+    .nav-links {
+        display: none;
+        position: absolute;
+        top: 60px;
+        left: 0;
+        width: 100%;
+        background-color: #ffffff;
+        flex-direction: column;
+        padding: 1rem 0;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        gap: 0;
+    }
+
+    /* Show nav links when menu is open */
+    .nav-links.active {
+        display: flex;
+    }
+
+    .nav-links li {
+        text-align: center;
+    }
+
+    .nav-links a {
+        display: block;
+        padding: 0.75rem 1rem;
+    }
+
+    /* Remove the underline effect on mobile */
+    .nav-links a::after {
+        display: none;
+    }
+
+    /* --- Typography --- */
+
+    h1 {
+        font-size: 2rem;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+    }
+
+    /* --- Hero Section --- */
+
+    .hero {
+        height: 70vh;
+    }
+
+    .hero-content h1 {
+        font-size: 2rem;
+    }
+
+    .hero-content p {
+        font-size: 1rem;
+    }
+
+    /* --- Grids --- */
+
+    .gallery {
+        grid-template-columns: 1fr;
+        padding: 0 1rem 2rem;
+    }
+
+    .featured-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* --- Sections --- */
+
+    .featured-section {
+        padding: 2rem 1rem;
+    }
+
+    .page-header {
+        padding: 2rem 1rem 1rem;
+    }
+
+    .blog-posts {
+        padding: 0 1rem 2rem;
+    }
+
+    .about-content {
+        padding: 0 1rem 2rem;
+    }
+
+    .contact-form-container {
+        padding: 0 1rem 2rem;
+    }
+
+    /* --- Filter Buttons --- */
+
+    .filter-buttons {
+        padding: 0 1rem 1.5rem;
+    }
+}

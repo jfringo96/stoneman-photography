@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Basic page setup -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Contact Stoneman Photography - Get in touch about projects, collaborations, or just to say hello.">
+    <title>Contact | Stoneman Photography</title>
+
+    <!-- Shared stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- ======== NAVIGATION ======== -->
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="logo">Stoneman Photography</a>
+            <button class="menu-toggle" aria-label="Toggle menu" aria-expanded="false">&#9776;</button>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="portfolio.html">Portfolio</a></li>
+                <li><a href="blog.html">Blog</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+
+    <!-- ✏️ EDIT: Contact page heading and intro text below -->
+    <header class="page-header">
+        <h1>Get in Touch</h1>
+        <p>Interested in my work or have a project in mind? I'd love to hear from you.</p>
+    </header>
+
+
+    <!-- ✏️ EDIT: Contact form — to connect this form, add action="https://formspree.io/f/YOUR_ID" to the <form> tag below -->
+    <div class="contact-form-container">
+        <form class="contact-form" novalidate>
+
+            <!-- Name field -->
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" id="name" name="name" required
+                       placeholder="Your name">
+                <div class="error-message"></div>
+            </div>
+
+            <!-- Email field -->
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required
+                       placeholder="you@example.com">
+                <div class="error-message"></div>
+            </div>
+
+            <!-- Message field -->
+            <div class="form-group">
+                <label for="message">Message</label>
+                <textarea id="message" name="message" required
+                          placeholder="What would you like to say?"></textarea>
+                <div class="error-message"></div>
+            </div>
+
+            <!-- Submit button -->
+            <button type="submit" class="submit-btn">Send Message</button>
+
+        </form>
+
+        <!-- Success message (shown after valid submission) -->
+        <div class="form-success">
+            <p>Thank you for your message! I'll get back to you as soon as I can.</p>
+        </div>
+    </div>
+
+
+    <!-- ======== FOOTER ======== -->
+    <footer>
+        <p>&copy; 2026 Stoneman Photography. All rights reserved.</p>
+    </footer>
+
+
+    <!-- Shared JavaScript -->
+    <script src="js/script.js"></script>
+
+</body>
+</html>
