@@ -40,21 +40,20 @@ You can edit this site directly on GitHub — no special software needed. Click 
 
 ### Add a Portfolio Image
 
-1. Open **portfolio.html**
-2. Find the `<!-- ✏️ EDIT: Portfolio images below -->` comment
-3. Add a new item inside the `<div class="gallery">`:
+1. First, upload your image to the `images/` folder in your repo (create the folder if it doesn't exist)
+2. Open **portfolio.html**
+3. Find the `<!-- ✏️ ADD NEW IMAGES HERE -->` comment
+4. Add a new item:
 
 ```html
         <div class="gallery-item" data-category="wildlife">
-            <span>Your Photo Title</span>
+            <img src="images/your-photo.jpg" alt="Short description of the photo">
         </div>
 ```
 
-4. Set `data-category` to `wildlife` or `other` (must match a filter button)
-5. Commit changes
-
-> **When you add real images later:** replace the `<span>` with an `<img>` tag, e.g.
-> `<img src="images/your-photo.jpg" alt="Description of photo">`
+5. Set `data-category` to `wildlife` or `other` (must match a filter button)
+6. The masonry layout handles any image size or aspect ratio automatically
+7. Commit changes
 
 ### Change the Featured Images on the Home Page
 

@@ -36,6 +36,7 @@
 
 
     <!-- ✏️ EDIT: Category filters — add or rename filter buttons to match your gallery categories -->
+    <!-- To add a new category: copy a button, change data-category="yourcategory" and the label -->
     <div class="filter-buttons">
         <button class="category-btn active" data-category="all">All</button>
         <button class="category-btn" data-category="wildlife">Wildlife</button>
@@ -43,58 +44,99 @@
     </div>
 
 
-    <!-- ✏️ EDIT: Portfolio images below — add, remove, or rename gallery items here -->
-    <!-- Each item has a data-category so the filter knows what to show/hide.
-         The span inside provides a label for the placeholder. -->
-    <div class="gallery">
+    <!-- ✏️ EDIT: Portfolio images below — add, remove, or reorder images here -->
+    <!--
+        ✏️ TEMPLATE — Copy this block to add a new image:
 
-        <!-- Wildlife images (10 items) -->
         <div class="gallery-item" data-category="wildlife">
-            <span>Wildlife Photo 1</span>
-        </div>
-        <div class="gallery-item" data-category="wildlife">
-            <span>Bird Portrait</span>
-        </div>
-        <div class="gallery-item" data-category="wildlife">
-            <span>Hummingbird in Flight</span>
-        </div>
-        <div class="gallery-item" data-category="wildlife">
-            <span>Robin on Branch</span>
-        </div>
-        <div class="gallery-item" data-category="wildlife">
-            <span>Butterfly Close-up</span>
-        </div>
-        <div class="gallery-item" data-category="wildlife">
-            <span>Dragonfly Macro</span>
-        </div>
-        <div class="gallery-item" data-category="wildlife">
-            <span>Fox at Dawn</span>
-        </div>
-        <div class="gallery-item" data-category="wildlife">
-            <span>Squirrel Portrait</span>
-        </div>
-        <div class="gallery-item" data-category="wildlife">
-            <span>Owl in Tree</span>
-        </div>
-        <div class="gallery-item" data-category="wildlife">
-            <span>Kingfisher Diving</span>
+            <img src="images/your-photo.jpg" alt="Short description of the photo">
         </div>
 
-        <!-- Other images (5 items) -->
+        • Set data-category to match one of your filter buttons (e.g. "wildlife" or "other")
+        • The alt text shows in the lightbox and helps with accessibility
+        • Images display at their natural aspect ratio — no cropping, any size works
+    -->
+    <div class="masonry-gallery">
+
+        <!-- ✏️ ADD NEW IMAGES HERE — paste new gallery-item blocks at the top or bottom -->
+
+        <!-- Wildlife images -->
+        <div class="gallery-item" data-category="wildlife">
+            <div class="gallery-placeholder" style="padding-top: 130%; background-color: #8b9a7e;">
+                <span>Kingfisher Portrait</span>
+            </div>
+        </div>
+        <div class="gallery-item" data-category="wildlife">
+            <div class="gallery-placeholder" style="padding-top: 66%; background-color: #7a8b9a;">
+                <span>Bird Portrait</span>
+            </div>
+        </div>
+        <div class="gallery-item" data-category="wildlife">
+            <div class="gallery-placeholder" style="padding-top: 100%; background-color: #9a8b7a;">
+                <span>Hummingbird in Flight</span>
+            </div>
+        </div>
+        <div class="gallery-item" data-category="wildlife">
+            <div class="gallery-placeholder" style="padding-top: 75%; background-color: #6e8b74;">
+                <span>Robin on Branch</span>
+            </div>
+        </div>
+        <div class="gallery-item" data-category="wildlife">
+            <div class="gallery-placeholder" style="padding-top: 140%; background-color: #8a7e6b;">
+                <span>Butterfly Close-up</span>
+            </div>
+        </div>
+        <div class="gallery-item" data-category="wildlife">
+            <div class="gallery-placeholder" style="padding-top: 90%; background-color: #5d7a6e;">
+                <span>Dragonfly Macro</span>
+            </div>
+        </div>
+        <div class="gallery-item" data-category="wildlife">
+            <div class="gallery-placeholder" style="padding-top: 66%; background-color: #8b7a65;">
+                <span>Fox at Dawn</span>
+            </div>
+        </div>
+        <div class="gallery-item" data-category="wildlife">
+            <div class="gallery-placeholder" style="padding-top: 120%; background-color: #7a8a6e;">
+                <span>Squirrel Portrait</span>
+            </div>
+        </div>
+        <div class="gallery-item" data-category="wildlife">
+            <div class="gallery-placeholder" style="padding-top: 80%; background-color: #6b7e8a;">
+                <span>Owl in Tree</span>
+            </div>
+        </div>
+        <div class="gallery-item" data-category="wildlife">
+            <div class="gallery-placeholder" style="padding-top: 100%; background-color: #5a7a6b;">
+                <span>Kingfisher Diving</span>
+            </div>
+        </div>
+
+        <!-- Other images -->
         <div class="gallery-item" data-category="other">
-            <span>Misty Forest</span>
+            <div class="gallery-placeholder" style="padding-top: 56%; background-color: #7e8a8b;">
+                <span>Misty Forest</span>
+            </div>
         </div>
         <div class="gallery-item" data-category="other">
-            <span>Mountain Sunrise</span>
+            <div class="gallery-placeholder" style="padding-top: 66%; background-color: #8b8a7e;">
+                <span>Mountain Sunrise</span>
+            </div>
         </div>
         <div class="gallery-item" data-category="other">
-            <span>Wildflower Meadow</span>
+            <div class="gallery-placeholder" style="padding-top: 130%; background-color: #6e7e5d;">
+                <span>Wildflower Meadow</span>
+            </div>
         </div>
         <div class="gallery-item" data-category="other">
-            <span>Frost on Leaves</span>
+            <div class="gallery-placeholder" style="padding-top: 75%; background-color: #8a8b7e;">
+                <span>Frost on Leaves</span>
+            </div>
         </div>
         <div class="gallery-item" data-category="other">
-            <span>River Reflection</span>
+            <div class="gallery-placeholder" style="padding-top: 90%; background-color: #6b8a8b;">
+                <span>River Reflection</span>
+            </div>
         </div>
 
     </div>

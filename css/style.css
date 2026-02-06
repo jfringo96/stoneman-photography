@@ -315,7 +315,7 @@ nav {
 
 /* ----------------------------------------------------------
    7. PORTFOLIO PAGE
-   Category filter buttons and responsive image grid.
+   Category filter buttons and CSS-columns masonry gallery.
    ---------------------------------------------------------- */
 
 /* Filter buttons container */
@@ -351,38 +351,51 @@ nav {
     color: #ffffff;
 }
 
-/* Image gallery grid */
-.gallery {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem;
+/* Masonry gallery using CSS columns */
+.masonry-gallery {
+    column-count: 3;
+    column-gap: 14px;
     padding: 0 2rem 4rem;
     max-width: 1200px;
     margin: 0 auto;
 }
 
-/* Each gallery image placeholder */
+/* Each gallery item — break-inside prevents items splitting across columns */
 .gallery-item {
-    position: relative;
-    padding-top: 75%; /* 4:3 aspect ratio */
-    background-color: #e0e0e0;
+    break-inside: avoid;
+    margin-bottom: 14px;
     overflow: hidden;
     cursor: pointer;
-    transition: transform 0.3s ease;
+    position: relative;
+    transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-/* Slight zoom effect on hover */
+/* Subtle hover effect — slight scale and brightness shift */
 .gallery-item:hover {
-    transform: scale(1.02);
+    transform: scale(1.015);
+    opacity: 0.88;
 }
 
-/* Label text inside the placeholder */
-.gallery-item span {
+/* Real images display at natural aspect ratio */
+.gallery-item img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* Placeholder boxes for development — styled coloured blocks
+   Replace these with <img> tags when adding real photos */
+.gallery-placeholder {
+    position: relative;
+    width: 100%;
+}
+
+.gallery-placeholder span {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    color: #666666;
+    color: rgba(255, 255, 255, 0.7);
     font-size: 0.875rem;
     font-weight: 500;
     text-align: center;
@@ -655,8 +668,8 @@ footer p {
    ---------------------------------------------------------- */
 
 @media (max-width: 1199px) {
-    .gallery {
-        grid-template-columns: repeat(2, 1fr);
+    .masonry-gallery {
+        column-count: 2;
     }
 
     .featured-grid {
@@ -748,8 +761,8 @@ footer p {
 
     /* --- Grids --- */
 
-    .gallery {
-        grid-template-columns: 1fr;
+    .masonry-gallery {
+        column-count: 1;
         padding: 0 1rem 2rem;
     }
 

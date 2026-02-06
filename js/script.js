@@ -93,7 +93,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==============================================
     // 3. PORTFOLIO CATEGORY FILTER
     // Shows/hides gallery items based on which
-    // category button is clicked.
+    // category button is clicked. CSS-columns
+    // masonry reflows automatically when items
+    // are hidden/shown via display: none.
     // ==============================================
 
     var categoryButtons = document.querySelectorAll('.category-btn');
@@ -132,6 +134,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==============================================
     // 4. LIGHTBOX (Full-Screen Image Viewer)
     // Click a gallery image to view it large.
+    // Works with both real <img> tags and placeholders.
     // Close with X button, clicking outside, or ESC.
     // ==============================================
 
@@ -144,14 +147,32 @@ document.addEventListener('DOMContentLoaded', function () {
         item.addEventListener('click', function () {
             if (!lightbox || !lightboxContent) return;
 
-            // Get the label text from the clicked item
-            var labelSpan = item.querySelector('span');
-            var labelText = labelSpan ? labelSpan.textContent : 'Photo';
+            // Check if the item has a real image
+            var img = item.querySelector('img');
 
-            // Put the label text into the lightbox
-            var lightboxSpan = lightboxContent.querySelector('span');
-            if (lightboxSpan) {
-                lightboxSpan.textContent = labelText;
+            if (img) {
+                // Show the real image in the lightbox
+                lightboxContent.innerHTML = '';
+                var lightboxImg = document.createElement('img');
+                lightboxImg.src = img.src;
+                lightboxImg.alt = img.alt;
+                lightboxImg.style.maxWidth = '90vw';
+                lightboxImg.style.maxHeight = '85vh';
+                lightboxImg.style.display = 'block';
+                lightboxContent.style.padding = '0';
+                lightboxContent.style.minWidth = '0';
+                lightboxContent.style.minHeight = '0';
+                lightboxContent.style.backgroundColor = 'transparent';
+                lightboxContent.appendChild(lightboxImg);
+            } else {
+                // Placeholder mode: show the label text
+                var labelSpan = item.querySelector('span');
+                var labelText = labelSpan ? labelSpan.textContent : 'Photo';
+                lightboxContent.innerHTML = '<span>' + labelText + '</span>';
+                lightboxContent.style.padding = '3rem 4rem';
+                lightboxContent.style.minWidth = '300px';
+                lightboxContent.style.minHeight = '225px';
+                lightboxContent.style.backgroundColor = '#e0e0e0';
             }
 
             // Show the lightbox
