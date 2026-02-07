@@ -262,32 +262,27 @@ nav {
     gap: 1.5rem;
 }
 
-/* Each featured image placeholder */
+/* Each featured image */
 .featured-item {
-    /* 4:3 aspect ratio using padding trick */
     position: relative;
-    padding-top: 75%;
-    background-color: #e0e0e0;
     overflow: hidden;
     cursor: pointer;
+    background-color: #e0e0e0;
 }
 
-/* Label text centered inside the placeholder */
-.featured-item span {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: #666666;
-    font-size: 0.875rem;
-    font-weight: 500;
-    text-align: center;
+/* Real images fill the grid cell and crop to a consistent 4:3 ratio */
+.featured-item img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    transition: transform 0.4s ease, opacity 0.4s ease;
 }
 
-/* Slight zoom on hover */
-.featured-item:hover {
-    background-color: #d0d0d0;
-    transition: background-color 0.3s ease;
+/* Subtle zoom on hover */
+.featured-item:hover img {
+    transform: scale(1.05);
+    opacity: 0.9;
 }
 
 
