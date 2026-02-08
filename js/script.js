@@ -541,6 +541,20 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // Apply the default active filter on page load (e.g. Wildlife first)
+    var activeFilter = document.querySelector('.category-btn.active');
+    if (activeFilter && galleryItems.length > 0) {
+        var defaultCategory = activeFilter.getAttribute('data-category');
+        if (defaultCategory !== 'all') {
+            galleryItems.forEach(function (item) {
+                var itemCategory = item.getAttribute('data-category');
+                if (itemCategory !== defaultCategory) {
+                    item.classList.add('hidden');
+                }
+            });
+        }
+    }
+
 
     // ==============================================
     // 4. LIGHTBOX WITH EXIF METADATA
@@ -556,6 +570,13 @@ document.addEventListener('DOMContentLoaded', function () {
     // Helper: extract the filename from an image src path
     function getFilename(src) {
         return src.split('/').pop().split('?')[0];
+    }
+
+    // Helper: get the full-resolution image URL from a thumbnail URL
+    // Thumbnails are in images/portfolio/thumbs/file.jpg
+    // Full-res are in images/portfolio/file.jpg
+    function getFullResUrl(thumbSrc) {
+        return thumbSrc.replace('/thumbs/', '/');
     }
 
     // Helper: build the metadata HTML for a given filename
@@ -587,18 +608,29 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!lightbox || !lightboxContent || !img) return;
 
         var filename = getFilename(img.src);
+        var fullResSrc = getFullResUrl(img.src);
 
-        // Build the lightbox content: image + metadata
+        // Build the lightbox content: start with thumb, then swap to full-res
         var html = '<img src="' + img.src + '" alt="' + (img.alt || '') + '">';
         html += buildMetaHTML(filename);
 
         lightboxContent.innerHTML = html;
 
-        // Show the lightbox
+        // Show the lightbox immediately with the thumbnail
         lightbox.classList.add('active');
-
-        // Prevent the page from scrolling while lightbox is open
         document.body.style.overflow = 'hidden';
+
+        // Load the full-resolution image in the background, then swap it in
+        if (fullResSrc !== img.src) {
+            var fullImg = new Image();
+            fullImg.onload = function () {
+                var lightboxImg = lightboxContent.querySelector('img');
+                if (lightboxImg) {
+                    lightboxImg.src = fullResSrc;
+                }
+            };
+            fullImg.src = fullResSrc;
+        }
     }
 
     // Attach click handlers to gallery items (portfolio page)

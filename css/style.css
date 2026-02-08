@@ -101,7 +101,7 @@ nav {
 }
 
 .nav-container {
-    max-width: 1200px;
+    max-width: 1600px;
     margin: 0 auto;
     padding: 0 2rem;
     display: flex;
@@ -254,20 +254,22 @@ nav {
    ---------------------------------------------------------- */
 
 .featured-section {
-    padding: 2rem 2rem 4rem;
-    max-width: 1400px;
-    margin: 0 auto;
+    padding: 0;
+    max-width: 100%;
+    margin: 0;
     text-align: center;
+    background-color: #1a1a1a;
 }
 
 .featured-section h2 {
     margin-bottom: 2rem;
+    color: #ffffff;
 }
 
 .featured-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
+    gap: 4px;
 }
 
 /* Each featured image */
@@ -275,7 +277,7 @@ nav {
     position: relative;
     overflow: hidden;
     cursor: pointer;
-    background-color: #e0e0e0;
+    background-color: #1a1a1a;
 }
 
 /* Real images fill the grid cell — 16:10 ratio for bigger display */
@@ -302,7 +304,7 @@ nav {
 .page-header {
     text-align: center;
     padding: 4rem 2rem 2rem;
-    max-width: 800px;
+    max-width: 1000px;
     margin: 0 auto;
 }
 
@@ -359,7 +361,7 @@ nav {
     column-count: 3;
     column-gap: 14px;
     padding: 0 2rem 4rem;
-    max-width: 1200px;
+    max-width: 1600px;
     margin: 0 auto;
 }
 
@@ -852,7 +854,7 @@ footer p {
     /* --- Sections --- */
 
     .featured-section {
-        padding: 2rem 1rem;
+        padding: 0;
     }
 
     .page-header {
