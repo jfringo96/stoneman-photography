@@ -5,9 +5,420 @@
    1. Mobile hamburger menu (open/close)
    2. Active page highlighting in the navigation
    3. Portfolio category filter buttons
-   4. Portfolio lightbox (full-screen image viewer)
+   4. Lightbox with EXIF metadata (works on portfolio + home)
    5. Contact form validation
    ========================================================== */
+
+
+/* ----------------------------------------------------------
+   PHOTO METADATA
+   EXIF data and placeholder titles for each image.
+   Pulled from the actual file metadata.
+   ---------------------------------------------------------- */
+
+var photoData = {
+    'p2039427.jpg': {
+        title: 'Golden Hour Guardian',
+        camera: 'OM System OM-5',
+        lens: 'OM 100-400mm F5.0-6.3',
+        focal: '374mm',
+        shutter: '1/1000',
+        aperture: 'f/6.3',
+        iso: '2000',
+        date: '3 Feb 2026'
+    },
+    'p2028335.jpg': {
+        title: 'Through the Canopy',
+        camera: 'OM System OM-5',
+        lens: 'OM 100-400mm F5.0-6.3',
+        focal: '400mm',
+        shutter: '1/1600',
+        aperture: 'f/6.3',
+        iso: '2500',
+        date: '2 Feb 2026'
+    },
+    'p9024421.jpg': {
+        title: 'Face to Face',
+        camera: 'OM System OM-5',
+        lens: 'OM 100-400mm F5.0-6.3',
+        focal: '400mm',
+        shutter: '1/1600',
+        aperture: 'f/6.3',
+        iso: '640',
+        date: '2 Sep 2025'
+    },
+    'p9024452.jpg': {
+        title: 'Wings of Steel',
+        camera: 'OM System OM-5',
+        lens: 'OM 100-400mm F5.0-6.3',
+        focal: '400mm',
+        shutter: '1/1600',
+        aperture: 'f/6.3',
+        iso: '1000',
+        date: '2 Sep 2025'
+    },
+    'p9024319.jpg': {
+        title: 'Iridescent Flight',
+        camera: 'OM System OM-5',
+        lens: 'OM 100-400mm F5.0-6.3',
+        focal: '400mm',
+        shutter: '1/1600',
+        aperture: 'f/6.3',
+        iso: '400',
+        date: '2 Sep 2025'
+    },
+    'pb150612.jpg': {
+        title: 'Woodland Jewel',
+        camera: 'OM System OM-5',
+        lens: 'OM 100-400mm F5.0-6.3',
+        focal: '400mm',
+        shutter: '1/500',
+        aperture: 'f/6.3',
+        iso: '2500',
+        date: '15 Nov 2025'
+    },
+    'pb150585.jpg': {
+        title: 'Side by Side',
+        camera: 'OM System OM-5',
+        lens: 'OM 100-400mm F5.0-6.3',
+        focal: '400mm',
+        shutter: '1/400',
+        aperture: 'f/6.3',
+        iso: '1600',
+        date: '15 Nov 2025'
+    },
+    'p1286163.jpg': {
+        title: 'Above the Treeline',
+        camera: 'OM System OM-5',
+        lens: 'OM 100-400mm F5.0-6.3',
+        focal: '123mm',
+        shutter: '1/2500',
+        aperture: 'f/5.4',
+        iso: '640',
+        date: '28 Jan 2026'
+    },
+    'p2021807.jpg': {
+        title: 'Morning Glide',
+        camera: 'OM System OM-5',
+        lens: 'OM 100-400mm F5.0-6.3',
+        focal: '400mm',
+        shutter: '1/1250',
+        aperture: 'f/6.3',
+        iso: '1000',
+        date: '2 Feb 2025'
+    },
+    'p2021437.jpg': {
+        title: 'Misty Dawn',
+        camera: 'OM System OM-5',
+        lens: 'OM 100-400mm F5.0-6.3',
+        focal: '400mm',
+        shutter: '1/1250',
+        aperture: 'f/6.3',
+        iso: '250',
+        date: '2 Feb 2025'
+    },
+    'p4051810.jpg': {
+        title: 'Suspended',
+        camera: 'OM System OM-5',
+        lens: 'OM 100-400mm F5.0-6.3',
+        focal: '400mm',
+        shutter: '1/2500',
+        aperture: 'f/6.3',
+        iso: '3200',
+        date: '5 Apr 2025'
+    },
+    'p8262697.jpg': {
+        title: 'Blue Perch',
+        camera: 'OM System OM-5',
+        lens: 'OM 100-400mm F5.0-6.3',
+        focal: '400mm',
+        shutter: '1/1000',
+        aperture: 'f/6.3',
+        iso: '1000',
+        date: '26 Aug 2025'
+    },
+    'p9064970.jpg': {
+        title: 'Ancient Predator',
+        camera: 'OM System OM-5',
+        lens: 'OM 100-400mm F5.0-6.3',
+        focal: '400mm',
+        shutter: '1/800',
+        aperture: 'f/6.3',
+        iso: '2000',
+        date: '6 Sep 2025'
+    },
+    'pb270047.jpg': {
+        title: 'Windswept',
+        camera: 'OM System OM-5',
+        lens: 'OM 100-400mm F5.0-6.3',
+        focal: '276mm',
+        shutter: '1/1600',
+        aperture: 'f/6.3',
+        iso: '1600',
+        date: '27 Nov 2025'
+    },
+    'pb210360.jpg': {
+        title: 'Evening Departure',
+        camera: 'OM System OM-5',
+        lens: 'OM 100-400mm F5.0-6.3',
+        focal: '186mm',
+        shutter: '1/1600',
+        aperture: 'f/6.3',
+        iso: '64',
+        date: '21 Nov 2025'
+    },
+    'pc051978.jpg': {
+        title: 'The Stare',
+        camera: 'Olympus E-PL9',
+        lens: 'Lumix G 45-200mm F4.0-5.6',
+        focal: '189mm',
+        shutter: '1/1600',
+        aperture: 'f/5.6',
+        iso: '2500',
+        date: '5 Dec 2024'
+    },
+    'pc302391.jpg': {
+        title: 'Hidden in Green',
+        camera: 'OM System OM-5',
+        lens: 'OM 100-400mm F5.0-6.3',
+        focal: '400mm',
+        shutter: '1/3200',
+        aperture: 'f/6.3',
+        iso: '1250',
+        date: '30 Dec 2025'
+    },
+    'p3023333-enhanced-nr.jpg': {
+        title: 'City Silhouette',
+        camera: 'OM System OM-5',
+        lens: 'OM 100-400mm F5.0-6.3',
+        focal: '100mm',
+        shutter: '1/640',
+        aperture: 'f/9',
+        iso: '200',
+        date: '2 Mar 2025'
+    },
+    'p1173612.jpg': {
+        title: 'Lavender Feast',
+        camera: 'OM System OM-5',
+        lens: 'OM 100-400mm F5.0-6.3',
+        focal: '400mm',
+        shutter: '1/1600',
+        aperture: 'f/6.3',
+        iso: '1250',
+        date: '17 Jan 2026'
+    },
+    'p1173653.jpg': {
+        title: 'Golden Approach',
+        camera: 'OM System OM-5',
+        lens: 'OM 100-400mm F5.0-6.3',
+        focal: '400mm',
+        shutter: '1/2000',
+        aperture: 'f/6.3',
+        iso: '1000',
+        date: '17 Jan 2026'
+    },
+    'p1204350.jpg': {
+        title: 'Volcanic Lookout',
+        camera: 'OM System OM-5',
+        lens: 'OM 100-400mm F5.0-6.3',
+        focal: '400mm',
+        shutter: '1/1600',
+        aperture: 'f/8',
+        iso: '500',
+        date: '20 Jan 2026'
+    },
+    'p1204386.jpg': {
+        title: 'Open Wide',
+        camera: 'OM System OM-5',
+        lens: 'OM 100-400mm F5.0-6.3',
+        focal: '400mm',
+        shutter: '1/640',
+        aperture: 'f/6.3',
+        iso: '2500',
+        date: '20 Jan 2026'
+    },
+    'p1214602.jpg': {
+        title: 'Last Light Landing',
+        camera: 'OM System OM-5',
+        lens: 'OM 100-400mm F5.0-6.3',
+        focal: '400mm',
+        shutter: '1/1600',
+        aperture: 'f/6.3',
+        iso: '80',
+        date: '21 Jan 2026'
+    },
+    // --- Landscape / Other ---
+    'pb271294.jpg': {
+        title: 'Peaks Above the Clouds',
+        camera: 'Olympus E-PL9',
+        lens: 'Olympus 14-42mm F3.5-5.6 EZ',
+        focal: '30mm',
+        shutter: '1/500',
+        aperture: 'f/11',
+        iso: '200',
+        date: '27 Nov 2024'
+    },
+    'pb271268.jpg': {
+        title: 'First Light',
+        camera: 'Olympus E-PL9',
+        lens: 'Olympus 14-42mm F3.5-5.6 EZ',
+        focal: '42mm',
+        shutter: '1/160',
+        aperture: 'f/7.1',
+        iso: '200',
+        date: '27 Nov 2024'
+    },
+    'p8293903.jpg': {
+        title: 'Sea of Clouds',
+        camera: 'OM System OM-5',
+        lens: 'OM 12-40mm F2.8 II',
+        focal: '22mm',
+        shutter: '1/60',
+        aperture: 'f/6.3',
+        iso: '250',
+        date: '29 Aug 2025'
+    },
+    'p3084741.jpg': {
+        title: 'The Passage',
+        camera: 'OM System OM-5',
+        lens: 'OM 12-40mm F2.8 II',
+        focal: '12mm',
+        shutter: '1/160',
+        aperture: 'f/9',
+        iso: '200',
+        date: '8 Mar 2025'
+    },
+    'p6220613.jpg': {
+        title: 'Lake District Sunset',
+        camera: 'OM System OM-5',
+        lens: 'OM 12-40mm F2.8 II',
+        focal: '40mm',
+        shutter: '1/320',
+        aperture: 'f/8',
+        iso: '200',
+        date: '22 Jun 2025'
+    },
+    'p8262837.jpg': {
+        title: 'Crater Dawn',
+        camera: 'OM System OM-5',
+        lens: 'OM 12-40mm F2.8 II',
+        focal: '12mm',
+        shutter: '1/60',
+        aperture: 'f/8',
+        iso: '500',
+        date: '26 Aug 2025'
+    },
+    'p8150703.jpg': {
+        title: 'Golden Skyline',
+        camera: 'OM System OM-5',
+        lens: 'OM 100-400mm F5.0-6.3',
+        focal: '285mm',
+        shutter: '1/640',
+        aperture: 'f/7.1',
+        iso: '200',
+        date: '15 Aug 2025'
+    },
+    'p8150903.jpg': {
+        title: 'Red Over London',
+        camera: 'OM System OM-5',
+        lens: 'OM 100-400mm F5.0-6.3',
+        focal: '300mm',
+        shutter: '1/640',
+        aperture: 'f/6.3',
+        iso: '800',
+        date: '15 Aug 2025'
+    },
+    'p5212175-enhanced-nr.jpg': {
+        title: 'Thames Crossing',
+        camera: 'OM System OM-5',
+        lens: 'OM 12-40mm F2.8 II',
+        focal: '23mm',
+        shutter: '1/1000',
+        aperture: 'f/9',
+        iso: '200',
+        date: '21 May 2025'
+    },
+    'pa270146.jpg': {
+        title: 'City Through the Mist',
+        camera: 'Olympus E-PL9',
+        lens: 'Lumix G 45-200mm F4.0-5.6',
+        focal: '84mm',
+        shutter: '1/500',
+        aperture: 'f/8',
+        iso: '200',
+        date: '27 Oct 2024'
+    },
+    'pa055403.jpg': {
+        title: 'Storm Watch',
+        camera: 'OM System OM-5',
+        lens: 'OM 12-40mm F2.8 II',
+        focal: '30mm',
+        shutter: '1/400',
+        aperture: 'f/9',
+        iso: '200',
+        date: '5 Oct 2025'
+    },
+    'p1110608-hdr.jpg': {
+        title: 'Frost Walk',
+        camera: 'OM System OM-5',
+        lens: 'Olympus 14-42mm F3.5-5.6 EZ',
+        focal: '42mm',
+        shutter: '1/125',
+        aperture: 'f/10',
+        iso: '200',
+        date: '11 Jan 2025'
+    },
+    '2025-10-31-20-52-05-c-s4-.jpg': {
+        title: 'Forest Light',
+        camera: 'OM System OM-5',
+        lens: 'OM 12-40mm F2.8 II',
+        focal: '40mm',
+        shutter: '1/200',
+        aperture: 'f/2.8',
+        iso: '400',
+        date: '31 Oct 2025'
+    },
+    'pb281436.jpg': {
+        title: 'Painted Sky',
+        camera: 'Olympus E-PL9',
+        lens: 'Olympus 14-42mm F3.5-5.6 EZ',
+        focal: '14mm',
+        shutter: '1/30',
+        aperture: 'f/4',
+        iso: '800',
+        date: '28 Nov 2024'
+    },
+    'pc090703.jpg': {
+        title: 'Winter Solitude',
+        camera: 'OM System OM-5',
+        lens: 'OM 12-40mm F2.8 II',
+        focal: '40mm',
+        shutter: '1/160',
+        aperture: 'f/9',
+        iso: '200',
+        date: '9 Dec 2025'
+    },
+    'pc121226.jpg': {
+        title: 'Alpine Crossing',
+        camera: 'OM System OM-5',
+        lens: 'OM 12-40mm F2.8 II',
+        focal: '35mm',
+        shutter: '1/200',
+        aperture: 'f/11',
+        iso: '200',
+        date: '12 Dec 2025'
+    },
+    'p9054824.jpg': {
+        title: 'Golden Wake',
+        camera: 'OM System OM-5',
+        lens: 'OM 12-40mm F2.8 II',
+        focal: '40mm',
+        shutter: '1/800',
+        aperture: 'f/2.8',
+        iso: '500',
+        date: '5 Sep 2025'
+    }
+};
 
 
 /* ----------------------------------------------------------
@@ -132,54 +543,82 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     // ==============================================
-    // 4. LIGHTBOX (Full-Screen Image Viewer)
-    // Click a gallery image to view it large.
-    // Works with both real <img> tags and placeholders.
-    // Close with X button, clicking outside, or ESC.
+    // 4. LIGHTBOX WITH EXIF METADATA
+    // Click a gallery or featured image to view it
+    // large with photo title and camera settings.
+    // Works on both the portfolio and home pages.
     // ==============================================
 
     var lightbox = document.querySelector('.lightbox');
     var lightboxContent = document.querySelector('.lightbox-content');
     var lightboxClose = document.querySelector('.lightbox-close');
 
-    // Open the lightbox when a gallery item is clicked
+    // Helper: extract the filename from an image src path
+    function getFilename(src) {
+        return src.split('/').pop().split('?')[0];
+    }
+
+    // Helper: build the metadata HTML for a given filename
+    function buildMetaHTML(filename) {
+        var data = photoData[filename];
+        if (!data) return '';
+
+        var html = '';
+
+        // Photo title
+        html += '<div class="lightbox-title">' + data.title + '</div>';
+
+        // Metadata bar
+        html += '<div class="lightbox-meta">';
+        html += '<div class="meta-item"><span class="meta-label">Camera</span><span class="meta-value">' + data.camera + '</span></div>';
+        html += '<div class="meta-item"><span class="meta-label">Lens</span><span class="meta-value">' + data.lens + '</span></div>';
+        html += '<div class="meta-item"><span class="meta-label">Focal</span><span class="meta-value">' + data.focal + '</span></div>';
+        html += '<div class="meta-item"><span class="meta-label">Shutter</span><span class="meta-value">' + data.shutter + '</span></div>';
+        html += '<div class="meta-item"><span class="meta-label">Aperture</span><span class="meta-value">' + data.aperture + '</span></div>';
+        html += '<div class="meta-item"><span class="meta-label">ISO</span><span class="meta-value">' + data.iso + '</span></div>';
+        html += '<div class="meta-item"><span class="meta-label">Date</span><span class="meta-value">' + data.date + '</span></div>';
+        html += '</div>';
+
+        return html;
+    }
+
+    // Shared function: open the lightbox for a given image element
+    function openLightbox(img) {
+        if (!lightbox || !lightboxContent || !img) return;
+
+        var filename = getFilename(img.src);
+
+        // Build the lightbox content: image + metadata
+        var html = '<img src="' + img.src + '" alt="' + (img.alt || '') + '">';
+        html += buildMetaHTML(filename);
+
+        lightboxContent.innerHTML = html;
+
+        // Show the lightbox
+        lightbox.classList.add('active');
+
+        // Prevent the page from scrolling while lightbox is open
+        document.body.style.overflow = 'hidden';
+    }
+
+    // Attach click handlers to gallery items (portfolio page)
     galleryItems.forEach(function (item) {
         item.addEventListener('click', function () {
-            if (!lightbox || !lightboxContent) return;
-
-            // Check if the item has a real image
             var img = item.querySelector('img');
-
             if (img) {
-                // Show the real image in the lightbox
-                lightboxContent.innerHTML = '';
-                var lightboxImg = document.createElement('img');
-                lightboxImg.src = img.src;
-                lightboxImg.alt = img.alt;
-                lightboxImg.style.maxWidth = '90vw';
-                lightboxImg.style.maxHeight = '85vh';
-                lightboxImg.style.display = 'block';
-                lightboxContent.style.padding = '0';
-                lightboxContent.style.minWidth = '0';
-                lightboxContent.style.minHeight = '0';
-                lightboxContent.style.backgroundColor = 'transparent';
-                lightboxContent.appendChild(lightboxImg);
-            } else {
-                // Placeholder mode: show the label text
-                var labelSpan = item.querySelector('span');
-                var labelText = labelSpan ? labelSpan.textContent : 'Photo';
-                lightboxContent.innerHTML = '<span>' + labelText + '</span>';
-                lightboxContent.style.padding = '3rem 4rem';
-                lightboxContent.style.minWidth = '300px';
-                lightboxContent.style.minHeight = '225px';
-                lightboxContent.style.backgroundColor = '#e0e0e0';
+                openLightbox(img);
             }
+        });
+    });
 
-            // Show the lightbox
-            lightbox.classList.add('active');
-
-            // Prevent the page from scrolling while lightbox is open
-            document.body.style.overflow = 'hidden';
+    // Attach click handlers to featured items (home page)
+    var featuredItems = document.querySelectorAll('.featured-item');
+    featuredItems.forEach(function (item) {
+        item.addEventListener('click', function () {
+            var img = item.querySelector('img');
+            if (img) {
+                openLightbox(img);
+            }
         });
     });
 

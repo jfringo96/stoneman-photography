@@ -185,43 +185,48 @@ nav {
     justify-content: center;
     text-align: center;
     background-color: #2a2a2a;
-    background-image: url('../images/portfolio/pb210360.jpg');
+    background-image: url('../images/portfolio/p2039427.jpg');
     background-size: cover;
-    background-position: center;
+    background-position: 42% center;
     overflow: hidden;
 }
 
-/* Dark overlay so white text is readable over any background */
+/* Dark overlay — gradient darkens the right side for text readability */
 .hero-overlay {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    background: linear-gradient(to left, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.25) 35%, rgba(0,0,0,0.0) 55%);
     z-index: 1;
 }
 
-/* Text content sits above the overlay */
+/* Text content sits above the overlay — positioned right for gazelle hero */
 .hero-content {
-    position: relative;
+    position: absolute;
+    top: 50%;
+    right: 5rem;
+    transform: translateY(-50%);
+    text-align: right;
     z-index: 2;
     color: #ffffff;
-    padding: 2rem;
+    padding: 0;
 }
 
 .hero-content h1 {
-    font-size: 3.5rem;
-    font-weight: 300;
-    letter-spacing: 2px;
+    font-size: 4.5rem;
+    font-weight: 200;
+    letter-spacing: 4px;
     margin-bottom: 1rem;
+    line-height: 1.1;
 }
 
 .hero-content p {
-    font-size: 1.25rem;
+    font-size: 1.4rem;
     font-weight: 300;
     margin-bottom: 2rem;
-    opacity: 0.9;
+    opacity: 0.85;
 }
 
 /* "View Portfolio" button */
@@ -245,12 +250,12 @@ nav {
 
 /* ----------------------------------------------------------
    5. FEATURED WORK SECTION (Home Page)
-   Three placeholder images shown in a row on the home page.
+   Three images shown in a row beneath the hero.
    ---------------------------------------------------------- */
 
 .featured-section {
-    padding: 4rem 2rem;
-    max-width: 1200px;
+    padding: 2rem 2rem 4rem;
+    max-width: 1400px;
     margin: 0 auto;
     text-align: center;
 }
@@ -262,7 +267,7 @@ nav {
 .featured-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem;
+    gap: 1rem;
 }
 
 /* Each featured image */
@@ -273,11 +278,11 @@ nav {
     background-color: #e0e0e0;
 }
 
-/* Real images fill the grid cell and crop to a consistent 4:3 ratio */
+/* Real images fill the grid cell — 16:10 ratio for bigger display */
 .featured-item img {
     display: block;
     width: 100%;
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 16 / 10;
     object-fit: cover;
     transition: transform 0.4s ease, opacity 0.4s ease;
 }
@@ -409,6 +414,7 @@ nav {
 /* ----------------------------------------------------------
    8. LIGHTBOX
    Full-screen overlay for viewing portfolio images.
+   Includes metadata panel for EXIF data display.
    ---------------------------------------------------------- */
 
 .lightbox {
@@ -436,19 +442,69 @@ nav {
 .lightbox-content {
     max-width: 90%;
     max-height: 85vh;
-    background-color: #e0e0e0;
+    background-color: transparent;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 3rem 4rem;
-    min-width: 300px;
-    min-height: 225px;
+    padding: 0;
+    min-width: 0;
+    min-height: 0;
+}
+
+.lightbox-content img {
+    max-width: 90vw;
+    max-height: 70vh;
+    display: block;
 }
 
 .lightbox-content span {
     color: #666666;
     font-size: 1.25rem;
     font-weight: 500;
+}
+
+/* Photo title shown above metadata */
+.lightbox-title {
+    color: #ffffff;
+    font-size: 1.1rem;
+    font-weight: 400;
+    letter-spacing: 1px;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+/* EXIF metadata bar beneath the image */
+.lightbox-meta {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 0.25rem;
+    padding: 0.5rem 1rem;
+}
+
+.lightbox-meta .meta-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+}
+
+.lightbox-meta .meta-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: rgba(255,255,255,0.45);
+    font-weight: 500;
+}
+
+.lightbox-meta .meta-value {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.85);
+    font-weight: 400;
+    letter-spacing: 0.5px;
 }
 
 /* Close button (X) in the top-right corner */
@@ -747,14 +803,39 @@ footer p {
 
     .hero {
         height: 70vh;
+        background-position: center center;
+    }
+
+    .hero-overlay {
+        background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.0) 100%);
+    }
+
+    .hero-content {
+        position: absolute;
+        top: auto;
+        bottom: 2.5rem;
+        right: auto;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+        width: 90%;
     }
 
     .hero-content h1 {
-        font-size: 2rem;
+        font-size: 2.2rem;
     }
 
     .hero-content p {
         font-size: 1rem;
+    }
+
+    /* Lightbox metadata stacks tighter on mobile */
+    .lightbox-meta {
+        gap: 1rem;
+    }
+
+    .lightbox-meta .meta-value {
+        font-size: 0.75rem;
     }
 
     /* --- Grids --- */
