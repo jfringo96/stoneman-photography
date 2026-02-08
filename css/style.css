@@ -46,10 +46,10 @@ body {
     padding-top: 70px;
 }
 
-/* Home page: dark background, no top padding (hero fills to top) */
+/* Home page: warm dark background, no top padding (hero fills to top) */
 body.home-page {
     padding-top: 0;
-    background-color: #111;
+    background-color: #1e1c19;
 }
 
 
@@ -192,88 +192,89 @@ body.home-page .nav-links a.active { color: #ffffff; }
 body.home-page .menu-toggle { color: #ffffff; }
 
 
-/* --- Dark page theme (portfolio, blog, about, contact) --- */
+/* --- Stone page theme (portfolio, blog, about, contact) --- */
+/* Warm neutral palette: stone #2c2926, sand accents */
 body.dark-page {
-    background-color: #111;
-    color: #e0e0e0;
+    background-color: #2c2926;
+    color: #e0dbd5;
 }
 
 body.dark-page nav {
-    background-color: #111;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    background-color: #2c2926;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
-body.dark-page .logo { color: #ffffff; }
-body.dark-page .logo:hover { color: #ffffff; }
-body.dark-page .nav-links a { color: rgba(255,255,255,0.75); }
-body.dark-page .nav-links a:hover { color: #ffffff; }
-body.dark-page .nav-links a::after { background-color: #ffffff; }
-body.dark-page .nav-links a.active { color: #ffffff; }
-body.dark-page .menu-toggle { color: #ffffff; }
+body.dark-page .logo { color: #f0ebe5; }
+body.dark-page .logo:hover { color: #f0ebe5; }
+body.dark-page .nav-links a { color: rgba(240,235,229,0.75); }
+body.dark-page .nav-links a:hover { color: #f0ebe5; }
+body.dark-page .nav-links a::after { background-color: #c8b89a; }
+body.dark-page .nav-links a.active { color: #f0ebe5; }
+body.dark-page .menu-toggle { color: #f0ebe5; }
 
-body.dark-page .page-header h1 { color: #ffffff; }
-body.dark-page .page-header p { color: rgba(255,255,255,0.6); }
+body.dark-page .page-header h1 { color: #f0ebe5; }
+body.dark-page .page-header p { color: rgba(240,235,229,0.6); }
 
-/* Dark portfolio filters */
+/* Stone portfolio filters */
 body.dark-page .category-btn {
-    border-color: rgba(255,255,255,0.3);
-    color: rgba(255,255,255,0.7);
+    border-color: rgba(200,184,154,0.4);
+    color: rgba(240,235,229,0.7);
     background-color: transparent;
 }
 body.dark-page .category-btn.active,
 body.dark-page .category-btn:hover {
-    background-color: #ffffff;
-    color: #111;
-    border-color: #ffffff;
+    background-color: #c8b89a;
+    color: #2c2926;
+    border-color: #c8b89a;
 }
 
-/* Dark blog */
+/* Stone blog */
 body.dark-page .blog-post {
-    border-bottom-color: rgba(255,255,255,0.1);
+    border-bottom-color: rgba(200,184,154,0.15);
 }
-body.dark-page .blog-post h2 { color: #ffffff; }
-body.dark-page .blog-date { color: rgba(255,255,255,0.4); }
-body.dark-page .blog-post p { color: rgba(255,255,255,0.65); }
-body.dark-page .read-more { color: rgba(255,255,255,0.85); }
-body.dark-page .read-more:hover { color: #ffffff; }
+body.dark-page .blog-post h2 { color: #f0ebe5; }
+body.dark-page .blog-date { color: rgba(200,184,154,0.5); }
+body.dark-page .blog-post p { color: rgba(240,235,229,0.65); }
+body.dark-page .read-more { color: #c8b89a; }
+body.dark-page .read-more:hover { color: #f0ebe5; }
 
-/* Dark about */
-body.dark-page .about-content p { color: rgba(255,255,255,0.7); }
+/* Stone about */
+body.dark-page .about-content p { color: rgba(240,235,229,0.7); }
 
-/* Dark contact form */
-body.dark-page .contact-form label { color: rgba(255,255,255,0.6); }
+/* Stone contact form */
+body.dark-page .contact-form label { color: rgba(200,184,154,0.7); }
 body.dark-page .contact-form input,
 body.dark-page .contact-form textarea {
-    background-color: rgba(255,255,255,0.05);
-    border-color: rgba(255,255,255,0.15);
-    color: #e0e0e0;
+    background-color: rgba(240,235,229,0.05);
+    border-color: rgba(200,184,154,0.2);
+    color: #e0dbd5;
 }
 body.dark-page .contact-form input:focus,
 body.dark-page .contact-form textarea:focus {
-    border-color: rgba(255,255,255,0.5);
+    border-color: #c8b89a;
 }
 body.dark-page .contact-form input::placeholder,
 body.dark-page .contact-form textarea::placeholder {
-    color: rgba(255,255,255,0.3);
+    color: rgba(200,184,154,0.35);
 }
 body.dark-page .submit-btn {
-    border-color: #ffffff;
-    background-color: #ffffff;
-    color: #111;
+    border-color: #c8b89a;
+    background-color: #c8b89a;
+    color: #2c2926;
 }
 body.dark-page .submit-btn:hover {
     background-color: transparent;
-    color: #ffffff;
+    color: #c8b89a;
 }
 body.dark-page .form-success {
-    background-color: rgba(255,255,255,0.05);
+    background-color: rgba(200,184,154,0.08);
 }
-body.dark-page .form-success p { color: #e0e0e0; }
+body.dark-page .form-success p { color: #e0dbd5; }
 
-/* Dark footer for dark pages */
+/* Stone footer for themed pages */
 body.dark-page footer {
-    background-color: #111;
-    border-top: 1px solid rgba(255,255,255,0.05);
+    background-color: #252220;
+    border-top: 1px solid rgba(200,184,154,0.1);
 }
 
 
@@ -307,7 +308,7 @@ body.dark-page footer {
     height: 100%;
     background:
         linear-gradient(to left, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.25) 35%, rgba(0,0,0,0.0) 55%),
-        linear-gradient(to top, #111 0%, rgba(17,17,17,0.6) 15%, transparent 35%);
+        linear-gradient(to top, #1e1c19 0%, rgba(30,28,25,0.6) 15%, transparent 35%);
     z-index: 1;
 }
 
@@ -369,10 +370,10 @@ body.dark-page footer {
     text-align: center;
 }
 
-/* Dark featured section on home page */
+/* Featured section on home page — gap above, warm dark bg */
 body.home-page .featured-section {
-    padding: 0;
-    background-color: #1a1a1a;
+    padding: 4rem 0 0 0;
+    background-color: transparent;
 }
 
 .featured-section h2 {
@@ -380,7 +381,7 @@ body.home-page .featured-section {
 }
 
 body.home-page .featured-section h2 {
-    color: #ffffff;
+    color: #f0ebe5;
 }
 
 .featured-grid {
@@ -397,7 +398,7 @@ body.home-page .featured-section h2 {
 }
 
 body.home-page .featured-item {
-    background-color: #1a1a1a;
+    background-color: #1e1c19;
 }
 
 /* Real images fill the grid cell — 16:10 ratio for bigger display */
@@ -832,7 +833,8 @@ footer {
 }
 
 body.home-page footer {
-    background-color: #111;
+    background-color: #1e1c19;
+    border-top: 1px solid rgba(200,184,154,0.08);
 }
 
 footer p {
@@ -929,7 +931,7 @@ footer p {
 
     body.home-page .nav-links,
     body.dark-page .nav-links {
-        background-color: rgba(17,17,17,0.95);
+        background-color: rgba(44,41,38,0.97);
     }
 
     body.home-page .nav-container {
@@ -947,7 +949,7 @@ footer p {
 
     .hero-overlay {
         background:
-            linear-gradient(to top, #111 0%, rgba(17,17,17,0.6) 20%, transparent 45%),
+            linear-gradient(to top, #1e1c19 0%, rgba(30,28,25,0.6) 20%, transparent 45%),
             linear-gradient(to left, rgba(0,0,0,0.5) 0%, transparent 60%);
     }
 
