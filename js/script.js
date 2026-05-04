@@ -687,16 +687,13 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==============================================
     // 5. CONTACT FORM VALIDATION
     // Checks that all required fields are filled in
-    // before showing a confirmation message.
-    // Note: No backend yet - just a front-end demo.
+    // before allowing the form to submit to Formspree.
     // ==============================================
 
     var contactForm = document.querySelector('.contact-form');
 
     if (contactForm) {
         contactForm.addEventListener('submit', function (event) {
-            // Prevent the form from actually submitting (no backend)
-            event.preventDefault();
 
             // Get the form field values
             var nameField = contactForm.querySelector('#name');
@@ -733,13 +730,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 clearError(messageField);
             }
 
-            // If everything is valid, show the success message
-            if (isValid) {
-                contactForm.style.display = 'none';
-                var successMessage = document.querySelector('.form-success');
-                if (successMessage) {
-                    successMessage.style.display = 'block';
-                }
+            // If any field is invalid, stop the submission so errors are visible
+            if (!isValid) {
+                event.preventDefault();
             }
         });
     }
