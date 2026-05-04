@@ -764,4 +764,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
+    // ==============================================
+    // 6. RIGHT-CLICK BLOCK ON IMAGES
+    // Silently prevents the context menu on all
+    // images to discourage casual downloading.
+    // ==============================================
+
+    document.querySelectorAll('img').forEach(function (img) {
+        img.addEventListener('contextmenu', function (event) {
+            event.preventDefault();
+        });
+    });
+
+
 }); // End of DOMContentLoaded
