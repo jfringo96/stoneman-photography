@@ -1,6 +1,6 @@
 {
   "settings": {
-    "site_name": "Stoneman Photography",
+    "site_name": "Stoneman Photographie",
     "tagline": "Wildlife & Nature",
     "background_colour": "#2c2926",
     "text_colour": "#e0dbd5",
@@ -8,11 +8,6 @@
     "nav_background": "#2c2926",
     "nav_text_colour": "rgba(240,235,229,0.75)"
   },
-
-  "about": {
-    "bio": ""
-  },
-
   "portfolio": [
     {
       "filename": "Golden-Gazelle.jpg",
@@ -599,7 +594,5 @@
       "iso": "1250",
       "date": "11 Mar 2026"
     }
-  ],
-
-  "blog": []
+  ]
 }
