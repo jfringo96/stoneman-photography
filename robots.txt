@@ -44,5 +44,4 @@ Disallow: /
 User-agent: Omgilibot
 Disallow: /
 
-# TODO: Replace placeholder with final domain before launch
-# Sitemap: https://YOUR-DOMAIN-HERE/sitemap.xml
+Sitemap: https://stoneman-photography.netlify.app/sitemap.xml

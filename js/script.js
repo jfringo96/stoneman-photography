@@ -500,8 +500,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 
-/* Apply colour values from settings as CSS custom properties on :root.
-   Style.css will be updated in Part 4 to consume these variables. */
+/* Apply CSS custom properties for site colours and inject hero text on index.html. */
 function applySettings(settings) {
     if (!settings) return;
     var root = document.documentElement;
@@ -510,6 +509,11 @@ function applySettings(settings) {
     if (settings.accent_colour)      root.style.setProperty('--colour-accent',   settings.accent_colour);
     if (settings.nav_background)     root.style.setProperty('--colour-nav-bg',   settings.nav_background);
     if (settings.nav_text_colour)    root.style.setProperty('--colour-nav-text', settings.nav_text_colour);
+
+    var heroH1 = document.querySelector('.hero-content h1');
+    if (heroH1 && settings.site_name) heroH1.textContent = settings.site_name;
+    var heroP = document.querySelector('.hero-content p');
+    if (heroP && settings.tagline) heroP.textContent = settings.tagline;
 }
 
 /* Merge portfolio entries from content.json into the photoData lookup. */
@@ -561,14 +565,15 @@ function populateFeaturedImages(portfolio) {
         }
     }
 
-    var slots = grid.querySelectorAll('.featured-item');
-    slots.forEach(function (slot, index) {
-        if (index >= featured.length) return;
-        var img = slot.querySelector('img');
-        if (img) {
-            img.src = 'images/Thumb/' + featured[index].filename;
-            img.alt = featured[index].title;
-        }
+    grid.innerHTML = '';
+    featured.slice(0, 3).forEach(function (photo) {
+        var item = document.createElement('div');
+        item.className = 'featured-item';
+        var img = document.createElement('img');
+        img.src = 'images/Thumb/' + photo.filename;
+        img.alt = photo.title;
+        item.appendChild(img);
+        grid.appendChild(item);
     });
 }
 
