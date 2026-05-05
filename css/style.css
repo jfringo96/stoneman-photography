@@ -57,7 +57,7 @@ body {
 /* Home page: warm dark background, no top padding (hero fills to top) */
 body.home-page {
     padding-top: 0;
-    background-color: #1e1c19;
+    background-color: var(--colour-bg);
 }
 
 
@@ -316,7 +316,7 @@ body.dark-page footer {
     height: 100%;
     background:
         linear-gradient(to left, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.25) 35%, rgba(0,0,0,0.0) 55%),
-        linear-gradient(to top, #1e1c19 0%, rgba(30,28,25,0.6) 15%, transparent 35%);
+        linear-gradient(to top, var(--colour-bg) 0%, rgba(30,28,25,0.6) 15%, transparent 35%);
     z-index: 1;
 }
 
@@ -406,7 +406,7 @@ body.home-page .featured-section h2 {
 }
 
 body.home-page .featured-item {
-    background-color: #1e1c19;
+    background-color: var(--colour-bg);
 }
 
 /* Real images fill the grid cell — 16:10 ratio for bigger display */
@@ -492,6 +492,8 @@ body.home-page .featured-item {
     padding: 0 2rem 4rem;
     max-width: 1600px;
     margin: 0 auto;
+    opacity: 0;
+    transition: opacity 0.5s ease;
 }
 
 /* Each gallery item — break-inside prevents items splitting across columns */
@@ -841,7 +843,7 @@ footer {
 }
 
 body.home-page footer {
-    background-color: #1e1c19;
+    background-color: var(--colour-bg);
     border-top: 1px solid rgba(200,184,154,0.08);
 }
 
@@ -957,7 +959,7 @@ footer p {
 
     .hero-overlay {
         background:
-            linear-gradient(to top, #1e1c19 0%, rgba(30,28,25,0.6) 20%, transparent 45%),
+            linear-gradient(to top, var(--colour-bg) 0%, rgba(30,28,25,0.6) 20%, transparent 45%),
             linear-gradient(to left, rgba(0,0,0,0.5) 0%, transparent 60%);
     }
 
