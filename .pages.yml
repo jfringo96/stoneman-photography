@@ -1,8 +1,3 @@
-backend:
-  name: github
-  repo: jfringo96/stoneman-photography
-  branch: master
-
 media:
   input: "images/Full res"
   output: "/images/Full res"
@@ -13,6 +8,7 @@ content:
     label: Settings
     type: file
     path: content.json
+    format: json
     fields:
       - name: settings
         label: Settings
@@ -20,40 +16,48 @@ content:
         fields:
           - { name: site_name,         label: "Site Name",         type: string }
           - { name: tagline,           label: "Tagline",           type: string }
-          - { name: background_colour, label: "Background Colour", type: color  }
-          - { name: text_colour,       label: "Text Colour",       type: color  }
-          - { name: accent_colour,     label: "Accent Colour",     type: color  }
-          - { name: nav_background,    label: "Nav Background",    type: color  }
+          - { name: background_colour, label: "Background Colour", type: string }
+          - { name: text_colour,       label: "Text Colour",       type: string }
+          - { name: accent_colour,     label: "Accent Colour",     type: string }
+          - { name: nav_background,    label: "Nav Background",    type: string }
           - { name: nav_text_colour,   label: "Nav Text Colour",   type: string }
 
   - name: about
     label: About
     type: file
     path: content.json
+    format: json
     fields:
       - name: about
         label: About
         type: object
         fields:
-          - { name: bio, label: "Bio", type: rich-text }
+          - name: bio
+            label: Bio
+            type: rich-text
+            options:
+              format: markdown
 
   - name: portfolio
     label: Portfolio
     type: file
     path: content.json
+    format: json
     fields:
       - name: portfolio
         label: Photos
-        type: list
+        type: object
+        list: true
         fields:
-          - { name: filename,  label: "Filename",      type: string,  required: true }
-          - { name: title,     label: "Title",         type: string,  required: true }
+          - { name: filename,  label: "Filename",      type: string, required: true }
+          - { name: title,     label: "Title",         type: string, required: true }
           - name: category
-            label: "Category"
+            label: Category
             type: select
             options:
-              - { value: wildlife, label: Wildlife }
-              - { value: other,    label: Other    }
+              values:
+                - { name: wildlife, label: Wildlife }
+                - { name: other,    label: Other    }
           - { name: featured,  label: "Featured",      type: boolean }
           - { name: camera,    label: "Camera",        type: string  }
           - { name: lens,      label: "Lens",          type: string  }
@@ -67,13 +71,28 @@ content:
     label: Blog
     type: file
     path: content.json
+    format: json
     fields:
       - name: blog
         label: Posts
-        type: list
+        type: object
+        list: true
         fields:
-          - { name: title,   label: "Title",   type: string,    required: true }
-          - { name: date,    label: "Date",    type: date                       }
-          - { name: excerpt, label: "Excerpt", type: text                       }
-          - { name: body,    label: "Body",    type: rich-text                  }
-          - { name: slug,    label: "Slug",    type: string                     }
+          - { name: title,   label: "Title",   type: string, required: true }
+          - name: date
+            label: Date
+            type: date
+            options:
+              time: false
+              format: "d MMM yyyy"
+          - { name: excerpt, label: "Excerpt", type: text       }
+          - name: body
+            label: Body
+            type: rich-text
+            options:
+              format: markdown
+          - { name: slug,    label: "Slug",    type: string     }
+
+settings:
+  content:
+    merge: true
