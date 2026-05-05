@@ -2,6 +2,7 @@
    STONEMAN PHOTOGRAPHY - Main JavaScript
 
    This file handles all interactive features on the site:
+   0. Content loading from content.json (colours, gallery, about, blog)
    1. Mobile hamburger menu (open/close)
    2. Active page highlighting in the navigation
    3. Portfolio category filter buttons
@@ -13,8 +14,8 @@
 
 /* ----------------------------------------------------------
    PHOTO METADATA
-   EXIF data and placeholder titles for each image.
-   Pulled from the actual file metadata.
+   Hardcoded fallback data used if content.json fetch fails.
+   Overridden at runtime by populatePhotoData() on success.
    ---------------------------------------------------------- */
 
 var photoData = {
@@ -472,11 +473,140 @@ var photoData = {
 
 
 /* ----------------------------------------------------------
-   WAIT FOR PAGE TO LOAD
-   Everything inside runs once the HTML is fully loaded.
+   SECTION 0 — CONTENT LOADING
+   Fetches content.json and populates the page before wiring
+   up any interactive behaviour. Falls back gracefully if the
+   fetch fails (e.g. file:// protocol during local dev).
    ---------------------------------------------------------- */
 
 document.addEventListener('DOMContentLoaded', function () {
+    fetch('content.json')
+        .then(function (response) { return response.json(); })
+        .then(function (content) {
+            applySettings(content.settings);
+            if (content.portfolio && content.portfolio.length) {
+                populatePhotoData(content.portfolio);
+                populatePortfolioGallery(content.portfolio);
+                populateFeaturedImages(content.portfolio);
+            }
+            populateAbout(content.about);
+            populateBlog(content.blog);
+            initInteractivity();
+        })
+        .catch(function () {
+            // content.json unavailable — existing hardcoded HTML and photoData take over
+            initInteractivity();
+        });
+});
+
+
+/* Apply colour values from settings as CSS custom properties on :root.
+   Style.css will be updated in Part 4 to consume these variables. */
+function applySettings(settings) {
+    if (!settings) return;
+    var root = document.documentElement;
+    if (settings.background_colour) root.style.setProperty('--colour-bg',       settings.background_colour);
+    if (settings.text_colour)        root.style.setProperty('--colour-text',     settings.text_colour);
+    if (settings.accent_colour)      root.style.setProperty('--colour-accent',   settings.accent_colour);
+    if (settings.nav_background)     root.style.setProperty('--colour-nav-bg',   settings.nav_background);
+    if (settings.nav_text_colour)    root.style.setProperty('--colour-nav-text', settings.nav_text_colour);
+}
+
+/* Merge portfolio entries from content.json into the photoData lookup. */
+function populatePhotoData(portfolio) {
+    portfolio.forEach(function (photo) {
+        photoData[photo.filename] = {
+            title:    photo.title,
+            camera:   photo.camera,
+            lens:     photo.lens,
+            focal:    photo.focal,
+            shutter:  photo.shutter,
+            aperture: photo.aperture,
+            iso:      photo.iso,
+            date:     photo.date
+        };
+    });
+}
+
+/* Build the masonry gallery on portfolio.html from content.json.
+   Clears any hardcoded items and rebuilds from the portfolio array. */
+function populatePortfolioGallery(portfolio) {
+    var gallery = document.querySelector('.masonry-gallery');
+    if (!gallery) return;
+    gallery.innerHTML = '';
+    portfolio.forEach(function (photo) {
+        var item = document.createElement('div');
+        item.className = 'gallery-item';
+        item.setAttribute('data-category', photo.category);
+        var img = document.createElement('img');
+        img.src = 'images/Thumb/' + photo.filename;
+        img.alt = photo.title;
+        item.appendChild(img);
+        gallery.appendChild(item);
+    });
+}
+
+/* Populate the three featured-item slots on index.html.
+   Uses photos marked featured: true; tops up from the rest if fewer than 3. */
+function populateFeaturedImages(portfolio) {
+    var grid = document.querySelector('.featured-grid');
+    if (!grid) return;
+
+    var featured = portfolio.filter(function (p) { return p.featured; });
+    if (featured.length < 3) {
+        var extras = portfolio.filter(function (p) { return !p.featured; });
+        var i = 0;
+        while (featured.length < 3 && i < extras.length) {
+            featured.push(extras[i++]);
+        }
+    }
+
+    var slots = grid.querySelectorAll('.featured-item');
+    slots.forEach(function (slot, index) {
+        if (index >= featured.length) return;
+        var img = slot.querySelector('img');
+        if (img) {
+            img.src = 'images/Thumb/' + featured[index].filename;
+            img.alt = featured[index].title;
+        }
+    });
+}
+
+/* Inject bio text into the about-content div on about.html.
+   Injects nothing if bio is empty, leaving the page blank. */
+function populateAbout(about) {
+    var div = document.querySelector('.about-content');
+    if (!div) return;
+    div.innerHTML = (about && about.bio) ? about.bio : '';
+}
+
+/* Build blog post list on blog.html from the blog array in content.json.
+   Renders nothing if the array is empty. */
+function populateBlog(blog) {
+    var container = document.querySelector('.blog-posts');
+    if (!container) return;
+    container.innerHTML = '';
+    if (!blog || blog.length === 0) return;
+    blog.forEach(function (post) {
+        var article = document.createElement('article');
+        article.className = 'blog-post';
+        article.innerHTML =
+            '<h2>' + post.title + '</h2>' +
+            '<p class="post-date">' + post.date + '</p>' +
+            '<p class="post-excerpt">' + post.excerpt + '</p>' +
+            '<a href="' + (post.url || '#') + '" class="read-more">Read more</a>';
+        container.appendChild(article);
+    });
+}
+
+
+/* ----------------------------------------------------------
+   SECTIONS 1–6 — INTERACTIVE FEATURES
+   Runs after content has been populated so that event
+   listeners are attached to the correct final DOM state.
+   ---------------------------------------------------------- */
+
+function initInteractivity() {
 
 
     // ==============================================
@@ -825,4 +955,4 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
 
-}); // End of DOMContentLoaded
+} // End of initInteractivity
