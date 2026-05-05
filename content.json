@@ -3,9 +3,9 @@
     "site_name": "Stoneman Photographie",
     "tagline": "Wildlife & Natures",
     "background_colour": "#ffffff",
-    "text_colour": "#e0dbd5",
-    "accent_colour": "#c8b89a",
-    "nav_background": "#2c2926",
+    "text_colour": "#ffffff",
+    "accent_colour": "#ffffff",
+    "nav_background": "#ffffff",
     "nav_text_colour": "rgba(240,235,229,0.75)"
   },
   "portfolio": [
