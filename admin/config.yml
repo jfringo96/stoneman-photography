@@ -1,0 +1,79 @@
+backend:
+  name: github
+  repo: jfringo96/stoneman-photography
+  branch: master
+
+media:
+  input: "images/Full res"
+  output: "/images/Full res"
+
+content:
+
+  - name: settings
+    label: Settings
+    type: file
+    path: content.json
+    fields:
+      - name: settings
+        label: Settings
+        type: object
+        fields:
+          - { name: site_name,         label: "Site Name",         type: string }
+          - { name: tagline,           label: "Tagline",           type: string }
+          - { name: background_colour, label: "Background Colour", type: color  }
+          - { name: text_colour,       label: "Text Colour",       type: color  }
+          - { name: accent_colour,     label: "Accent Colour",     type: color  }
+          - { name: nav_background,    label: "Nav Background",    type: color  }
+          - { name: nav_text_colour,   label: "Nav Text Colour",   type: string }
+
+  - name: about
+    label: About
+    type: file
+    path: content.json
+    fields:
+      - name: about
+        label: About
+        type: object
+        fields:
+          - { name: bio, label: "Bio", type: rich-text }
+
+  - name: portfolio
+    label: Portfolio
+    type: file
+    path: content.json
+    fields:
+      - name: portfolio
+        label: Photos
+        type: list
+        fields:
+          - { name: filename,  label: "Filename",      type: string,  required: true }
+          - { name: title,     label: "Title",         type: string,  required: true }
+          - name: category
+            label: "Category"
+            type: select
+            options:
+              - { value: wildlife, label: Wildlife }
+              - { value: other,    label: Other    }
+          - { name: featured,  label: "Featured",      type: boolean }
+          - { name: camera,    label: "Camera",        type: string  }
+          - { name: lens,      label: "Lens",          type: string  }
+          - { name: focal,     label: "Focal Length",  type: string  }
+          - { name: shutter,   label: "Shutter Speed", type: string  }
+          - { name: aperture,  label: "Aperture",      type: string  }
+          - { name: iso,       label: "ISO",           type: string  }
+          - { name: date,      label: "Date",          type: string  }
+
+  - name: blog
+    label: Blog
+    type: file
+    path: content.json
+    fields:
+      - name: blog
+        label: Posts
+        type: list
+        fields:
+          - { name: title,   label: "Title",   type: string,    required: true }
+          - { name: date,    label: "Date",    type: date                       }
+          - { name: excerpt, label: "Excerpt", type: text                       }
+          - { name: body,    label: "Body",    type: rich-text                  }
+          - { name: slug,    label: "Slug",    type: string                     }
