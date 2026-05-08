@@ -833,25 +833,25 @@ function initInteractivity() {
         if (lightboxPrev) lightboxPrev.style.display = items.length > 1 ? '' : 'none';
         if (lightboxNext) lightboxNext.style.display = items.length > 1 ? '' : 'none';
 
-        // Content hidden until full res is ready so image and text appear together
+        // Hide instantly (no transition) to avoid flashing previous content
+        lightboxContent.style.transition = 'none';
         lightboxContent.style.opacity = '0';
-        lightboxContent.style.transition = 'opacity 0.4s ease';
 
-        var html = '<img src="" alt="' + (img.alt || '') + '">';
-        html += buildMetaHTML(filename);
-        lightboxContent.innerHTML = html;
+        // No <img> in the DOM yet — avoids the broken-image icon while loading
+        lightboxContent.innerHTML = buildMetaHTML(filename);
 
         lightbox.classList.add('active');
         document.body.style.overflow = 'hidden';
 
-        // Load full res off-screen, then fade in image and metadata together
+        // Load full res off-screen; once ready, insert the image and fade everything in
         var fullImg = new Image();
         fullImg.onload = function () {
-            var lightboxImg = lightboxContent.querySelector('img');
-            if (lightboxImg) {
-                lightboxImg.src = fullResSrc;
-                lightboxContent.style.opacity = '1';
-            }
+            var imgEl = document.createElement('img');
+            imgEl.src = fullResSrc;
+            imgEl.alt = img.alt || '';
+            lightboxContent.insertBefore(imgEl, lightboxContent.firstChild);
+            lightboxContent.style.transition = 'opacity 0.4s ease';
+            lightboxContent.style.opacity = '1';
         };
         fullImg.src = fullResSrc;
     }
