@@ -532,9 +532,9 @@ function populatePhotoData(portfolio) {
     });
 }
 
-// IMAGE MODE: currently using full res only. To revert to two-tier (thumb gallery + full res lightbox), see git history.
-
-/* Build the masonry gallery on portfolio.html from content.json. */
+/* Build the masonry gallery on portfolio.html from content.json.
+   Clears any hardcoded items, rebuilds from the portfolio array, then fades
+   the gallery in once all thumbnails have loaded to avoid a masonry layout flash. */
 function populatePortfolioGallery(portfolio) {
     var gallery = document.querySelector('.masonry-gallery');
     if (!gallery) return;
@@ -544,29 +544,27 @@ function populatePortfolioGallery(portfolio) {
         item.className = 'gallery-item';
         item.setAttribute('data-category', photo.category);
         var img = document.createElement('img');
-        img.src = 'images/Full%20res/' + photo.filename;
+        img.src = 'images/Thumb/' + photo.filename;
         img.alt = photo.title;
         item.appendChild(img);
         gallery.appendChild(item);
     });
 
-    // Fade in once the first image settles (load or error), with a 1-second
-    // hard fallback. Avoids waiting for all 45 full-res files before revealing.
-    var revealed = false;
-    function revealGallery() {
-        if (revealed) return;
-        revealed = true;
-        gallery.style.opacity = '1';
+    // Fade in once every thumbnail has settled (loaded or errored) so the
+    // masonry columns are fully formed before the gallery becomes visible.
+    var imgs = Array.prototype.slice.call(gallery.querySelectorAll('img'));
+    var remaining = imgs.length;
+    if (remaining === 0) { gallery.style.opacity = '1'; return; }
+    function onSettled() {
+        remaining -= 1;
+        if (remaining === 0) gallery.style.opacity = '1';
     }
-    var firstImg = gallery.querySelector('img');
-    if (!firstImg) { revealGallery(); return; }
-    if (firstImg.complete) {
-        revealGallery();
-    } else {
-        firstImg.addEventListener('load',  revealGallery);
-        firstImg.addEventListener('error', revealGallery);
-    }
-    setTimeout(revealGallery, 1000);
+    imgs.forEach(function (img) {
+        if (img.complete) { onSettled(); } else {
+            img.addEventListener('load',  onSettled);
+            img.addEventListener('error', onSettled);
+        }
+    });
 }
 
 /* Populate the three featured-item slots on index.html.
@@ -589,7 +587,7 @@ function populateFeaturedImages(portfolio) {
         var item = document.createElement('div');
         item.className = 'featured-item';
         var img = document.createElement('img');
-        img.src = 'images/Full%20res/' + photo.filename;
+        img.src = 'images/Thumb/' + photo.filename;
         img.alt = photo.title;
         item.appendChild(img);
         grid.appendChild(item);
