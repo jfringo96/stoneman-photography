@@ -534,9 +534,7 @@ function populatePhotoData(portfolio) {
 
 // IMAGE MODE: currently using full res only. To revert to two-tier (thumb gallery + full res lightbox), see git history.
 
-/* Build the masonry gallery on portfolio.html from content.json.
-   Clears any hardcoded items, rebuilds from the portfolio array, then fades
-   the gallery in once all thumbnails have loaded to avoid a masonry layout flash. */
+/* Build the masonry gallery on portfolio.html from content.json. */
 function populatePortfolioGallery(portfolio) {
     var gallery = document.querySelector('.masonry-gallery');
     if (!gallery) return;
@@ -552,21 +550,9 @@ function populatePortfolioGallery(portfolio) {
         gallery.appendChild(item);
     });
 
-    // Fade in once every thumbnail has settled (loaded or errored) so the
-    // masonry columns are fully formed before the gallery becomes visible.
-    var imgs = Array.prototype.slice.call(gallery.querySelectorAll('img'));
-    var remaining = imgs.length;
-    if (remaining === 0) { gallery.style.opacity = '1'; return; }
-    function onSettled() {
-        remaining -= 1;
-        if (remaining === 0) gallery.style.opacity = '1';
-    }
-    imgs.forEach(function (img) {
-        if (img.complete) { onSettled(); } else {
-            img.addEventListener('load',  onSettled);
-            img.addEventListener('error', onSettled);
-        }
-    });
+    // Show immediately — waiting for all full-res images to load would keep
+    // the gallery invisible for too long. Images render in as they arrive.
+    gallery.style.opacity = '1';
 }
 
 /* Populate the three featured-item slots on index.html.
