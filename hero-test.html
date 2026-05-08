@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hero Test | Stoneman Photography</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        /* Tab bar — fixed strip at the very top */
+        .tab-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 500;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            padding: 0.5rem 0.75rem;
+            background: rgba(20, 18, 16, 0.96);
+            border-bottom: 1px solid rgba(200, 184, 154, 0.2);
+        }
+
+        .tab-bar button {
+            background: rgba(200, 184, 154, 0.1);
+            color: rgba(240, 235, 229, 0.6);
+            border: 1px solid rgba(200, 184, 154, 0.2);
+            padding: 0.3rem 0.8rem;
+            font-size: 0.8rem;
+            font-family: inherit;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .tab-bar button:hover {
+            background: rgba(200, 184, 154, 0.2);
+            color: rgba(240, 235, 229, 0.9);
+        }
+
+        .tab-bar button.active {
+            background: var(--colour-accent);
+            color: var(--colour-bg);
+            border-color: var(--colour-accent);
+        }
+
+        /* Reset the nav-offset that the hero normally needs */
+        .hero {
+            margin-top: 0;
+            padding-top: 0;
+            height: 100vh;
+            background-position: center center;
+        }
+    </style>
+</head>
+<body class="home-page">
+
+    <div class="tab-bar">
+        <button class="tab active" data-src="images/Hero/P1173653.jpg">P1173653.jpg</button>
+        <button class="tab" data-src="images/Hero/P1286172.jpg">P1286172.jpg</button>
+        <button class="tab" data-src="images/Hero/P2039427.jpg">P2039427.jpg</button>
+        <button class="tab" data-src="images/Hero/P3110544.jpg">P3110544.jpg</button>
+        <button class="tab" data-src="images/Hero/PB150612.jpg">PB150612.jpg</button>
+    </div>
+
+    <section class="hero" id="hero-preview">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <h1>Stoneman Photography</h1>
+            <p>Wildlife &amp; Nature</p>
+            <a href="portfolio.html" class="cta-button">View Portfolio</a>
+        </div>
+    </section>
+
+    <script>
+        var hero = document.getElementById('hero-preview');
+        var tabs = document.querySelectorAll('.tab-bar .tab');
+
+        function setHero(src) {
+            hero.style.backgroundImage = "url('" + src + "')";
+        }
+
+        // Load the first image on page open
+        setHero(tabs[0].getAttribute('data-src'));
+
+        tabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                tabs.forEach(function (t) { t.classList.remove('active'); });
+                tab.classList.add('active');
+                setHero(tab.getAttribute('data-src'));
+            });
+        });
+    </script>
+
+</body>
+</html>
