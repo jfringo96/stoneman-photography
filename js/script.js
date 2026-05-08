@@ -810,27 +810,26 @@ function initInteractivity() {
         var filename = getFilename(img.src);
         var fullResSrc = getFullResUrl(img.src);
 
-        // Build the lightbox content: start with thumb, then swap to full-res
-        var html = '<img src="' + img.src + '" alt="' + (img.alt || '') + '">';
+        // Show metadata immediately; image slot starts invisible while full res loads
+        var html = '<img src="" alt="' + (img.alt || '') + '" style="opacity:0;transition:opacity 0.4s ease;">';
         html += buildMetaHTML(filename);
 
         lightboxContent.innerHTML = html;
 
-        // Show the lightbox immediately with the thumbnail
+        // Open the lightbox (black background) straight away
         lightbox.classList.add('active');
         document.body.style.overflow = 'hidden';
 
-        // Load the full-resolution image in the background, then swap it in
-        if (fullResSrc !== img.src) {
-            var fullImg = new Image();
-            fullImg.onload = function () {
-                var lightboxImg = lightboxContent.querySelector('img');
-                if (lightboxImg) {
-                    lightboxImg.src = fullResSrc;
-                }
-            };
-            fullImg.src = fullResSrc;
-        }
+        // Load full res off-screen, then fade it in once ready
+        var fullImg = new Image();
+        fullImg.onload = function () {
+            var lightboxImg = lightboxContent.querySelector('img');
+            if (lightboxImg) {
+                lightboxImg.src = fullResSrc;
+                lightboxImg.style.opacity = '1';
+            }
+        };
+        fullImg.src = fullResSrc;
     }
 
     // Attach click handlers to gallery items (portfolio page)
