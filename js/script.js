@@ -833,21 +833,24 @@ function initInteractivity() {
         if (lightboxPrev) lightboxPrev.style.display = items.length > 1 ? '' : 'none';
         if (lightboxNext) lightboxNext.style.display = items.length > 1 ? '' : 'none';
 
-        // Image slot starts invisible while full res loads; metadata shows immediately
-        var html = '<img src="" alt="' + (img.alt || '') + '" style="opacity:0;transition:opacity 0.4s ease;">';
+        // Content hidden until full res is ready so image and text appear together
+        lightboxContent.style.opacity = '0';
+        lightboxContent.style.transition = 'opacity 0.4s ease';
+
+        var html = '<img src="" alt="' + (img.alt || '') + '">';
         html += buildMetaHTML(filename);
         lightboxContent.innerHTML = html;
 
         lightbox.classList.add('active');
         document.body.style.overflow = 'hidden';
 
-        // Load full res off-screen, then fade in
+        // Load full res off-screen, then fade in image and metadata together
         var fullImg = new Image();
         fullImg.onload = function () {
             var lightboxImg = lightboxContent.querySelector('img');
             if (lightboxImg) {
                 lightboxImg.src = fullResSrc;
-                lightboxImg.style.opacity = '1';
+                lightboxContent.style.opacity = '1';
             }
         };
         fullImg.src = fullResSrc;
