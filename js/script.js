@@ -768,6 +768,10 @@ function initInteractivity() {
     var lightbox = document.querySelector('.lightbox');
     var lightboxContent = document.querySelector('.lightbox-content');
     var lightboxClose = document.querySelector('.lightbox-close');
+    var lightboxPrev = document.querySelector('.lightbox-prev');
+    var lightboxNext = document.querySelector('.lightbox-next');
+
+    var currentLightboxIndex = -1;
 
     // Helper: extract the filename from an image src path
     function getFilename(src) {
@@ -803,24 +807,41 @@ function initInteractivity() {
         return html;
     }
 
-    // Shared function: open the lightbox for a given image element
-    function openLightbox(img) {
+    // Returns gallery items that are currently visible (respects active filter)
+    function getVisibleItems() {
+        return Array.prototype.slice.call(
+            document.querySelectorAll('.gallery-item:not(.hidden)')
+        );
+    }
+
+    // Open the lightbox for a specific index within the visible items
+    function openLightboxAtIndex(index) {
+        var items = getVisibleItems();
+        if (!items.length) return;
+
+        // Clamp and wrap index
+        index = ((index % items.length) + items.length) % items.length;
+        currentLightboxIndex = index;
+
+        var img = items[index].querySelector('img');
         if (!lightbox || !lightboxContent || !img) return;
 
         var filename = getFilename(img.src);
         var fullResSrc = getFullResUrl(img.src);
 
-        // Show metadata immediately; image slot starts invisible while full res loads
+        // Show/hide arrows: hide if only one image is visible
+        if (lightboxPrev) lightboxPrev.style.display = items.length > 1 ? '' : 'none';
+        if (lightboxNext) lightboxNext.style.display = items.length > 1 ? '' : 'none';
+
+        // Image slot starts invisible while full res loads; metadata shows immediately
         var html = '<img src="" alt="' + (img.alt || '') + '" style="opacity:0;transition:opacity 0.4s ease;">';
         html += buildMetaHTML(filename);
-
         lightboxContent.innerHTML = html;
 
-        // Open the lightbox (black background) straight away
         lightbox.classList.add('active');
         document.body.style.overflow = 'hidden';
 
-        // Load full res off-screen, then fade it in once ready
+        // Load full res off-screen, then fade in
         var fullImg = new Image();
         fullImg.onload = function () {
             var lightboxImg = lightboxContent.querySelector('img');
@@ -830,6 +851,16 @@ function initInteractivity() {
             }
         };
         fullImg.src = fullResSrc;
+    }
+
+    // Shared function: open the lightbox for a given image element
+    function openLightbox(img) {
+        var items = getVisibleItems();
+        var index = 0;
+        for (var i = 0; i < items.length; i++) {
+            if (items[i].querySelector('img') === img) { index = i; break; }
+        }
+        openLightboxAtIndex(index);
     }
 
     // Attach click handlers to gallery items (portfolio page)
@@ -875,11 +906,26 @@ function initInteractivity() {
         });
     }
 
-    // Close when pressing the Escape key
+    // Arrow buttons
+    if (lightboxPrev) {
+        lightboxPrev.addEventListener('click', function (event) {
+            event.stopPropagation();
+            openLightboxAtIndex(currentLightboxIndex - 1);
+        });
+    }
+    if (lightboxNext) {
+        lightboxNext.addEventListener('click', function (event) {
+            event.stopPropagation();
+            openLightboxAtIndex(currentLightboxIndex + 1);
+        });
+    }
+
+    // Keyboard: Escape closes, left/right arrows navigate
     document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape') {
-            closeLightbox();
-        }
+        if (event.key === 'Escape') { closeLightbox(); }
+        if (!lightbox || !lightbox.classList.contains('active')) return;
+        if (event.key === 'ArrowLeft')  { openLightboxAtIndex(currentLightboxIndex - 1); }
+        if (event.key === 'ArrowRight') { openLightboxAtIndex(currentLightboxIndex + 1); }
     });
 
 

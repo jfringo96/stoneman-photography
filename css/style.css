@@ -660,6 +660,31 @@ body.home-page .featured-item {
     opacity: 0.7;
 }
 
+/* Prev / Next arrow buttons */
+.lightbox-prev,
+.lightbox-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: rgba(240, 235, 229, 0.5);
+    font-size: 4rem;
+    line-height: 1;
+    padding: 1rem;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    user-select: none;
+}
+
+.lightbox-prev { left: 1rem; }
+.lightbox-next { right: 1rem; }
+
+.lightbox-prev:hover,
+.lightbox-next:hover {
+    color: rgba(240, 235, 229, 0.95);
+}
+
 
 /* ----------------------------------------------------------
    9. BLOG PAGE
