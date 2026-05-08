@@ -550,9 +550,23 @@ function populatePortfolioGallery(portfolio) {
         gallery.appendChild(item);
     });
 
-    // Show immediately — waiting for all full-res images to load would keep
-    // the gallery invisible for too long. Images render in as they arrive.
-    gallery.style.opacity = '1';
+    // Fade in once the first image settles (load or error), with a 1-second
+    // hard fallback. Avoids waiting for all 45 full-res files before revealing.
+    var revealed = false;
+    function revealGallery() {
+        if (revealed) return;
+        revealed = true;
+        gallery.style.opacity = '1';
+    }
+    var firstImg = gallery.querySelector('img');
+    if (!firstImg) { revealGallery(); return; }
+    if (firstImg.complete) {
+        revealGallery();
+    } else {
+        firstImg.addEventListener('load',  revealGallery);
+        firstImg.addEventListener('error', revealGallery);
+    }
+    setTimeout(revealGallery, 1000);
 }
 
 /* Populate the three featured-item slots on index.html.
