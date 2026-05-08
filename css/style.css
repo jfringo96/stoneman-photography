@@ -247,7 +247,8 @@ body.dark-page .read-more { color: var(--colour-accent); }
 body.dark-page .read-more:hover { color: #f0ebe5; }
 
 /* Stone about */
-body.dark-page .about-content p { color: rgba(240,235,229,0.7); }
+body.dark-page .about-content p,
+body.dark-page .about-content li { color: rgba(240,235,229,0.7); }
 
 /* Stone contact form */
 body.dark-page .contact-form label { color: rgba(200,184,154,0.7); }
@@ -728,6 +729,27 @@ body.home-page .featured-item {
     font-size: 1.1rem;
     line-height: 1.8;
     margin-bottom: 1.5rem;
+    color: #444444;
+}
+
+.about-content h3 {
+    margin-top: 2.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.about-content h3:first-child {
+    margin-top: 0;
+}
+
+.about-content ul {
+    padding-left: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.about-content li {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    margin-bottom: 0.4rem;
     color: #444444;
 }
 
