@@ -532,6 +532,8 @@ function populatePhotoData(portfolio) {
     });
 }
 
+// IMAGE MODE: currently using full res only. To revert to two-tier (thumb gallery + full res lightbox), see git history.
+
 /* Build the masonry gallery on portfolio.html from content.json.
    Clears any hardcoded items, rebuilds from the portfolio array, then fades
    the gallery in once all thumbnails have loaded to avoid a masonry layout flash. */
@@ -544,7 +546,7 @@ function populatePortfolioGallery(portfolio) {
         item.className = 'gallery-item';
         item.setAttribute('data-category', photo.category);
         var img = document.createElement('img');
-        img.src = 'images/Thumb/' + photo.filename;
+        img.src = 'images/Full%20res/' + photo.filename;
         img.alt = photo.title;
         item.appendChild(img);
         gallery.appendChild(item);
@@ -587,7 +589,7 @@ function populateFeaturedImages(portfolio) {
         var item = document.createElement('div');
         item.className = 'featured-item';
         var img = document.createElement('img');
-        img.src = 'images/Thumb/' + photo.filename;
+        img.src = 'images/Full%20res/' + photo.filename;
         img.alt = photo.title;
         item.appendChild(img);
         grid.appendChild(item);
