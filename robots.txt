@@ -44,4 +44,4 @@ Disallow: /
 User-agent: Omgilibot
 Disallow: /
 
-Sitemap: https://stoneman-photography.pages.dev/sitemap.xml
+Sitemap: https://stonemanphotography.co.uk/sitemap.xml
