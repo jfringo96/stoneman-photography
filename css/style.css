@@ -486,10 +486,9 @@ body.home-page .featured-item {
     color: #ffffff;
 }
 
-/* Masonry gallery using CSS columns */
+/* Masonry gallery — Masonry.js positions items absolutely within this container */
 .masonry-gallery {
-    column-count: 3;
-    column-gap: 14px;
+    position: relative;
     padding: 0 2rem 4rem;
     max-width: 1600px;
     margin: 0 auto;
@@ -497,9 +496,13 @@ body.home-page .featured-item {
     transition: opacity 0.5s ease;
 }
 
-/* Each gallery item — break-inside prevents items splitting across columns */
+/* Column-width reference element used by Masonry.js */
+.gallery-sizer,
 .gallery-item {
-    break-inside: avoid;
+    width: calc((100% - 28px) / 3);
+}
+
+.gallery-item {
     margin-bottom: 14px;
     overflow: hidden;
     cursor: pointer;
@@ -920,8 +923,9 @@ footer a:hover {
    ---------------------------------------------------------- */
 
 @media (max-width: 1199px) {
-    .masonry-gallery {
-        column-count: 2;
+    .gallery-sizer,
+    .gallery-item {
+        width: calc((100% - 14px) / 2);
     }
 
     .featured-grid {
@@ -1055,8 +1059,12 @@ footer a:hover {
     /* --- Grids --- */
 
     .masonry-gallery {
-        column-count: 1;
         padding: 0 1rem 2rem;
+    }
+
+    .gallery-sizer,
+    .gallery-item {
+        width: 100%;
     }
 
     .featured-grid {

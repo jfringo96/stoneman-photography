@@ -65,6 +65,8 @@ var photoData = {
     'Colourful-London.jpg':      { title: 'Colourful London',      camera: 'OM System OM-5',          lens: 'OM 12-40mm F2.8 II',          focal: '12mm',   shutter: '1/60',   aperture: 'f/10',  iso: '4000', date: '17 Feb 2025' }
 };
 
+var msnry = null;
+
 
 /* ----------------------------------------------------------
    SECTION 0 — CONTENT LOADING
@@ -133,6 +135,12 @@ function populatePortfolioGallery(portfolio) {
     var gallery = document.querySelector('.masonry-gallery');
     if (!gallery) return;
     gallery.innerHTML = '';
+
+    // Sizer element gives Masonry.js a stable column-width reference
+    var sizer = document.createElement('div');
+    sizer.className = 'gallery-sizer';
+    gallery.appendChild(sizer);
+
     portfolio.forEach(function (photo) {
         var item = document.createElement('div');
         item.className = 'gallery-item';
@@ -144,14 +152,24 @@ function populatePortfolioGallery(portfolio) {
         gallery.appendChild(item);
     });
 
-    // Fade in once every thumbnail has settled (loaded or errored) so the
-    // masonry columns are fully formed before the gallery becomes visible.
+    // Wait for all thumbnails to settle, then initialise Masonry and fade in.
+    // Masonry is initialised here (not at DOMContentLoaded) so it measures
+    // real image heights and the default filter has already been applied.
     var imgs = Array.prototype.slice.call(gallery.querySelectorAll('img'));
     var remaining = imgs.length;
-    if (remaining === 0) { gallery.style.opacity = '1'; return; }
+    function initMasonryAndShow() {
+        msnry = new Masonry(gallery, {
+            itemSelector: '.gallery-item:not(.hidden)',
+            columnWidth: '.gallery-sizer',
+            gutter: 14,
+            horizontalOrder: true
+        });
+        gallery.style.opacity = '1';
+    }
+    if (remaining === 0) { initMasonryAndShow(); return; }
     function onSettled() {
         remaining -= 1;
-        if (remaining === 0) gallery.style.opacity = '1';
+        if (remaining === 0) initMasonryAndShow();
     }
     imgs.forEach(function (img) {
         if (img.complete) { onSettled(); } else {
@@ -332,6 +350,18 @@ function initInteractivity() {
                     item.classList.add('hidden');
                 }
             });
+
+            // Re-run Masonry so it only places visible items
+            if (msnry) {
+                var gal = document.querySelector('.masonry-gallery');
+                msnry.destroy();
+                msnry = new Masonry(gal, {
+                    itemSelector: '.gallery-item:not(.hidden)',
+                    columnWidth: '.gallery-sizer',
+                    gutter: 14,
+                    horizontalOrder: true
+                });
+            }
         });
     });
 
