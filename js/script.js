@@ -153,11 +153,9 @@ function populatePortfolioGallery(portfolio) {
     });
 
     // Wait for all thumbnails to settle, then initialise Masonry and fade in.
-    // Masonry is initialised here (not at DOMContentLoaded) so it measures
-    // real image heights and the default filter has already been applied.
-    var imgs = Array.prototype.slice.call(gallery.querySelectorAll('img'));
-    var remaining = imgs.length;
-    function initMasonryAndShow() {
+    // imagesLoaded always fires asynchronously, so initInteractivity() and the
+    // default filter are guaranteed to have run before Masonry measures anything.
+    imagesLoaded(gallery, function () {
         msnry = new Masonry(gallery, {
             itemSelector: '.gallery-item:not(.hidden)',
             columnWidth: '.gallery-sizer',
@@ -165,17 +163,6 @@ function populatePortfolioGallery(portfolio) {
             horizontalOrder: true
         });
         gallery.style.opacity = '1';
-    }
-    if (remaining === 0) { initMasonryAndShow(); return; }
-    function onSettled() {
-        remaining -= 1;
-        if (remaining === 0) initMasonryAndShow();
-    }
-    imgs.forEach(function (img) {
-        if (img.complete) { onSettled(); } else {
-            img.addEventListener('load',  onSettled);
-            img.addEventListener('error', onSettled);
-        }
     });
 }
 
