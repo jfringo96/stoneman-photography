@@ -152,18 +152,7 @@ function populatePortfolioGallery(portfolio) {
         gallery.appendChild(item);
     });
 
-    // Wait for all thumbnails to settle, then initialise Masonry and fade in.
-    // imagesLoaded always fires asynchronously, so initInteractivity() and the
-    // default filter are guaranteed to have run before Masonry measures anything.
-    imagesLoaded(gallery, function () {
-        msnry = new Masonry(gallery, {
-            itemSelector: '.gallery-item:not(.hidden)',
-            columnWidth: '.gallery-sizer',
-            gutter: 14,
-            horizontalOrder: true
-        });
-        gallery.style.opacity = '1';
-    });
+    // Masonry is initialised from initInteractivity() after the default filter runs.
 }
 
 /* Populate the three featured-item slots on index.html.
@@ -360,6 +349,44 @@ function initInteractivity() {
             var itemCategory = item.getAttribute('data-category');
             if (itemCategory !== defaultCategory) {
                 item.classList.add('hidden');
+            }
+        });
+    }
+
+    // Initialise Masonry now that the default filter has been applied.
+    // requestAnimationFrame defers to after the browser has done layout,
+    // so the sizer and item dimensions are accurate when Masonry measures them.
+    var msnryGallery = document.querySelector('.masonry-gallery');
+    if (msnryGallery && typeof Masonry !== 'undefined') {
+        requestAnimationFrame(function () {
+            msnry = new Masonry(msnryGallery, {
+                itemSelector: '.gallery-item:not(.hidden)',
+                columnWidth: '.gallery-sizer',
+                gutter: 14,
+                horizontalOrder: true
+            });
+
+            // Relayout each time a visible image loads (gives correct item heights),
+            // then fade the gallery in once all visible images have settled.
+            var visImgs = Array.prototype.slice.call(
+                msnryGallery.querySelectorAll('.gallery-item:not(.hidden) img')
+            );
+            var pending = visImgs.length;
+            function onImgSettled() {
+                if (msnry) msnry.layout();
+                pending -= 1;
+                if (pending <= 0) msnryGallery.style.opacity = '1';
+            }
+            if (pending === 0) {
+                msnryGallery.style.opacity = '1';
+            } else {
+                visImgs.forEach(function (img) {
+                    if (img.complete) { onImgSettled(); }
+                    else {
+                        img.addEventListener('load',  onImgSettled);
+                        img.addEventListener('error', onImgSettled);
+                    }
+                });
             }
         });
     }
