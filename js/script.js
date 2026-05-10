@@ -19,456 +19,50 @@
    ---------------------------------------------------------- */
 
 var photoData = {
-    'Above-the-Trees.jpg': {
-        title: 'Above the Trees',
-        camera: 'OM System OM-5',
-        lens: 'OM 100-400mm F5.0-6.3',
-        focal: '123mm',
-        shutter: '1/3200',
-        aperture: 'f/5.4',
-        iso: '800',
-        date: '28 Jan 2026'
-    },
-    'Alone.jpg': {
-        title: 'Alone',
-        camera: 'OM System OM-5',
-        lens: 'OM 12-40mm F2.8 II',
-        focal: '40mm',
-        shutter: '1/160',
-        aperture: 'f/9',
-        iso: '200',
-        date: '9 Dec 2025'
-    },
-    'Autumn-Mandorin.jpg': {
-        title: 'Autumn Mandorin',
-        camera: 'OM System OM-5',
-        lens: 'OM 100-400mm F5.0-6.3',
-        focal: '400mm',
-        shutter: '1/500',
-        aperture: 'f/6.3',
-        iso: '2500',
-        date: '15 Nov 2025'
-    },
-    'Beautiful-Flight.jpg': {
-        title: 'Beautiful Flight',
-        camera: 'OM System OM-5',
-        lens: 'OM 100-400mm F5.0-6.3',
-        focal: '186mm',
-        shutter: '1/1600',
-        aperture: 'f/6.3',
-        iso: '64',
-        date: '21 Nov 2025'
-    },
-    'Beautiful-Morning.jpg': {
-        title: 'Beautiful Morning',
-        camera: 'OM System OM-1 Mark II',
-        lens: 'Olympus 300mm F4.0',
-        focal: '300mm',
-        shutter: '1/4000',
-        aperture: 'f/4',
-        iso: '4000',
-        date: '5 Apr 2026'
-    },
-    'Blended-Sunrise.jpg': {
-        title: 'Blended Sunrise',
-        camera: 'OM System OM-5',
-        lens: 'OM 12-40mm F2.8 II',
-        focal: '22mm',
-        shutter: '1/60',
-        aperture: 'f/6.3',
-        iso: '250',
-        date: '29 Aug 2025'
-    },
-    'Blue-Mountains.jpg': {
-        title: 'Blue Mountains',
-        camera: 'Olympus E-PL9',
-        lens: 'Olympus 14-42mm F3.5-5.6 EZ',
-        focal: '30mm',
-        shutter: '1/500',
-        aperture: 'f/11',
-        iso: '200',
-        date: '27 Nov 2024'
-    },
-    'Buzzing-off.jpg': {
-        title: 'Buzzing off',
-        camera: 'OM System OM-5',
-        lens: 'OM 100-400mm F5.0-6.3',
-        focal: '400mm',
-        shutter: '1/2000',
-        aperture: 'f/6.3',
-        iso: '1000',
-        date: '17 Jan 2026'
-    },
-    'Cable-Car.jpg': {
-        title: 'Cable Car',
-        camera: 'OM System OM-5',
-        lens: 'OM 12-40mm F2.8 II',
-        focal: '35mm',
-        shutter: '1/200',
-        aperture: 'f/11',
-        iso: '200',
-        date: '12 Dec 2025'
-    },
-    'Chamonix.jpg': {
-        title: 'Chamonix',
-        camera: 'OM System OM-1 Mark II',
-        lens: 'OM 12-40mm F2.8 II',
-        focal: '19mm',
-        shutter: '1/2000',
-        aperture: 'f/5.6',
-        iso: '200',
-        date: '19 Apr 2026'
-    },
-    'Colourful-London.jpg': {
-        title: 'Colourful London',
-        camera: 'OM System OM-5',
-        lens: 'OM 12-40mm F2.8 II',
-        focal: '12mm',
-        shutter: '1/60',
-        aperture: 'f/10',
-        iso: '4000',
-        date: '17 Feb 2025'
-    },
-    'Curious.jpg': {
-        title: 'Curious',
-        camera: 'OM System OM-5',
-        lens: 'Lumix G 45-200mm F4.0-5.6',
-        focal: '200mm',
-        shutter: '1/500',
-        aperture: 'f/5.6',
-        iso: '6400',
-        date: '10 Jan 2025'
-    },
-    'Damp-Start.jpg': {
-        title: 'Damp Start',
-        camera: 'OM System OM-5',
-        lens: 'OM 12-40mm F2.8 II',
-        focal: '40mm',
-        shutter: '1/1000',
-        aperture: 'f/6.3',
-        iso: '1600',
-        date: '27 Aug 2025'
-    },
-    'Dawn-Chorus.jpg': {
-        title: 'Dawn Chorus',
-        camera: 'OM System OM-1 Mark II',
-        lens: 'Olympus 300mm F4.0',
-        focal: '300mm',
-        shutter: '1/4000',
-        aperture: 'f/4',
-        iso: '5000',
-        date: '5 Apr 2026'
-    },
-    'Disk.jpg': {
-        title: 'Disk',
-        camera: 'OM System OM-5',
-        lens: 'OM 100-400mm F5.0-6.3',
-        focal: '300mm',
-        shutter: '1/640',
-        aperture: 'f/6.3',
-        iso: '800',
-        date: '15 Aug 2025'
-    },
-    'Dragonfly.jpg': {
-        title: 'Dragonfly',
-        camera: 'OM System OM-5',
-        lens: 'OM 100-400mm F5.0-6.3',
-        focal: '400mm',
-        shutter: '1/1000',
-        aperture: 'f/6.3',
-        iso: '1000',
-        date: '26 Aug 2025'
-    },
-    'Evening-Cormorant.jpg': {
-        title: 'Evening Cormorant',
-        camera: 'OM System OM-5',
-        lens: 'OM 100-400mm F5.0-6.3',
-        focal: '100mm',
-        shutter: '1/640',
-        aperture: 'f/9',
-        iso: '200',
-        date: '2 Mar 2025'
-    },
-    'Golden-Gazelle.jpg': {
-        title: 'Golden Gazelle',
-        camera: 'OM System OM-5',
-        lens: 'OM 100-400mm F5.0-6.3',
-        focal: '374mm',
-        shutter: '1/1000',
-        aperture: 'f/6.3',
-        iso: '2000',
-        date: '3 Feb 2026'
-    },
-    'Golden-Grebe.jpg': {
-        title: 'Golden Grebe',
-        camera: 'OM System OM-5',
-        lens: 'OM 100-400mm F5.0-6.3',
-        focal: '400mm',
-        shutter: '1/1250',
-        aperture: 'f/6.3',
-        iso: '250',
-        date: '2 Feb 2025'
-    },
-    'Golden-Greenwich.jpg': {
-        title: 'Golden Greenwich',
-        camera: 'OM System OM-5',
-        lens: 'OM 100-400mm F5.0-6.3',
-        focal: '100mm',
-        shutter: '1/200',
-        aperture: 'f/5',
-        iso: '200',
-        date: '23 Jan 2025'
-    },
-    'Golden-Thames.jpg': {
-        title: 'Golden Thames',
-        camera: 'OM System OM-5',
-        lens: 'OM 12-40mm F2.8 II',
-        focal: '23mm',
-        shutter: '1/1000',
-        aperture: 'f/9',
-        iso: '200',
-        date: '21 May 2025'
-    },
-    'Green.jpg': {
-        title: 'Green',
-        camera: 'OM System OM-5',
-        lens: 'OM 100-400mm F5.0-6.3',
-        focal: '400mm',
-        shutter: '1/3200',
-        aperture: 'f/6.3',
-        iso: '1250',
-        date: '30 Dec 2025'
-    },
-    'Hampstead-Heath.jpg': {
-        title: 'Hampstead Heath',
-        camera: 'Olympus E-PL9',
-        lens: 'Lumix G 45-200mm F4.0-5.6',
-        focal: '84mm',
-        shutter: '1/500',
-        aperture: 'f/8',
-        iso: '200',
-        date: '27 Oct 2024'
-    },
-    'Head-On.jpg': {
-        title: 'Head On',
-        camera: 'OM System OM-5',
-        lens: 'OM 100-400mm F5.0-6.3',
-        focal: '400mm',
-        shutter: '1/1600',
-        aperture: 'f/6.3',
-        iso: '640',
-        date: '2 Sep 2025'
-    },
-    'Hey.jpg': {
-        title: 'Hey',
-        camera: 'Olympus E-PL9',
-        lens: 'Lumix G 45-200mm F4.0-5.6',
-        focal: '189mm',
-        shutter: '1/1600',
-        aperture: 'f/5.6',
-        iso: '2500',
-        date: '5 Dec 2024'
-    },
-    'Iridescent.jpg': {
-        title: 'Iridescent',
-        camera: 'OM System OM-5',
-        lens: 'OM 100-400mm F5.0-6.3',
-        focal: '400mm',
-        shutter: '1/1600',
-        aperture: 'f/6.3',
-        iso: '400',
-        date: '2 Sep 2025'
-    },
-    'Kestrel.jpg': {
-        title: 'Kestrel',
-        camera: 'OM System OM-5',
-        lens: 'OM 100-400mm F5.0-6.3',
-        focal: '276mm',
-        shutter: '1/1600',
-        aperture: 'f/6.3',
-        iso: '1600',
-        date: '27 Nov 2025'
-    },
-    'La-Palma-Lizard.jpg': {
-        title: 'La Palma Lizard',
-        camera: 'OM System OM-5',
-        lens: 'OM 100-400mm F5.0-6.3',
-        focal: '400mm',
-        shutter: '1/1600',
-        aperture: 'f/8',
-        iso: '500',
-        date: '20 Jan 2026'
-    },
-    'Last-Flight.jpg': {
-        title: 'Last Flight',
-        camera: 'OM System OM-5',
-        lens: 'OM 100-400mm F5.0-6.3',
-        focal: '400mm',
-        shutter: '1/1600',
-        aperture: 'f/6.3',
-        iso: '80',
-        date: '21 Jan 2026'
-    },
-    'Leopard.jpg': {
-        title: 'Leopard',
-        camera: 'OM System OM-5',
-        lens: 'OM 100-400mm F5.0-6.3',
-        focal: '400mm',
-        shutter: '1/1600',
-        aperture: 'f/6.3',
-        iso: '2500',
-        date: '2 Feb 2026'
-    },
-    'Lighthouse.jpg': {
-        title: 'Lighthouse',
-        camera: 'Google Pixel 8a',
-        lens: 'Pixel 8a',
-        focal: '5mm',
-        shutter: '1/2500',
-        aperture: 'f/1.9',
-        iso: '47',
-        date: '25 Oct 2025'
-    },
-    'London.jpg': {
-        title: 'London',
-        camera: 'OM System OM-5',
-        lens: 'OM 12-40mm F2.8 II',
-        focal: '16mm',
-        shutter: '1/320',
-        aperture: 'f/2.8',
-        iso: '200',
-        date: '15 Feb 2026'
-    },
-    'Moody-Thames.jpg': {
-        title: 'Moody Thames',
-        camera: 'OM System OM-5',
-        lens: 'Olympus 14-42mm F3.5-5.6 EZ',
-        focal: '42mm',
-        shutter: '1/250',
-        aperture: 'f/8',
-        iso: '160',
-        date: '6 Jan 2025'
-    },
-    'Morning-Goose.jpg': {
-        title: 'Morning Goose',
-        camera: 'OM System OM-5',
-        lens: 'OM 100-400mm F5.0-6.3',
-        focal: '400mm',
-        shutter: '1/1250',
-        aperture: 'f/6.3',
-        iso: '1000',
-        date: '2 Feb 2025'
-    },
-    'Necter.jpg': {
-        title: 'Necter',
-        camera: 'OM System OM-5',
-        lens: 'OM 100-400mm F5.0-6.3',
-        focal: '400mm',
-        shutter: '1/1600',
-        aperture: 'f/6.3',
-        iso: '1250',
-        date: '17 Jan 2026'
-    },
-    'Perched.jpg': {
-        title: 'Perched',
-        camera: 'OM System OM-5',
-        lens: 'Lumix G 45-200mm F4.0-5.6',
-        focal: '200mm',
-        shutter: '1/1000',
-        aperture: 'f/5.6',
-        iso: '4000',
-        date: '9 Jan 2025'
-    },
-    'Poon-Hill.jpg': {
-        title: 'Poon Hill',
-        camera: 'Olympus E-PL9',
-        lens: 'Olympus 14-42mm F3.5-5.6 EZ',
-        focal: '42mm',
-        shutter: '1/160',
-        aperture: 'f/7.1',
-        iso: '200',
-        date: '27 Nov 2024'
-    },
-    'Purple.jpg': {
-        title: 'Purple',
-        camera: 'OM System OM-5',
-        lens: 'OM 12-40mm F2.8 II',
-        focal: '40mm',
-        shutter: '1/200',
-        aperture: 'f/2.8',
-        iso: '2500',
-        date: '22 Jun 2025'
-    },
-    'Slick.jpg': {
-        title: 'Slick',
-        camera: 'OM System OM-5',
-        lens: 'OM 100-400mm F5.0-6.3',
-        focal: '400mm',
-        shutter: '1/640',
-        aperture: 'f/6.3',
-        iso: '2500',
-        date: '20 Jan 2026'
-    },
-    'Squirrel.jpg': {
-        title: 'Squirrel',
-        camera: 'OM System OM-5',
-        lens: 'OM 100-400mm F5.0-6.3',
-        focal: '400mm',
-        shutter: '1/2000',
-        aperture: 'f/6.3',
-        iso: '3200',
-        date: '20 Feb 2026'
-    },
-    'Sulphur.jpg': {
-        title: 'Sulphur',
-        camera: 'OM System OM-5',
-        lens: 'OM 12-40mm F2.8 II',
-        focal: '12mm',
-        shutter: '1/60',
-        aperture: 'f/8',
-        iso: '500',
-        date: '26 Aug 2025'
-    },
-    'The-Eye.jpg': {
-        title: 'The Eye',
-        camera: 'OM System OM-5',
-        lens: 'OM 100-400mm F5.0-6.3',
-        focal: '285mm',
-        shutter: '1/640',
-        aperture: 'f/7.1',
-        iso: '200',
-        date: '15 Aug 2025'
-    },
-    'Unlucky.jpg': {
-        title: 'Unlucky',
-        camera: 'OM System OM-1 Mark II',
-        lens: 'Olympus 300mm F4.0',
-        focal: '300mm',
-        shutter: '1/5000',
-        aperture: 'f/4',
-        iso: '640',
-        date: '15 Apr 2026'
-    },
-    'Winter-Walk.jpg': {
-        title: 'Winter Walk',
-        camera: 'OM System OM-5',
-        lens: 'Olympus 14-42mm F3.5-5.6 EZ',
-        focal: '42mm',
-        shutter: '1/125',
-        aperture: 'f/10',
-        iso: '200',
-        date: '11 Jan 2025'
-    },
-    'Yum!.jpg': {
-        title: 'Yum!',
-        camera: 'OM System OM-1 Mark II',
-        lens: 'Olympus 300mm F4.0',
-        focal: '300mm',
-        shutter: '1/3200',
-        aperture: 'f/4',
-        iso: '1250',
-        date: '11 Mar 2026'
-    }
+    'Dawn-Chorus.jpg':           { title: 'Dawn Chorus',           camera: 'OM System OM-1 Mark II',  lens: 'Olympus 300mm F4.0',          focal: '300mm',  shutter: '1/4000', aperture: 'f/4',   iso: '5000', date: '5 Apr 2026'  },
+    'Over-the-Shoulder.jpg':     { title: 'Over the Shoulder',     camera: 'OM System OM-1 Mark II',  lens: 'Olympus 300mm F4.0',          focal: '300mm',  shutter: '1/1600', aperture: 'f/4',   iso: '1250', date: '5 Apr 2026'  },
+    'Beautiful-Morning.jpg':     { title: 'Beautiful Morning',     camera: 'OM System OM-1 Mark II',  lens: 'Olympus 300mm F4.0',          focal: '300mm',  shutter: '1/4000', aperture: 'f/4',   iso: '4000', date: '5 Apr 2026'  },
+    'Golden-Gazelle.jpg':        { title: 'Golden Gazelle',        camera: 'OM System OM-5',          lens: 'OM 100-400mm F5.0-6.3',       focal: '374mm',  shutter: '1/1000', aperture: 'f/6.3', iso: '2000', date: '3 Feb 2026'  },
+    'Samburu-Zebra.jpg':         { title: 'Samburu Zebra',         camera: 'OM System OM-5',          lens: 'OM 100-400mm F5.0-6.3',       focal: '400mm',  shutter: '1/2500', aperture: 'f/6.3', iso: '1000', date: '1 Feb 2026'  },
+    'Leopard.jpg':               { title: 'Leopard',               camera: 'OM System OM-5',          lens: 'OM 100-400mm F5.0-6.3',       focal: '400mm',  shutter: '1/1600', aperture: 'f/6.3', iso: '2500', date: '2 Feb 2026'  },
+    'Crescent Island Monkey.jpg':{ title: 'Crescent Island Monkey',camera: 'OM System OM-5',          lens: 'OM 100-400mm F5.0-6.3',       focal: '400mm',  shutter: '1/2500', aperture: 'f/6.3', iso: '1250', date: '28 Jan 2026' },
+    'Above-the-Trees.jpg':       { title: 'Above the Trees',       camera: 'OM System OM-5',          lens: 'OM 100-400mm F5.0-6.3',       focal: '123mm',  shutter: '1/3200', aperture: 'f/5.4', iso: '800',  date: '28 Jan 2026' },
+    'Head-On.jpg':               { title: 'Head-On',               camera: 'OM System OM-5',          lens: 'OM 100-400mm F5.0-6.3',       focal: '400mm',  shutter: '1/1600', aperture: 'f/6.3', iso: '640',  date: '2 Sep 2025'  },
+    'Blue-Dragonfly.jpg':        { title: 'Blue Dragonfly',        camera: 'OM System OM-5',          lens: 'OM 100-400mm F5.0-6.3',       focal: '400mm',  shutter: '1/1000', aperture: 'f/6.3', iso: '1000', date: '26 Aug 2025' },
+    'Yum!.jpg':                  { title: 'Yum!',                  camera: 'OM System OM-1 Mark II',  lens: 'Olympus 300mm F4.0',          focal: '300mm',  shutter: '1/3200', aperture: 'f/4',   iso: '1250', date: '11 Mar 2026' },
+    'Through-the-Grass.jpg':     { title: 'Through the Grass',     camera: 'OM System OM-1 Mark II',  lens: 'Olympus 300mm F4.0',          focal: '300mm',  shutter: '1/4000', aperture: 'f/4',   iso: '400',  date: '15 Apr 2026' },
+    'Squirrel.jpg':              { title: 'Squirrel',              camera: 'OM System OM-5',          lens: 'OM 100-400mm F5.0-6.3',       focal: '400mm',  shutter: '1/2000', aperture: 'f/6.3', iso: '3200', date: '20 Feb 2026' },
+    'Buzzing-off.jpg':           { title: 'Buzzing Off',           camera: 'OM System OM-5',          lens: 'OM 100-400mm F5.0-6.3',       focal: '400mm',  shutter: '1/2000', aperture: 'f/6.3', iso: '1000', date: '17 Jan 2026' },
+    'Necter.jpg':                { title: 'Nectar',                camera: 'OM System OM-5',          lens: 'OM 100-400mm F5.0-6.3',       focal: '400mm',  shutter: '1/1600', aperture: 'f/6.3', iso: '1250', date: '17 Jan 2026' },
+    'Damp-Start.jpg':            { title: 'Damp Start',            camera: 'OM System OM-5',          lens: 'OM 12-40mm F2.8 II',          focal: '40mm',   shutter: '1/1000', aperture: 'f/6.3', iso: '1600', date: '27 Aug 2025' },
+    'Evening-Swans.jpg':         { title: 'Evening Swans',         camera: 'OM System OM-5',          lens: 'OM 100-400mm F5.0-6.3',       focal: '186mm',  shutter: '1/1600', aperture: 'f/6.3', iso: '64',   date: '21 Nov 2025' },
+    'Last-Flight.jpg':           { title: 'Last Flight',           camera: 'OM System OM-5',          lens: 'OM 100-400mm F5.0-6.3',       focal: '400mm',  shutter: '1/1600', aperture: 'f/6.3', iso: '80',   date: '21 Jan 2026' },
+    'Evening-Cormorant.jpg':     { title: 'Evening Cormorant',     camera: 'OM System OM-5',          lens: 'OM 100-400mm F5.0-6.3',       focal: '100mm',  shutter: '1/640',  aperture: 'f/9',   iso: '200',  date: '2 Mar 2025'  },
+    'From-My-Window.jpg':        { title: 'From My Window',        camera: 'OM System OM-5',          lens: 'OM 100-400mm F5.0-6.3',       focal: '400mm',  shutter: '1/3200', aperture: 'f/6.3', iso: '1250', date: '30 Dec 2025' },
+    'Kestrel.jpg':               { title: 'Kestrel',               camera: 'OM System OM-5',          lens: 'OM 100-400mm F5.0-6.3',       focal: '276mm',  shutter: '1/1600', aperture: 'f/6.3', iso: '1600', date: '27 Nov 2025' },
+    'La-Palma-Lizard.jpg':       { title: 'La Palma Lizard',       camera: 'OM System OM-5',          lens: 'OM 100-400mm F5.0-6.3',       focal: '400mm',  shutter: '1/1600', aperture: 'f/8',   iso: '500',  date: '20 Jan 2026' },
+    'Autumn-Mandarin.jpg':       { title: 'Autumn Mandarin',       camera: 'OM System OM-5',          lens: 'OM 100-400mm F5.0-6.3',       focal: '400mm',  shutter: '1/500',  aperture: 'f/6.3', iso: '2500', date: '15 Nov 2025' },
+    'Autumn-Glow.jpg':           { title: 'Autumn Glow',           camera: 'OM System OM-5',          lens: 'OM 60mm F2.8 Macro',          focal: '60mm',   shutter: '1/25',   aperture: 'f/3.2', iso: '640',  date: '31 Oct 2025' },
+    'Curious.jpg':               { title: 'Curious',               camera: 'OM System OM-5',          lens: 'Lumix G 45-200mm F4.0-5.6',   focal: '200mm',  shutter: '1/500',  aperture: 'f/5.6', iso: '6400', date: '10 Jan 2025' },
+    'Golden-Grebe.jpg':          { title: 'Golden Grebe',          camera: 'OM System OM-5',          lens: 'OM 100-400mm F5.0-6.3',       focal: '400mm',  shutter: '1/1250', aperture: 'f/6.3', iso: '250',  date: '2 Feb 2025'  },
+    'Blended-Sunrise.jpg':       { title: 'Blended Sunrise',       camera: 'OM System OM-5',          lens: 'OM 12-40mm F2.8 II',          focal: '22mm',   shutter: '1/60',   aperture: 'f/6.3', iso: '250',  date: '29 Aug 2025' },
+    'London.jpg':                { title: 'London',                camera: 'OM System OM-5',          lens: 'OM 12-40mm F2.8 II',          focal: '16mm',   shutter: '1/320',  aperture: 'f/2.8', iso: '200',  date: '15 Feb 2026' },
+    'Golden-Thames.jpg':         { title: 'Golden Thames',         camera: 'OM System OM-5',          lens: 'OM 12-40mm F2.8 II',          focal: '23mm',   shutter: '1/1000', aperture: 'f/9',   iso: '200',  date: '21 May 2025' },
+    'Moody-Thames.jpg':          { title: 'Moody Thames',          camera: 'OM System OM-5',          lens: 'Olympus 14-42mm F3.5-5.6 EZ', focal: '42mm',   shutter: '1/250',  aperture: 'f/8',   iso: '160',  date: '6 Jan 2025'  },
+    'HMS-Belfast.jpg':           { title: 'HMS Belfast',           camera: 'OM System OM-5',          lens: 'Olympus 14-42mm F3.5-5.6 EZ', focal: '42mm',   shutter: '1/250',  aperture: 'f/8',   iso: '200',  date: '6 Jan 2025'  },
+    'The-Eye.jpg':               { title: 'The Eye',               camera: 'OM System OM-5',          lens: 'OM 100-400mm F5.0-6.3',       focal: '285mm',  shutter: '1/640',  aperture: 'f/7.1', iso: '200',  date: '15 Aug 2025' },
+    'Chamonix.jpg':              { title: 'Chamonix',              camera: 'OM System OM-1 Mark II',  lens: 'OM 12-40mm F2.8 II',          focal: '19mm',   shutter: '1/2000', aperture: 'f/5.6', iso: '200',  date: '19 Apr 2026' },
+    'Cold-Mountains.jpg':        { title: 'Cold Mountains',        camera: 'Olympus E-PL9',           lens: 'Olympus 14-42mm F3.5-5.6 EZ', focal: '30mm',   shutter: '1/500',  aperture: 'f/11',  iso: '200',  date: '27 Nov 2024' },
+    'Cable-Car.jpg':             { title: 'Cable Car',             camera: 'OM System OM-5',          lens: 'OM 12-40mm F2.8 II',          focal: '35mm',   shutter: '1/200',  aperture: 'f/11',  iso: '200',  date: '12 Dec 2025' },
+    'Golden-Greenwich.jpg':      { title: 'Golden Greenwich',      camera: 'OM System OM-5',          lens: 'OM 100-400mm F5.0-6.3',       focal: '100mm',  shutter: '1/200',  aperture: 'f/5',   iso: '200',  date: '23 Jan 2025' },
+    'Greenwich-Drama.jpg':       { title: 'Greenwich Drama',       camera: 'OM System OM-5',          lens: 'OM 100-400mm F5.0-6.3',       focal: '300mm',  shutter: '1/640',  aperture: 'f/6.3', iso: '800',  date: '15 Aug 2025' },
+    'Hampstead-Heath.jpg':       { title: 'Hampstead Heath',       camera: 'Olympus E-PL9',           lens: 'Lumix G 45-200mm F4.0-5.6',   focal: '84mm',   shutter: '1/500',  aperture: 'f/8',   iso: '200',  date: '27 Oct 2024' },
+    'Ladder-to-the-Sea.jpg':     { title: 'Ladder to the Sea',     camera: 'OM System OM-5',          lens: 'OM 12-40mm F2.8 II',          focal: '12mm',   shutter: '1/160',  aperture: 'f/9',   iso: '200',  date: '8 Mar 2025'  },
+    'Poon-Hill.jpg':             { title: 'Poon Hill',             camera: 'Olympus E-PL9',           lens: 'Olympus 14-42mm F3.5-5.6 EZ', focal: '42mm',   shutter: '1/160',  aperture: 'f/7.1', iso: '200',  date: '27 Nov 2024' },
+    'Lighthouse.jpg':            { title: 'Lighthouse',            camera: 'Google Pixel 8a',         lens: 'Pixel 8a',                    focal: '5mm',    shutter: '1/2500', aperture: 'f/1.9', iso: '47',   date: '25 Oct 2025' },
+    'Winter-Walk.jpg':           { title: 'Winter Walk',           camera: 'OM System OM-5',          lens: 'Olympus 14-42mm F3.5-5.6 EZ', focal: '42mm',   shutter: '1/125',  aperture: 'f/10',  iso: '200',  date: '11 Jan 2025' },
+    "Villeneuve's-Tree.jpg":     { title: "Villeneuve's Tree",     camera: 'OM System OM-5',          lens: 'OM 12-40mm F2.8 II',          focal: '40mm',   shutter: '1/160',  aperture: 'f/9',   iso: '200',  date: '9 Dec 2025'  },
+    'Colourful-London.jpg':      { title: 'Colourful London',      camera: 'OM System OM-5',          lens: 'OM 12-40mm F2.8 II',          focal: '12mm',   shutter: '1/60',   aperture: 'f/10',  iso: '4000', date: '17 Feb 2025' }
 };
 
 
@@ -732,11 +326,9 @@ function initInteractivity() {
             galleryItems.forEach(function (item) {
                 var itemCategory = item.getAttribute('data-category');
 
-                if (filterCategory === 'all' || itemCategory === filterCategory) {
-                    // Show this item
+                if (itemCategory === filterCategory) {
                     item.classList.remove('hidden');
                 } else {
-                    // Hide this item
                     item.classList.add('hidden');
                 }
             });
@@ -747,14 +339,12 @@ function initInteractivity() {
     var activeFilter = document.querySelector('.category-btn.active');
     if (activeFilter && galleryItems.length > 0) {
         var defaultCategory = activeFilter.getAttribute('data-category');
-        if (defaultCategory !== 'all') {
-            galleryItems.forEach(function (item) {
-                var itemCategory = item.getAttribute('data-category');
-                if (itemCategory !== defaultCategory) {
-                    item.classList.add('hidden');
-                }
-            });
-        }
+        galleryItems.forEach(function (item) {
+            var itemCategory = item.getAttribute('data-category');
+            if (itemCategory !== defaultCategory) {
+                item.classList.add('hidden');
+            }
+        });
     }
 
 
