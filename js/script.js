@@ -330,10 +330,14 @@ function initInteractivity() {
             // Re-run Masonry so it only places visible items
             if (msnry) {
                 var gal = document.querySelector('.masonry-gallery');
+                var cs2 = window.getComputedStyle(gal);
+                var inner2 = gal.clientWidth - parseFloat(cs2.paddingLeft) - parseFloat(cs2.paddingRight);
+                var cols2 = window.innerWidth > 1199 ? 3 : window.innerWidth > 767 ? 2 : 1;
+                var colW2 = Math.floor((inner2 - 14 * (cols2 - 1)) / cols2);
                 msnry.destroy();
                 msnry = new Masonry(gal, {
                     itemSelector: '.gallery-item:not(.hidden)',
-                    columnWidth: '.gallery-sizer',
+                    columnWidth: colW2,
                     gutter: 14,
                     horizontalOrder: true
                 });
@@ -354,20 +358,44 @@ function initInteractivity() {
     }
 
     // Initialise Masonry now that the default filter has been applied.
-    // requestAnimationFrame defers to after the browser has done layout,
-    // so the sizer and item dimensions are accurate when Masonry measures them.
+    // Column width is calculated directly from clientWidth minus padding so
+    // there is no ambiguity about what "100%" resolves to for abs-positioned
+    // items vs normal-flow items (the root cause of the one-column bug).
     var msnryGallery = document.querySelector('.masonry-gallery');
     if (msnryGallery && typeof Masonry !== 'undefined') {
+
+        function calcColWidth() {
+            var cs  = window.getComputedStyle(msnryGallery);
+            var inner = msnryGallery.clientWidth
+                - parseFloat(cs.paddingLeft)
+                - parseFloat(cs.paddingRight);
+            var cols = window.innerWidth > 1199 ? 3
+                     : window.innerWidth > 767  ? 2
+                     : 1;
+            return Math.floor((inner - 14 * (cols - 1)) / cols);
+        }
+
+        function applyColWidth(colW) {
+            // Set every item's width to the computed pixel value so it matches
+            // Masonry's column width regardless of how CSS resolves percentages.
+            Array.prototype.forEach.call(
+                msnryGallery.querySelectorAll('.gallery-item'),
+                function (item) { item.style.width = colW + 'px'; }
+            );
+        }
+
         requestAnimationFrame(function () {
+            var colW = calcColWidth();
+            applyColWidth(colW);
+
             msnry = new Masonry(msnryGallery, {
                 itemSelector: '.gallery-item:not(.hidden)',
-                columnWidth: '.gallery-sizer',
+                columnWidth: colW,
                 gutter: 14,
                 horizontalOrder: true
             });
 
-            // Relayout each time a visible image loads (gives correct item heights),
-            // then fade the gallery in once all visible images have settled.
+            // Relayout each time a visible image loads, fade in when all settled.
             var visImgs = Array.prototype.slice.call(
                 msnryGallery.querySelectorAll('.gallery-item:not(.hidden) img')
             );
@@ -388,6 +416,21 @@ function initInteractivity() {
                     }
                 });
             }
+
+            // Rebuild on resize so column count and item widths stay in sync.
+            window.addEventListener('resize', function () {
+                var newColW = calcColWidth();
+                applyColWidth(newColW);
+                if (msnry) {
+                    msnry.destroy();
+                    msnry = new Masonry(msnryGallery, {
+                        itemSelector: '.gallery-item:not(.hidden)',
+                        columnWidth: newColW,
+                        gutter: 14,
+                        horizontalOrder: true
+                    });
+                }
+            });
         });
     }
 
