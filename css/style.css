@@ -961,9 +961,10 @@ footer a:hover {
         padding: 0 1rem;
     }
 
-    /* Show the hamburger button */
+    /* Show the hamburger button, pinned to the right */
     .menu-toggle {
         display: block;
+        margin-left: auto;
     }
 
     /* Hide nav links by default on mobile */
@@ -1070,45 +1071,17 @@ footer a:hover {
 
     /* --- Grids --- */
 
-    /* Portfolio gallery: horizontal scroll carousel */
     .masonry-gallery {
-        display: flex;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        scroll-snap-type: x mandatory;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        gap: 12px;
-        padding: 1rem 1rem 2rem;
-        opacity: 1;
-    }
-    .masonry-gallery::-webkit-scrollbar { display: none; }
-    .gallery-sizer { display: none; }
-    .gallery-item {
-        flex: 0 0 82vw;
-        width: 82vw;
-        scroll-snap-align: start;
+        padding: 0 1rem 2rem;
     }
 
-    /* Featured images: horizontal scroll carousel */
+    .gallery-sizer,
+    .gallery-item {
+        width: 100%;
+    }
+
     .featured-grid {
-        display: flex;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        scroll-snap-type: x mandatory;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        gap: 12px;
-        padding: 0 1rem 1.5rem;
-    }
-    .featured-grid::-webkit-scrollbar { display: none; }
-    .featured-item {
-        flex: 0 0 82vw;
-        scroll-snap-align: start;
-    }
-    .featured-item img {
-        height: auto;
-        object-fit: initial;
+        grid-template-columns: 1fr;
     }
 
     /* --- Sections --- */

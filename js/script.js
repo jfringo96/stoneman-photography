@@ -374,13 +374,11 @@ function initInteractivity() {
     }
 
     // Initialise Masonry now that the default filter has been applied.
-    // On mobile (≤767px) CSS handles a horizontal scroll carousel instead,
-    // so Masonry is skipped entirely and the gallery is revealed immediately.
+    // Column width is calculated directly from clientWidth minus padding so
+    // there is no ambiguity about what "100%" resolves to for abs-positioned
+    // items vs normal-flow items (the root cause of the one-column bug).
     var msnryGallery = document.querySelector('.masonry-gallery');
     if (msnryGallery && typeof Masonry !== 'undefined') {
-    if (window.innerWidth <= 767) {
-        msnryGallery.style.opacity = '1';
-    } else {
 
         function calcColWidth() {
             var cs  = window.getComputedStyle(msnryGallery);
@@ -450,8 +448,7 @@ function initInteractivity() {
                 }
             });
         });
-    } // end desktop-only Masonry block
-    } // end msnryGallery check
+    }
 
 
     // ==============================================
