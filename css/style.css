@@ -248,7 +248,9 @@ body.dark-page .read-more:hover { color: #f0ebe5; }
 
 /* Stone about */
 body.dark-page .about-content p,
-body.dark-page .about-content li { color: rgba(240,235,229,0.7); }
+body.dark-page .about-content li,
+body.dark-page .copyright-content p,
+body.dark-page .copyright-content li { color: rgba(240,235,229,0.7); }
 
 /* Stone contact form */
 body.dark-page .contact-form label { color: rgba(200,184,154,0.7); }
@@ -302,7 +304,7 @@ body.dark-page footer {
     justify-content: center;
     text-align: center;
     background-color: #2a2a2a;
-    background-image: url('../images/Full%20res/Golden-Gazelle.jpg');
+    background-image: url('../images/Hero/Golden-Gazelle.jpg');
     background-size: cover;
     background-position: 42% 20%;
     overflow: hidden;
@@ -747,34 +749,40 @@ body.home-page .featured-item {
    Centered text column with comfortable reading width.
    ---------------------------------------------------------- */
 
-.about-content {
+.about-content,
+.copyright-content {
     max-width: 800px;
     margin: 0 auto;
     padding: 0 2rem 4rem;
 }
 
-.about-content p {
+.about-content p,
+.copyright-content p {
     font-size: 1.1rem;
     line-height: 1.8;
     margin-bottom: 1.5rem;
     color: #444444;
 }
 
-.about-content h3 {
+.about-content h3,
+.copyright-content h3 {
     margin-top: 2.5rem;
     margin-bottom: 0.75rem;
 }
 
-.about-content h3:first-child {
+.about-content h3:first-child,
+.copyright-content h3:first-child {
     margin-top: 0;
 }
 
-.about-content ul {
+.about-content ul,
+.copyright-content ul {
     padding-left: 1.5rem;
     margin-bottom: 1.5rem;
 }
 
-.about-content li {
+.about-content li,
+.copyright-content li {
     font-size: 1.1rem;
     line-height: 1.8;
     margin-bottom: 0.4rem;
@@ -1085,7 +1093,8 @@ footer a:hover {
         padding: 0 1rem 2rem;
     }
 
-    .about-content {
+    .about-content,
+    .copyright-content {
         padding: 0 1rem 2rem;
     }
 
