@@ -501,11 +501,17 @@ function initInteractivity() {
         return html;
     }
 
-    // Returns gallery items that are currently visible (respects active filter)
+    // Returns the items to cycle through in the lightbox.
+    // On portfolio page: visible gallery items (respects active filter).
+    // On home page: featured items (no gallery items present).
     function getVisibleItems() {
-        return Array.prototype.slice.call(
+        var items = Array.prototype.slice.call(
             document.querySelectorAll('.gallery-item:not(.hidden)')
         );
+        if (!items.length) {
+            items = Array.prototype.slice.call(document.querySelectorAll('.featured-item'));
+        }
+        return items;
     }
 
     // Open the lightbox for a specific index within the visible items
