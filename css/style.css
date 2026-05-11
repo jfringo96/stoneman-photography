@@ -1022,17 +1022,21 @@ footer a:hover {
 
     /* --- Hero Section --- */
 
+    /* Nav logo hidden on home page — hero title makes it redundant */
+    body.home-page .logo {
+        display: none;
+    }
+
     .hero {
-        height: 85vh;
+        height: 92vh;
         margin-top: -60px;
         padding-top: 60px;
         background-position: 42% 30%;
     }
 
+    /* Right-side overlay removed on mobile — only the bottom fade needed */
     .hero-overlay {
-        background:
-            linear-gradient(to top, var(--colour-bg) 0%, rgba(30,28,25,0.6) 20%, transparent 45%),
-            linear-gradient(to left, var(--colour-bg) 0%, transparent 55%);
+        background: linear-gradient(to top, var(--colour-bg) 0%, rgba(30,28,25,0.6) 20%, transparent 45%);
     }
 
     .hero-content {
@@ -1066,17 +1070,45 @@ footer a:hover {
 
     /* --- Grids --- */
 
+    /* Portfolio gallery: horizontal scroll carousel */
     .masonry-gallery {
-        padding: 0 1rem 2rem;
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        gap: 12px;
+        padding: 1rem 1rem 2rem;
+        opacity: 1;
     }
-
-    .gallery-sizer,
+    .masonry-gallery::-webkit-scrollbar { display: none; }
+    .gallery-sizer { display: none; }
     .gallery-item {
-        width: 100%;
+        flex: 0 0 82vw;
+        width: 82vw;
+        scroll-snap-align: start;
     }
 
+    /* Featured images: horizontal scroll carousel */
     .featured-grid {
-        grid-template-columns: 1fr;
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        gap: 12px;
+        padding: 0 1rem 1.5rem;
+    }
+    .featured-grid::-webkit-scrollbar { display: none; }
+    .featured-item {
+        flex: 0 0 82vw;
+        scroll-snap-align: start;
+    }
+    .featured-item img {
+        height: auto;
+        object-fit: initial;
     }
 
     /* --- Sections --- */
