@@ -8,6 +8,7 @@
     "nav_background": "#2c2926",
     "nav_text_colour": "rgba(240,235,229,0.75)"
   },
+  "featured_images": ["Dawn-Chorus.jpg", "Yum!.jpg", "Leopard.jpg"],
   "portfolio": [
     {
       "filename": "Dawn-Chorus.jpg",

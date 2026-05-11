@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (content.portfolio && content.portfolio.length) {
                 populatePhotoData(content.portfolio);
                 populatePortfolioGallery(content.portfolio);
-                populateFeaturedImages(content.portfolio);
+                populateFeaturedImages(content.portfolio, content.featured_images);
             }
             populateAbout(content.about);
             populateBlog(content.blog);
@@ -107,7 +107,12 @@ function applySettings(settings) {
     if (settings.nav_text_colour)    root.style.setProperty('--colour-nav-text', settings.nav_text_colour);
 
     var heroH1 = document.querySelector('.hero-content h1');
-    if (heroH1 && settings.site_name) heroH1.textContent = settings.site_name;
+    if (heroH1 && settings.site_name) {
+        var lastSpace = settings.site_name.lastIndexOf(' ');
+        heroH1.innerHTML = lastSpace !== -1
+            ? settings.site_name.slice(0, lastSpace) + '<br>' + settings.site_name.slice(lastSpace + 1)
+            : settings.site_name;
+    }
     var heroP = document.querySelector('.hero-content p');
     if (heroP && settings.tagline) heroP.textContent = settings.tagline;
 }
@@ -156,17 +161,29 @@ function populatePortfolioGallery(portfolio) {
 }
 
 /* Populate the three featured-item slots on index.html.
-   Uses photos marked featured: true; tops up from the rest if fewer than 3. */
-function populateFeaturedImages(portfolio) {
+   Uses featured_images array from content.json for explicit ordering;
+   falls back to featured: true flag if the array is absent. */
+function populateFeaturedImages(portfolio, featuredImages) {
     var grid = document.querySelector('.featured-grid');
     if (!grid) return;
 
-    var featured = portfolio.filter(function (p) { return p.featured; });
-    if (featured.length < 3) {
-        var extras = portfolio.filter(function (p) { return !p.featured; });
-        var i = 0;
-        while (featured.length < 3 && i < extras.length) {
-            featured.push(extras[i++]);
+    var byFilename = {};
+    portfolio.forEach(function (p) { byFilename[p.filename] = p; });
+
+    var featured;
+    if (featuredImages && featuredImages.length) {
+        featured = featuredImages.map(function (fn) { return byFilename[fn]; }).filter(Boolean);
+        if (featured.length < 3) {
+            portfolio.forEach(function (p) {
+                if (featured.length < 3 && featuredImages.indexOf(p.filename) === -1) featured.push(p);
+            });
+        }
+    } else {
+        featured = portfolio.filter(function (p) { return p.featured; });
+        if (featured.length < 3) {
+            var extras = portfolio.filter(function (p) { return !p.featured; });
+            var i = 0;
+            while (featured.length < 3 && i < extras.length) featured.push(extras[i++]);
         }
     }
 
@@ -452,7 +469,7 @@ function initInteractivity() {
 
     // Helper: extract the filename from an image src path
     function getFilename(src) {
-        return src.split('/').pop().split('?')[0];
+        return decodeURIComponent(src.split('/').pop().split('?')[0]);
     }
 
     // Helper: get the full-resolution image URL from a thumbnail URL
