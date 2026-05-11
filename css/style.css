@@ -33,6 +33,7 @@
 
 html {
     scroll-behavior: smooth;
+    overflow-y: scroll; /* always reserve scrollbar width so nav never shifts between pages */
 }
 
 :root {
