@@ -192,19 +192,6 @@
       "date": "17 Jan 2026"
     },
     {
-      "filename": "Necter.jpg",
-      "title": "Nectar",
-      "category": "wildlife",
-      "featured": false,
-      "camera": "OM System OM-5",
-      "lens": "OM 100-400mm F5.0-6.3",
-      "focal": "400mm",
-      "shutter": "1/1600",
-      "aperture": "f/6.3",
-      "iso": "1250",
-      "date": "17 Jan 2026"
-    },
-    {
       "filename": "Damp-Start.jpg",
       "title": "Damp Start",
       "category": "wildlife",
@@ -283,17 +270,17 @@
       "date": "27 Nov 2025"
     },
     {
-      "filename": "La-Palma-Lizard.jpg",
-      "title": "La Palma Lizard",
+      "filename": "Necter.jpg",
+      "title": "Nectar",
       "category": "wildlife",
       "featured": false,
       "camera": "OM System OM-5",
       "lens": "OM 100-400mm F5.0-6.3",
       "focal": "400mm",
       "shutter": "1/1600",
-      "aperture": "f/8",
-      "iso": "500",
-      "date": "20 Jan 2026"
+      "aperture": "f/6.3",
+      "iso": "1250",
+      "date": "17 Jan 2026"
     },
     {
       "filename": "Autumn-Mandarin.jpg",
@@ -346,6 +333,19 @@
       "aperture": "f/6.3",
       "iso": "250",
       "date": "2 Feb 2025"
+    },
+    {
+      "filename": "La-Palma-Lizard.jpg",
+      "title": "La Palma Lizard",
+      "category": "wildlife",
+      "featured": false,
+      "camera": "OM System OM-5",
+      "lens": "OM 100-400mm F5.0-6.3",
+      "focal": "400mm",
+      "shutter": "1/1600",
+      "aperture": "f/8",
+      "iso": "500",
+      "date": "20 Jan 2026"
     },
     {
       "filename": "Blended-Sunrise.jpg",
