@@ -479,17 +479,17 @@
       "date": "23 Jan 2025"
     },
     {
-      "filename": "Greenwich-Drama.jpg",
-      "title": "Greenwich Drama",
+      "filename": "Villeneuve's-Tree.jpg",
+      "title": "Villeneuve's Tree",
       "category": "landscape",
       "featured": false,
       "camera": "OM System OM-5",
-      "lens": "OM 100-400mm F5.0-6.3",
-      "focal": "300mm",
-      "shutter": "1/640",
-      "aperture": "f/6.3",
-      "iso": "800",
-      "date": "15 Aug 2025"
+      "lens": "OM 12-40mm F2.8 II",
+      "focal": "40mm",
+      "shutter": "1/160",
+      "aperture": "f/9",
+      "iso": "200",
+      "date": "9 Dec 2025"
     },
     {
       "filename": "Hampstead-Heath.jpg",
@@ -555,19 +555,6 @@
       "aperture": "f/10",
       "iso": "200",
       "date": "11 Jan 2025"
-    },
-    {
-      "filename": "Villeneuve's-Tree.jpg",
-      "title": "Villeneuve's Tree",
-      "category": "landscape",
-      "featured": false,
-      "camera": "OM System OM-5",
-      "lens": "OM 12-40mm F2.8 II",
-      "focal": "40mm",
-      "shutter": "1/160",
-      "aperture": "f/9",
-      "iso": "200",
-      "date": "9 Dec 2025"
     },
     {
       "filename": "Colourful-London.jpg",
