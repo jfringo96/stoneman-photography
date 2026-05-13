@@ -305,10 +305,24 @@ body.dark-page footer {
     justify-content: center;
     text-align: center;
     background-color: #2a2a2a;
+    overflow: hidden;
+}
+
+/* Hero image on a pseudo-element so it can fade in once loaded */
+.hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
     background-image: url('../images/Hero/Golden-Gazelle(2).jpg');
     background-size: cover;
     background-position: 42% 20%;
-    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.9s ease;
+    z-index: 0;
+}
+
+.hero.loaded::before {
+    opacity: 1;
 }
 
 /* Dark overlay — gradient darkens right side for text + bottom fades to dark bg */

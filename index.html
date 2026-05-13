@@ -12,6 +12,9 @@
     <!-- Shared stylesheet -->
     <link rel="stylesheet" href="css/style.css">
 
+    <!-- Preload hero image so the browser fetches it as early as possible -->
+    <link rel="preload" as="image" href="images/Hero/Golden-Gazelle(2).jpg">
+
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/favicon-512.png">
     <link rel="apple-touch-icon" href="/favicon-512.png">
@@ -86,6 +89,17 @@
 
     <!-- Shared JavaScript -->
     <script src="js/script.js"></script>
+
+    <!-- Fade in hero image once it has finished loading -->
+    <script>
+        (function () {
+            var img = new Image();
+            img.onload = function () {
+                document.querySelector('.hero').classList.add('loaded');
+            };
+            img.src = 'images/Hero/Golden-Gazelle(2).jpg';
+        })();
+    </script>
 
 </body>
 </html>
