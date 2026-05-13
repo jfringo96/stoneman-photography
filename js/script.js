@@ -411,27 +411,11 @@ function initInteractivity() {
                 horizontalOrder: true
             });
 
-            // Relayout each time a visible image loads, fade in when all settled.
-            var visImgs = Array.prototype.slice.call(
-                msnryGallery.querySelectorAll('.gallery-item:not(.hidden) img')
-            );
-            var pending = visImgs.length;
-            function onImgSettled() {
+            // Wait for all images to finish loading, do one final layout, then reveal.
+            imagesLoaded(msnryGallery, function () {
                 if (msnry) msnry.layout();
-                pending -= 1;
-                if (pending <= 0) msnryGallery.style.opacity = '1';
-            }
-            if (pending === 0) {
                 msnryGallery.style.opacity = '1';
-            } else {
-                visImgs.forEach(function (img) {
-                    if (img.complete) { onImgSettled(); }
-                    else {
-                        img.addEventListener('load',  onImgSettled);
-                        img.addEventListener('error', onImgSettled);
-                    }
-                });
-            }
+            });
 
             // Rebuild on resize so column count and item widths stay in sync.
             window.addEventListener('resize', function () {
