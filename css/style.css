@@ -805,6 +805,30 @@ body.home-page .featured-item {
 }
 
 
+.about-photo-wrap {
+    margin-top: 3rem;
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+}
+
+.about-photo-wrap::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 6px;
+    box-shadow: inset 0 0 80px 40px rgba(0, 0, 0, 0.55);
+    pointer-events: none;
+}
+
+.about-photo {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+}
+
+
 /* ----------------------------------------------------------
    11. CONTACT PAGE
    Centered contact form with clean styling.
