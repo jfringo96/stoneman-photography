@@ -464,6 +464,13 @@ body.home-page .featured-item {
     font-size: 1.1rem;
 }
 
+.page-header-sub {
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-top: -0.25rem;
+}
+
 
 /* ----------------------------------------------------------
    7. PORTFOLIO PAGE
