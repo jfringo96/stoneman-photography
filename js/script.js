@@ -203,7 +203,7 @@ function populateFeaturedImages(portfolio, featuredImages) {
 function populateAbout(about) {
     var div = document.querySelector('.about-content');
     if (!div) return;
-    div.innerHTML = (about && about.bio) ? about.bio : '';
+    if (about && about.bio) div.innerHTML = about.bio;
 }
 
 /* Build blog post list on blog.html from the blog array in content.json.
