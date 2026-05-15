@@ -84,7 +84,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 populatePortfolioGallery(content.portfolio);
                 populateFeaturedImages(content.portfolio, content.featured_images);
             }
-            populateAbout(content.about);
             populateBlog(content.blog);
             initInteractivity();
         })
@@ -196,14 +195,6 @@ function populateFeaturedImages(portfolio, featuredImages) {
         item.appendChild(img);
         grid.appendChild(item);
     });
-}
-
-/* Inject bio text into the about-content div on about.html.
-   Injects nothing if bio is empty, leaving the page blank. */
-function populateAbout(about) {
-    var div = document.querySelector('.about-content');
-    if (!div) return;
-    if (about && about.bio) div.innerHTML = about.bio;
 }
 
 /* Build blog post list on blog.html from the blog array in content.json.
