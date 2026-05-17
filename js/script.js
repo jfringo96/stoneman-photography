@@ -41,6 +41,7 @@ var photoData = {
     'From-My-Window.jpg':        { title: 'From My Window',        camera: 'OM System OM-5',          lens: 'OM 100-400mm F5.0-6.3',       focal: '400mm',  shutter: '1/3200', aperture: 'f/6.3', iso: '1250', date: '30 Dec 2025' },
     'Kestrel.jpg':               { title: 'Kestrel',               camera: 'OM System OM-5',          lens: 'OM 100-400mm F5.0-6.3',       focal: '276mm',  shutter: '1/1600', aperture: 'f/6.3', iso: '1600', date: '27 Nov 2025' },
     'La-Palma-Lizard.jpg':       { title: 'La Palma Lizard',       camera: 'OM System OM-5',          lens: 'OM 100-400mm F5.0-6.3',       focal: '400mm',  shutter: '1/1600', aperture: 'f/8',   iso: '500',  date: '20 Jan 2026' },
+    'Coot.jpg':                  { title: 'Coot',                  camera: 'OM System OM-1 Mark II',  lens: 'Olympus 300mm F4.0',          focal: '300mm',  shutter: '1/1600', aperture: 'f/4',   iso: '640',  date: '16 May 2026' },
     'Autumn-Mandarin.jpg':       { title: 'Autumn Mandarin',       camera: 'OM System OM-5',          lens: 'OM 100-400mm F5.0-6.3',       focal: '400mm',  shutter: '1/500',  aperture: 'f/6.3', iso: '2500', date: '15 Nov 2025' },
     'Autumn-Glow.jpg':           { title: 'Autumn Glow',           camera: 'OM System OM-5',          lens: 'OM 60mm F2.8 Macro',          focal: '60mm',   shutter: '1/25',   aperture: 'f/3.2', iso: '640',  date: '31 Oct 2025' },
     'Curious.jpg':               { title: 'Curious',               camera: 'OM System OM-5',          lens: 'Lumix G 45-200mm F4.0-5.6',   focal: '200mm',  shutter: '1/500',  aperture: 'f/5.6', iso: '6400', date: '10 Jan 2025' },
@@ -346,7 +347,8 @@ function initInteractivity() {
                     itemSelector: '.gallery-item:not(.hidden)',
                     columnWidth: colW2,
                     gutter: 14,
-                    horizontalOrder: true
+                    horizontalOrder: true,
+                    transitionDuration: 0
                 });
             }
         });
@@ -399,13 +401,18 @@ function initInteractivity() {
                 itemSelector: '.gallery-item:not(.hidden)',
                 columnWidth: colW,
                 gutter: 14,
-                horizontalOrder: true
+                horizontalOrder: true,
+                transitionDuration: 0
             });
 
             // Wait for all images to finish loading, do one final layout, then reveal.
+            // rAF defers the opacity reveal until after the browser has painted the
+            // Masonry positions, preventing items shuffling during the fade-in.
             imagesLoaded(msnryGallery, function () {
                 if (msnry) msnry.layout();
-                msnryGallery.style.opacity = '1';
+                requestAnimationFrame(function () {
+                    msnryGallery.style.opacity = '1';
+                });
             });
 
             // Rebuild on resize so column count and item widths stay in sync.
@@ -418,7 +425,8 @@ function initInteractivity() {
                         itemSelector: '.gallery-item:not(.hidden)',
                         columnWidth: newColW,
                         gutter: 14,
-                        horizontalOrder: true
+                        horizontalOrder: true,
+                        transitionDuration: 0
                     });
                 }
             });
