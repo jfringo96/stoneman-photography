@@ -833,6 +833,12 @@ body.home-page .featured-item {
     width: 100%;
     height: auto;
     border-radius: 6px;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+}
+
+.about-photo.loaded {
+    opacity: 1;
 }
 
 

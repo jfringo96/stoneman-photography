@@ -707,4 +707,22 @@ function initInteractivity() {
     });
 
 
+    // ==============================================
+    // 7. ABOUT PAGE PHOTO FADE-IN
+    // Keeps the photo hidden until loaded, then
+    // fades it in to avoid a jarring pop-in.
+    // ==============================================
+
+    var aboutPhoto = document.querySelector('.about-photo');
+    if (aboutPhoto) {
+        if (aboutPhoto.complete && aboutPhoto.naturalWidth) {
+            requestAnimationFrame(function () { aboutPhoto.classList.add('loaded'); });
+        } else {
+            aboutPhoto.addEventListener('load', function () {
+                requestAnimationFrame(function () { aboutPhoto.classList.add('loaded'); });
+            });
+        }
+    }
+
+
 } // End of initInteractivity
