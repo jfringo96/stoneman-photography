@@ -247,6 +247,14 @@ body.dark-page .blog-post p { color: rgba(240,235,229,0.65); }
 body.dark-page .read-more { color: var(--colour-accent); }
 body.dark-page .read-more:hover { color: #f0ebe5; }
 
+/* Stone portfolio blurb */
+body.dark-page .portfolio-blurb {
+    border-top-color: rgba(200, 184, 154, 0.1);
+}
+body.dark-page .portfolio-blurb p {
+    color: rgba(240, 235, 229, 0.5);
+}
+
 /* Stone about */
 body.dark-page .about-content p,
 body.dark-page .about-content li,
@@ -569,6 +577,22 @@ body.home-page .featured-item {
 /* Hidden items (filtered out) */
 .gallery-item.hidden {
     display: none;
+}
+
+/* Photographer bio blurb below the gallery */
+.portfolio-blurb {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 3rem 2rem 4rem;
+    text-align: center;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.portfolio-blurb p {
+    font-size: 0.95rem;
+    line-height: 1.8;
+    color: #666666;
+    margin-bottom: 0;
 }
 
 
