@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Keep this tool out of search engines -->
+    <meta name="robots" content="noindex, nofollow">
+    <title>Site Manager | Stoneman Photography</title>
+
+    <style>
+        :root {
+            --bg:        #2c2926;
+            --panel:     #38342f;
+            --panel-2:   #433e38;
+            --text:      #e0dbd5;
+            --muted:     rgba(224,219,213,0.6);
+            --accent:    #c8b89a;
+            --danger:    #d98a7a;
+            --ok:        #8bbf9a;
+            --border:    rgba(224,219,213,0.15);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        button {
+            font: inherit;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            padding: 0.6rem 1.1rem;
+            background: var(--accent);
+            color: #2c2926;
+            font-weight: 600;
+            transition: opacity 0.15s ease;
+        }
+        button:hover { opacity: 0.85; }
+        button.secondary { background: var(--panel-2); color: var(--text); }
+        button.link { background: none; color: var(--muted); padding: 0.3rem 0.5rem; font-weight: 400; text-decoration: underline; }
+
+        input, textarea, select {
+            font: inherit;
+            width: 100%;
+            padding: 0.6rem 0.75rem;
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+
+        /* ---------- Test-branch banner ---------- */
+        .branch-banner {
+            background: #4a3f2a;
+            color: #f0e2c4;
+            text-align: center;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            border-bottom: 1px solid rgba(240,226,196,0.25);
+        }
+        .branch-banner strong { color: #ffe9b8; }
+        .branch-banner.live { background: #3a2a2a; color: #f3c9c0; }
+
+        /* ---------- Layout ---------- */
+        .wrap { max-width: 900px; margin: 0 auto; padding: 2rem 1.25rem; }
+
+        header.app-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        header.app-head h1 { font-size: 1.35rem; font-weight: 500; margin: 0; letter-spacing: 0.5px; }
+
+        /* ---------- Login card ---------- */
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.75rem;
+            margin-bottom: 1.5rem;
+        }
+        .card h2 { margin-top: 0; font-size: 1.05rem; font-weight: 600; }
+        .field { margin-bottom: 1rem; }
+        .field label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.35rem; }
+        .help { font-size: 0.8rem; color: var(--muted); margin-top: 0.4rem; }
+        .help a { color: var(--accent); }
+
+        .status { font-size: 0.9rem; padding: 0.6rem 0.85rem; border-radius: 6px; margin-top: 0.75rem; }
+        .status.ok    { background: rgba(139,191,154,0.12); color: var(--ok); }
+        .status.error { background: rgba(217,138,122,0.12); color: var(--danger); }
+        .hidden { display: none !important; }
+
+        /* ---------- Tabs ---------- */
+        .tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border); }
+        .tab {
+            background: none; color: var(--muted); border-radius: 6px 6px 0 0;
+            padding: 0.6rem 1rem; font-weight: 500; border-bottom: 2px solid transparent;
+        }
+        .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+        .tab .soon { font-size: 0.65rem; opacity: 0.6; margin-left: 0.3rem; }
+
+        .panel-body { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; min-height: 200px; }
+        .placeholder { color: var(--muted); text-align: center; padding: 2rem 1rem; }
+    </style>
+</head>
+<body>
+
+    <!-- Banner tells you at a glance whether you're editing the live site or the test copy -->
+    <div class="branch-banner" id="branchBanner">Loading…</div>
+
+    <div class="wrap">
+
+        <header class="app-head">
+            <h1>Stoneman Photography — Site Manager</h1>
+            <button class="link hidden" id="disconnectBtn">Disconnect</button>
+        </header>
+
+        <!-- ======== LOGIN ======== -->
+        <section class="card" id="loginCard">
+            <h2>Connect to your site</h2>
+            <p class="help">
+                Paste your GitHub access token to let this tool save changes for you.
+                It's stored only in this browser and never leaves your computer except to talk to GitHub.
+            </p>
+            <div class="field">
+                <label for="tokenInput">GitHub access token</label>
+                <input type="password" id="tokenInput" placeholder="github_pat_…" autocomplete="off">
+            </div>
+            <button id="connectBtn">Connect</button>
+            <div class="status hidden" id="loginStatus"></div>
+            <p class="help" id="tokenHelp" style="margin-top:1.25rem;">
+                Don't have a token yet? I'll walk you through making one — it takes about two minutes.
+            </p>
+        </section>
+
+        <!-- ======== APP (shown once connected) ======== -->
+        <section class="hidden" id="app">
+            <div class="tabs">
+                <button class="tab active" data-tab="photos">Photos</button>
+                <button class="tab" data-tab="hero">Home / Hero<span class="soon">soon</span></button>
+                <button class="tab" data-tab="blog">Blog<span class="soon">soon</span></button>
+                <button class="tab" data-tab="text">Page Text<span class="soon">soon</span></button>
+            </div>
+
+            <div class="panel-body" id="panelBody">
+                <div class="placeholder" id="connSummary">Connecting…</div>
+            </div>
+        </section>
+
+    </div>
+
+    <script src="js/admin.js?v=1"></script>
+</body>
+</html>
