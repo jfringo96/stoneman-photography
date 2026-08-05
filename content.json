@@ -11,45 +11,6 @@
   "featured_images": ["Dawn-Chorus.jpg", "Yum!.jpg", "Leopard.jpg"],
   "portfolio": [
     {
-      "filename": "Eyes.jpg",
-      "title": "Eyes",
-      "category": "wildlife",
-      "featured": false,
-      "camera": "OM System OM-1 Mark II",
-      "lens": "OM 60mm F2.8 Macro",
-      "focal": "60mm",
-      "shutter": "1/250",
-      "aperture": "f/3.5",
-      "iso": "2500",
-      "date": "14 Jul 2026"
-    },
-    {
-      "filename": "Lone squirrel.jpg",
-      "title": "Lone Squirrel",
-      "category": "wildlife",
-      "featured": false,
-      "camera": "OM System OM-1 Mark II",
-      "lens": "Olympus 300mm F4.0",
-      "focal": "300mm",
-      "shutter": "1/2000",
-      "aperture": "f/4",
-      "iso": "2000",
-      "date": "12 Jul 2026"
-    },
-    {
-      "filename": "Grasshopper.jpg",
-      "title": "Grasshopper",
-      "category": "wildlife",
-      "featured": false,
-      "camera": "OM System OM-1 Mark II",
-      "lens": "OM 60mm F2.8 Macro",
-      "focal": "60mm",
-      "shutter": "1/250",
-      "aperture": "f/2.8",
-      "iso": "1000",
-      "date": "12 Jul 2026"
-    },
-    {
       "filename": "Dawn-Chorus.jpg",
       "title": "Dawn Chorus",
       "category": "wildlife",
@@ -191,6 +152,45 @@
       "aperture": "f/4",
       "iso": "1250",
       "date": "11 Mar 2026"
+    },
+    {
+      "filename": "Eyes.jpg",
+      "title": "Eyes",
+      "category": "wildlife",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "OM 60mm F2.8 Macro",
+      "focal": "60mm",
+      "shutter": "1/250",
+      "aperture": "f/3.5",
+      "iso": "2500",
+      "date": "14 Jul 2026"
+    },
+    {
+      "filename": "Lone-Squirrel.jpg",
+      "title": "Lone Squirrel",
+      "category": "wildlife",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "Olympus 300mm F4.0",
+      "focal": "300mm",
+      "shutter": "1/2000",
+      "aperture": "f/4",
+      "iso": "2000",
+      "date": "12 Jul 2026"
+    },
+    {
+      "filename": "Grasshopper.jpg",
+      "title": "Grasshopper",
+      "category": "wildlife",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "OM 60mm F2.8 Macro",
+      "focal": "60mm",
+      "shutter": "1/250",
+      "aperture": "f/2.8",
+      "iso": "1000",
+      "date": "12 Jul 2026"
     },
     {
       "filename": "Through-the-Grass.jpg",
