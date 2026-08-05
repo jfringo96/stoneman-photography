@@ -321,9 +321,9 @@ body.dark-page footer {
     content: '';
     position: absolute;
     inset: 0;
-    background-image: url('../images/Hero/Golden-Gazelle(2).jpg');
+    background-image: url('../images/Hero/golden-gazelle-2.jpg');
     background-size: cover;
-    background-position: 42% 20%;
+    background-position: center;
     opacity: 0;
     transition: opacity 0.9s ease;
     z-index: 0;
@@ -333,20 +333,21 @@ body.dark-page footer {
     opacity: 1;
 }
 
-/* Dark overlay — gradient darkens right side for text + bottom fades to dark bg */
+/* Dark overlay. The base is a simple bottom fade (also used on mobile);
+   the side-darkening for text readability is added per position below. */
 .hero-overlay {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background:
-        linear-gradient(to left, var(--colour-bg) 0%, rgba(44,41,38,0.5) 30%, transparent 55%),
-        linear-gradient(to top, var(--colour-bg) 0%, rgba(30,28,25,0.6) 15%, transparent 35%);
+    background: linear-gradient(to top, var(--colour-bg) 0%, rgba(30,28,25,0.6) 15%, transparent 35%);
     z-index: 1;
 }
 
-/* Text content sits above the overlay — positioned right for gazelle hero */
+/* Text content sits above the overlay. Horizontal placement is set by the
+   .hero.text-left / .text-right / .text-center variants (desktop) below;
+   defaults here keep it readable if no class is present. */
 .hero-content {
     position: absolute;
     top: 50%;
@@ -356,6 +357,30 @@ body.dark-page footer {
     z-index: 2;
     color: #ffffff;
     padding: 0;
+}
+
+/* --- Hero text-position variants (desktop only; mobile is always centred) ---
+   The Site Manager sets text-left / text-right / text-center on .hero.        */
+@media (min-width: 768px) {
+    .hero.text-right .hero-content  { left: auto; right: 5rem; text-align: right; transform: translateY(-50%); }
+    .hero.text-left  .hero-content  { right: auto; left: 5rem; text-align: left;  transform: translateY(-50%); }
+    .hero.text-center .hero-content { left: 50%; right: auto; text-align: center; transform: translate(-50%, -50%); }
+
+    .hero.text-right .hero-overlay {
+        background:
+            linear-gradient(to left, var(--colour-bg) 0%, rgba(44,41,38,0.5) 30%, transparent 55%),
+            linear-gradient(to top, var(--colour-bg) 0%, rgba(30,28,25,0.6) 15%, transparent 35%);
+    }
+    .hero.text-left .hero-overlay {
+        background:
+            linear-gradient(to right, var(--colour-bg) 0%, rgba(44,41,38,0.5) 30%, transparent 55%),
+            linear-gradient(to top, var(--colour-bg) 0%, rgba(30,28,25,0.6) 15%, transparent 35%);
+    }
+    .hero.text-center .hero-overlay {
+        background:
+            radial-gradient(ellipse at center, rgba(30,28,25,0.55) 0%, transparent 62%),
+            linear-gradient(to top, var(--colour-bg) 0%, rgba(30,28,25,0.6) 15%, transparent 35%);
+    }
 }
 
 .hero-content h1 {

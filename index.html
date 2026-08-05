@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="css/style.css">
 
     <!-- Preload hero image so the browser fetches it as early as possible -->
-    <link rel="preload" as="image" href="images/Hero/Golden-Gazelle(2).jpg">
+    <link rel="preload" as="image" href="images/Hero/golden-gazelle-2.jpg">
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/favicon-512.png">
@@ -49,7 +49,8 @@
 
 
     <!-- ✏️ EDIT: Hero section — change your headline, tagline, or call-to-action below -->
-    <section class="hero">
+    <!-- The "text-right/left/center" class is managed by the Site Manager (Hero tab) -->
+    <section class="hero text-right">
         <!-- Dark overlay for text readability -->
         <div class="hero-overlay"></div>
 
@@ -98,7 +99,7 @@
             img.onload = function () {
                 document.querySelector('.hero').classList.add('loaded');
             };
-            img.src = 'images/Hero/Golden-Gazelle(2).jpg';
+            img.src = 'images/Hero/golden-gazelle-2.jpg';
         })();
     </script>
 

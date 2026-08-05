@@ -638,6 +638,162 @@ function submitAddPhoto() {
 
 
 /* ----------------------------------------------------------
+   HERO / HOME PAGE
+   The active hero image is baked into index.html (preload + fade-in
+   script) and style.css (background) for fast, flash-free loading.
+   Selecting a hero rewrites all of those; the text-position buttons
+   rewrite a class on the .hero section.
+   ---------------------------------------------------------- */
+
+function heroSrc(name) {
+    return 'https://raw.githubusercontent.com/' + CONFIG.owner + '/' + CONFIG.repo +
+           '/' + CONFIG.branch + '/images/Hero/' + encodeURIComponent(name);
+}
+
+function heroFlash(msg, type) {
+    var el = $('heroStatus');
+    if (el) showStatus(el, msg, type);
+}
+
+/* List the files in a repo folder. */
+function ghListDir(path) {
+    var url = API + '/repos/' + CONFIG.owner + '/' + CONFIG.repo +
+              '/contents/' + encodeURIComponent(path).replace(/%2F/g, '/') +
+              '?ref=' + encodeURIComponent(CONFIG.branch) + '&t=' + Date.now();
+    return fetch(url, { headers: ghHeaders() }).then(function (res) {
+        if (!res.ok) throw new Error('Could not list ' + path + ' (' + res.status + ').');
+        return res.json();
+    });
+}
+
+function loadHeroPanel() {
+    var body = $('panelBody');
+    body.innerHTML = '<div class="placeholder">Loading hero images…</div>';
+
+    var activeHero = '', activePos = 'right';
+    ghGetFile('index.html').then(function (f) {
+        var m = f.text.match(/images\/Hero\/([^"'\s)]+)/);
+        if (m) activeHero = m[1];
+        var pm = f.text.match(/class="hero(?: text-(left|right|center))?"/);
+        if (pm && pm[1]) activePos = pm[1];
+        return ghListDir('images/Hero');
+    }).then(function (files) {
+        var imgs = files.filter(function (f) { return /\.(jpe?g|png)$/i.test(f.name); });
+        renderHeroPanel(imgs, activeHero, activePos);
+    }).catch(function (err) {
+        body.innerHTML = '<div class="status error">' + err.message + '</div>';
+    });
+}
+
+function posRadio(val, cur) {
+    return '<label><input type="radio" name="heropos" value="' + val + '"' +
+           (cur === val ? ' checked' : '') + '> ' + val + '</label>';
+}
+
+function renderHeroPanel(imgs, active, pos) {
+    var cards = imgs.map(function (f) {
+        var isActive = f.name === active;
+        return '' +
+        '<div class="hero-card ' + (isActive ? 'active' : '') + '" data-name="' + escapeHtml(f.name) + '">' +
+            '<img src="' + heroSrc(f.name) + '" alt="" loading="lazy">' +
+            '<div class="hero-card-foot">' +
+                (isActive
+                    ? '<span class="hero-active">● Live hero</span>'
+                    : '<button class="hero-select">Use this</button>') +
+                '<button class="hero-remove"' + (isActive ? ' disabled title="Can\'t remove the live hero"' : '') + '>Remove</button>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+
+    $('panelBody').innerHTML =
+        '<div class="hero-status status hidden" id="heroStatus"></div>' +
+        '<div class="hero-toolbar">' +
+            '<label class="btn-like">+ Add hero shot' +
+                '<input type="file" id="heroFile" accept="image/jpeg,image/png" hidden></label>' +
+            '<div class="hero-pos"><span>Text position:</span>' +
+                posRadio('left', pos) + posRadio('center', pos) + posRadio('right', pos) +
+            '</div>' +
+        '</div>' +
+        '<div class="hero-grid">' + cards + '</div>' +
+        '<p class="help">The hero is the big image on your home page. “Use this” makes one live; the ' +
+        'text-position buttons move your name/tagline so it doesn’t sit on top of your subject. Fine ' +
+        'framing tweaks can still come to me.</p>';
+
+    $('heroFile').addEventListener('change', onHeroFileChosen);
+    document.querySelectorAll('.hero-pos input').forEach(function (r) {
+        r.addEventListener('change', function () { setHeroPosition(this.value); });
+    });
+    document.querySelectorAll('.hero-card').forEach(function (card) {
+        var name = card.getAttribute('data-name');
+        var sel = card.querySelector('.hero-select');
+        if (sel) sel.addEventListener('click', function () { selectHero(name); });
+        var rem = card.querySelector('.hero-remove');
+        if (rem && !rem.disabled) rem.addEventListener('click', function () { removeHero(name); });
+    });
+}
+
+function selectHero(fn) {
+    heroFlash('Switching hero…', 'ok');
+    Promise.all([ghGetFile('index.html'), ghGetFile('css/style.css')]).then(function (res) {
+        var idx = res[0].text.replace(/images\/Hero\/[^"'\s)]+/g, 'images/Hero/' + fn);
+        var css = res[1].text.replace(/images\/Hero\/[^"'\s)]+/g, 'images/Hero/' + fn);
+        return commitChanges({
+            message: 'Set hero image to ' + fn + ' via Site Manager',
+            upserts: [
+                { path: 'index.html',   base64: b64EncodeUnicode(idx) },
+                { path: 'css/style.css', base64: b64EncodeUnicode(css) }
+            ]
+        });
+    }).then(function () {
+        heroFlash('✓ Hero updated. Live within about a minute.', 'ok');
+        loadHeroPanel();
+    }).catch(function (err) { heroFlash('Could not switch hero: ' + err.message, 'error'); });
+}
+
+function setHeroPosition(pos) {
+    heroFlash('Updating text position…', 'ok');
+    ghGetFile('index.html').then(function (f) {
+        var idx = f.text.replace(/class="hero(?: text-(?:left|right|center))?"/, 'class="hero text-' + pos + '"');
+        return commitChanges({
+            message: 'Set hero text position to ' + pos + ' via Site Manager',
+            upserts: [{ path: 'index.html', base64: b64EncodeUnicode(idx) }]
+        });
+    }).then(function () {
+        heroFlash('✓ Text moved to the ' + pos + '. Live within about a minute.', 'ok');
+    }).catch(function (err) { heroFlash('Could not update: ' + err.message, 'error'); });
+}
+
+function onHeroFileChosen(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var base = slugify(file.name.replace(/\.[^.]+$/, ''));
+    var name = base + '.jpg';
+    heroFlash('Uploading “' + name + '”…', 'ok');
+    fileToBase64(file).then(function (b64) {
+        return commitChanges({
+            message: 'Add hero shot ' + name + ' via Site Manager',
+            upserts: [{ path: 'images/Hero/' + name, base64: b64 }]
+        });
+    }).then(function () {
+        heroFlash('✓ Added. Click “Use this” under it to make it your home page hero.', 'ok');
+        loadHeroPanel();
+    }).catch(function (err) { heroFlash('Could not add: ' + err.message, 'error'); });
+}
+
+function removeHero(fn) {
+    if (!confirm('Remove hero image "' + fn + '"? (Recoverable from version history.)')) return;
+    heroFlash('Removing…', 'ok');
+    commitChanges({
+        message: 'Remove hero shot ' + fn + ' via Site Manager',
+        deletes: ['images/Hero/' + fn]
+    }).then(function () {
+        heroFlash('✓ Removed.', 'ok');
+        loadHeroPanel();
+    }).catch(function (err) { heroFlash('Could not remove: ' + err.message, 'error'); });
+}
+
+
+/* ----------------------------------------------------------
    CONNECT / LOGIN
    ---------------------------------------------------------- */
 
@@ -666,10 +822,13 @@ document.addEventListener('DOMContentLoaded', function () {
         tab.addEventListener('click', function () {
             document.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('active'); });
             tab.classList.add('active');
-            if (tab.getAttribute('data-tab') !== 'photos') {
+            var which = tab.getAttribute('data-tab');
+            if (which === 'photos') {
+                if (state.content) renderPhotos();
+            } else if (which === 'hero') {
+                loadHeroPanel();
+            } else {
                 $('panelBody').innerHTML = '<div class="placeholder">This section is coming in a later phase.</div>';
-            } else if (state.content) {
-                renderPhotos();
             }
         });
     });

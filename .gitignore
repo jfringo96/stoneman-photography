@@ -1,0 +1,6 @@
+# Local working folders — NOT part of the website, never publish these
+Pictures/
+Archive/
+Assets/
+memory/
+.claude/
