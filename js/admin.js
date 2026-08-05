@@ -322,6 +322,10 @@ function renderPhotos() {
         var isFeatured = state.featured.indexOf(p.filename) !== -1;
         return '' +
         '<div class="photo-row" data-filename="' + escapeHtml(p.filename) + '">' +
+            '<span class="reorder">' +
+                '<button class="up" title="Move up" aria-label="Move up">▲</button>' +
+                '<button class="down" title="Move down" aria-label="Move down">▼</button>' +
+            '</span>' +
             '<span class="drag" title="Drag to reorder">⋮⋮</span>' +
             '<img src="' + imgSrc(p.filename) + '" alt="" loading="lazy">' +
             '<div class="photo-meta">' +
@@ -371,9 +375,22 @@ function wirePhotoEvents() {
 
     document.querySelectorAll('.photo-row').forEach(function (row) {
         var fn = row.getAttribute('data-filename');
+        row.querySelector('.up').addEventListener('click', function () { moveRow(row, -1); });
+        row.querySelector('.down').addEventListener('click', function () { moveRow(row, 1); });
         row.querySelector('.star').addEventListener('click', function () { toggleFeatured(fn, this); });
         row.querySelector('.remove').addEventListener('click', function () { removePhoto(fn, row); });
     });
+}
+
+/* Move a row up (-1) or down (+1) in the list. */
+function moveRow(row, dir) {
+    var list = row.parentNode;
+    if (dir === -1 && row.previousElementSibling) {
+        list.insertBefore(row, row.previousElementSibling);
+    } else if (dir === 1 && row.nextElementSibling) {
+        list.insertBefore(row.nextElementSibling, row);
+    }
+    row.scrollIntoView({ block: 'nearest' });
 }
 
 function toggleFeatured(filename, btn) {
