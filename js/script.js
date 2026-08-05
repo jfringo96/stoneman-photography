@@ -82,6 +82,7 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(function (response) { return response.json(); })
         .then(function (content) {
             applySettings(content.settings);
+            populateCategories(content.categories);
             if (content.portfolio && content.portfolio.length) {
                 populatePhotoData(content.portfolio);
                 populatePortfolioGallery(content.portfolio);
@@ -198,6 +199,23 @@ function populateFeaturedImages(portfolio, featuredImages) {
         item.appendChild(img);
         grid.appendChild(item);
     });
+}
+
+/* Build the portfolio filter buttons from the categories list in content.json.
+   Leaves the hardcoded buttons in place if no categories are defined yet. The
+   first category is shown active by default. Runs before initInteractivity so
+   the buttons exist when their click handlers are attached. */
+function populateCategories(categories) {
+    var container = document.querySelector('.filter-buttons');
+    if (!container || !categories || !categories.length) return;
+    function esc(s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    container.innerHTML = categories.map(function (cat, i) {
+        return '<button class="category-btn' + (i === 0 ? ' active' : '') +
+               '" data-category="' + esc(cat.key) + '">' + esc(cat.label) + '</button>';
+    }).join('');
 }
 
 /* Build blog post list on blog.html from the blog array in content.json.

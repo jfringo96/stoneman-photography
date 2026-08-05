@@ -103,6 +103,33 @@ function distinctValues(list, key) {
     return out.sort();
 }
 
+function prettyLabel(key) {
+    return key.replace(/-/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+}
+
+/* Make sure state.content.categories exists. If not, seed it from the category
+   keys actually used by the photos (keeping the two known friendly labels). */
+function ensureCategories() {
+    if (state.content.categories && state.content.categories.length) return;
+    var labels = { wildlife: 'Wildlife and Nature', landscape: 'Landscape and City' };
+    var seen = {}, keys = [];
+    (state.content.portfolio || []).forEach(function (p) {
+        if (p.category && !seen[p.category]) { seen[p.category] = true; keys.push(p.category); }
+    });
+    if (!keys.length) keys = ['wildlife'];
+    state.content.categories = keys.map(function (k) {
+        return { key: k, label: labels[k] || prettyLabel(k) };
+    });
+}
+
+/* <option> list for a category <select>, marking selectedKey. */
+function categoryOptions(selectedKey) {
+    return (state.content.categories || []).map(function (c) {
+        return '<option value="' + escapeHtml(c.key) + '"' +
+               (c.key === selectedKey ? ' selected' : '') + '>' + escapeHtml(c.label) + '</option>';
+    }).join('');
+}
+
 
 /* ----------------------------------------------------------
    GITHUB API
@@ -328,6 +355,7 @@ function loadContent() {
         state.byFilename = {};
         (state.content.portfolio || []).forEach(function (p) { state.byFilename[p.filename] = p; });
         state.featured = (state.content.featured_images || []).slice();
+        ensureCategories();
         renderActiveTab();
     });
 }
@@ -343,6 +371,7 @@ function renderActiveTab() {
     if (which === 'hero') loadHeroPanel();
     else if (which === 'blog') renderBlogPanel();
     else if (which === 'text') loadTextPanel();
+    else if (which === 'categories') renderCategoriesPanel();
     else renderPhotos();
 }
 
@@ -365,6 +394,7 @@ function renderPhotos() {
                 '<span class="badge ' + escapeHtml(p.category) + '">' + escapeHtml(p.category) + '</span>' +
             '</div>' +
             '<button class="star ' + (isFeatured ? 'active' : '') + '" title="Show on home page">★</button>' +
+            '<button class="photo-edit" title="Edit photo info">Edit</button>' +
             '<button class="remove" title="Remove photo">Remove</button>' +
         '</div>';
     }).join('');
@@ -410,6 +440,7 @@ function wirePhotoEvents() {
         row.querySelector('.up').addEventListener('click', function () { moveRow(row, -1); });
         row.querySelector('.down').addEventListener('click', function () { moveRow(row, 1); });
         row.querySelector('.star').addEventListener('click', function () { toggleFeatured(fn, this); });
+        row.querySelector('.photo-edit').addEventListener('click', function () { openPhotoEdit(fn); });
         row.querySelector('.remove').addEventListener('click', function () { removePhoto(fn, row); });
     });
 }
@@ -537,7 +568,8 @@ function toggleAddForm() {
             '<div class="af-preview" id="afPreview"></div>' +
             '<div class="af-grid">' +
                 field('afTitle', 'Title', 'text') +
-                selectField('afCategory', 'Category', ['wildlife', 'landscape']) +
+                '<div class="af-field"><label for="afCategory">Category</label>' +
+                    '<select id="afCategory">' + categoryOptions() + '</select></div>' +
                 listField('afCamera', 'Camera', cameras) +
                 listField('afLens', 'Lens', lenses) +
                 field('afFocal', 'Focal length', 'text') +
@@ -571,6 +603,19 @@ function selectField(id, label, opts) {
 function listField(id, label, opts) {
     return '<div class="af-field"><label for="' + id + '">' + label + '</label>' +
         '<input type="text" id="' + id + '" list="' + id + 'List">' +
+        '<datalist id="' + id + 'List">' +
+        opts.map(function (o) { return '<option value="' + escapeHtml(o) + '">'; }).join('') +
+        '</datalist></div>';
+}
+
+/* Same as field/listField but pre-filled with a value (used by the edit form). */
+function fieldV(id, label, val) {
+    return '<div class="af-field"><label for="' + id + '">' + label + '</label>' +
+           '<input type="text" id="' + id + '" value="' + escapeHtml(val || '') + '"></div>';
+}
+function listFieldV(id, label, opts, val) {
+    return '<div class="af-field"><label for="' + id + '">' + label + '</label>' +
+        '<input type="text" id="' + id + '" list="' + id + 'List" value="' + escapeHtml(val || '') + '">' +
         '<datalist id="' + id + 'List">' +
         opts.map(function (o) { return '<option value="' + escapeHtml(o) + '">'; }).join('') +
         '</datalist></div>';
@@ -666,6 +711,192 @@ function submitAddPhoto() {
             showStatus(status, 'Could not add photo: ' + err.message, 'error');
             submit.disabled = false;
         });
+}
+
+
+/* ----------------------------------------------------------
+   EDIT PHOTO INFO (title / category / EXIF — no image change)
+   The filename stays fixed; only the data in content.json changes.
+   ---------------------------------------------------------- */
+
+function openPhotoEdit(filename) {
+    var p = state.byFilename[filename];
+    if (!p) return;
+    var cameras = distinctValues(state.content.portfolio, 'camera');
+    var lenses  = distinctValues(state.content.portfolio, 'lens');
+
+    $('addFormHolder').innerHTML =
+        '<div class="add-form">' +
+            '<h3 class="edit-head">Edit “' + escapeHtml(p.title) + '”</h3>' +
+            '<div class="af-grid">' +
+                fieldV('epTitle', 'Title', p.title) +
+                '<div class="af-field"><label for="epCategory">Category</label>' +
+                    '<select id="epCategory">' + categoryOptions(p.category) + '</select></div>' +
+                listFieldV('epCamera', 'Camera', cameras, p.camera) +
+                listFieldV('epLens', 'Lens', lenses, p.lens) +
+                fieldV('epFocal', 'Focal length', p.focal) +
+                fieldV('epShutter', 'Shutter', p.shutter) +
+                fieldV('epAperture', 'Aperture', p.aperture) +
+                fieldV('epIso', 'ISO', p.iso) +
+                fieldV('epDate', 'Date', p.date) +
+            '</div>' +
+            '<div class="af-actions">' +
+                '<button id="epSave">Save changes</button>' +
+                '<button class="secondary" id="epCancel">Cancel</button>' +
+            '</div>' +
+            '<div class="status hidden" id="epStatus"></div>' +
+        '</div>';
+
+    $('epSave').addEventListener('click', function () { submitPhotoEdit(filename); });
+    $('epCancel').addEventListener('click', function () { $('addFormHolder').innerHTML = ''; });
+    $('addFormHolder').scrollIntoView({ block: 'nearest' });
+}
+
+function submitPhotoEdit(filename) {
+    var p = state.byFilename[filename];
+    if (!p) return;
+    var status = $('epStatus');
+    var title = $('epTitle').value.trim();
+    if (!title) { showStatus(status, 'Title cannot be empty.', 'error'); return; }
+
+    p.title    = title;
+    p.category = $('epCategory').value;
+    p.camera   = $('epCamera').value.trim();
+    p.lens     = $('epLens').value.trim();
+    p.focal    = $('epFocal').value.trim();
+    p.shutter  = $('epShutter').value.trim();
+    p.aperture = $('epAperture').value.trim();
+    p.iso      = $('epIso').value.trim();
+    p.date     = $('epDate').value.trim();
+
+    $('epSave').disabled = true;
+    showStatus(status, 'Saving…', 'ok');
+
+    var content = buildContentFromDOM();   // preserves order/featured; picks up edited p
+    commitChanges({
+        message: 'Edit photo "' + title + '" via Site Manager',
+        upserts: [{ path: 'content.json', base64: contentToBase64(content) }]
+    }).then(function () {
+        return loadContent();
+    }).then(function () {
+        flashSave('✓ Updated “' + title + '”. The site will update within about a minute.', 'ok');
+    }).catch(function (err) {
+        showStatus(status, 'Could not save: ' + err.message, 'error');
+        if ($('epSave')) $('epSave').disabled = false;
+    });
+}
+
+
+/* ----------------------------------------------------------
+   CATEGORIES
+   The portfolio filter buttons. Stored in content.json as
+   categories: [{ key, label }]. Photos reference a category key;
+   keys are immutable so renaming a label never disturbs photos.
+   ---------------------------------------------------------- */
+
+function catFlash(msg, type) { var el = $('catStatus'); if (el) showStatus(el, msg, type); }
+
+function categoryUsageCount(key) {
+    return (state.content.portfolio || []).filter(function (p) { return p.category === key; }).length;
+}
+
+function loadCategoriesPanel() { ensureCategories(); renderCategoriesPanel(); }
+
+function renderCategoriesPanel() {
+    var cats = state.content.categories || [];
+    var rows = cats.map(function (c, i) {
+        var count = c.key ? categoryUsageCount(c.key) : 0;
+        return '' +
+        '<div class="cat-row" data-index="' + i + '">' +
+            '<span class="reorder">' +
+                '<button class="up" title="Move up">▲</button>' +
+                '<button class="down" title="Move down">▼</button>' +
+            '</span>' +
+            '<input type="text" class="cat-label" value="' + escapeHtml(c.label) + '" placeholder="Category name">' +
+            '<span class="cat-count">' + count + ' photo' + (count === 1 ? '' : 's') + '</span>' +
+            '<button class="cat-remove remove">Remove</button>' +
+        '</div>';
+    }).join('');
+
+    $('panelBody').innerHTML =
+        '<div class="cat-status status hidden" id="catStatus"></div>' +
+        '<div class="photo-toolbar">' +
+            '<button id="addCatBtn">+ Add category</button>' +
+            '<button id="saveCatBtn" class="secondary">Save categories</button>' +
+        '</div>' +
+        '<div class="cat-list">' + rows + '</div>' +
+        '<p class="help">These are the filter buttons on the Portfolio page. Rename by typing; drag order sets ' +
+        'button order (the first is shown by default). A category can only be removed once it has no photos in it.</p>';
+
+    $('addCatBtn').addEventListener('click', addCategory);
+    $('saveCatBtn').addEventListener('click', saveCategories);
+    document.querySelectorAll('.cat-row').forEach(function (row) {
+        var i = parseInt(row.getAttribute('data-index'), 10);
+        row.querySelector('.up').addEventListener('click', function () { moveCategory(i, -1); });
+        row.querySelector('.down').addEventListener('click', function () { moveCategory(i, 1); });
+        row.querySelector('.cat-remove').addEventListener('click', function () { removeCategory(i); });
+    });
+}
+
+/* Read the label inputs back into state before any re-render. */
+function syncCategoryInputs() {
+    document.querySelectorAll('.cat-row').forEach(function (row) {
+        var i = parseInt(row.getAttribute('data-index'), 10);
+        var input = row.querySelector('.cat-label');
+        if (state.content.categories[i] && input) state.content.categories[i].label = input.value;
+    });
+}
+
+function addCategory() {
+    syncCategoryInputs();
+    state.content.categories.push({ key: '', label: '' });
+    renderCategoriesPanel();
+}
+
+function moveCategory(i, dir) {
+    syncCategoryInputs();
+    var c = state.content.categories, j = i + dir;
+    if (j < 0 || j >= c.length) return;
+    var t = c[i]; c[i] = c[j]; c[j] = t;
+    renderCategoriesPanel();
+}
+
+function removeCategory(i) {
+    syncCategoryInputs();
+    var cat = state.content.categories[i];
+    var count = cat.key ? categoryUsageCount(cat.key) : 0;
+    if (count > 0) {
+        catFlash('“' + (cat.label || 'This category') + '” still has ' + count +
+                 ' photo' + (count === 1 ? '' : 's') + '. Move them to another category first (edit each photo).', 'error');
+        return;
+    }
+    state.content.categories.splice(i, 1);
+    renderCategoriesPanel();
+}
+
+function saveCategories() {
+    syncCategoryInputs();
+    var cats = state.content.categories, taken = {};
+    for (var i = 0; i < cats.length; i++) {
+        if (!cats[i].label.trim()) { catFlash('Every category needs a name.', 'error'); return; }
+        if (!cats[i].key) cats[i].key = slugify(cats[i].label);
+        if (taken[cats[i].key]) cats[i].key = cats[i].key + '-' + (i + 1);
+        taken[cats[i].key] = true;
+    }
+    $('saveCatBtn').disabled = true;
+    catFlash('Saving…', 'ok');
+    commitChanges({
+        message: 'Update categories via Site Manager',
+        upserts: [{ path: 'content.json', base64: contentToBase64(state.content) }]
+    }).then(function () {
+        return loadContent();
+    }).then(function () {
+        catFlash('✓ Saved. The site will update within about a minute.', 'ok');
+    }).catch(function (err) {
+        catFlash('Could not save: ' + err.message, 'error');
+    }).then(function () {
+        if ($('saveCatBtn')) $('saveCatBtn').disabled = false;
+    });
 }
 
 
@@ -1202,6 +1433,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 loadBlogPanel();
             } else if (which === 'text') {
                 loadTextPanel();
+            } else if (which === 'categories') {
+                loadCategoriesPanel();
             } else {
                 $('panelBody').innerHTML = '<div class="placeholder">This section is coming in a later phase.</div>';
             }
