@@ -119,7 +119,7 @@ function ghGetFile(path) {
               '/contents/' + encodeURIComponent(path).replace(/%2F/g, '/') +
               '?ref=' + encodeURIComponent(CONFIG.branch) + '&t=' + Date.now();
 
-    return fetch(url, { headers: ghHeaders() }).then(function (res) {
+    return fetch(url, { headers: ghHeaders(), cache: 'no-store' }).then(function (res) {
         if (res.status === 401) throw new Error('Token rejected — it may be wrong or expired.');
         if (res.status === 404) throw new Error('Could not find ' + path + ' on branch "' + CONFIG.branch + '".');
         if (!res.ok) throw new Error('GitHub error (' + res.status + ').');
@@ -131,7 +131,7 @@ function ghGetFile(path) {
 
 /* Generic JSON call for the Git Data API. */
 function ghApi(method, path, body) {
-    var opts = { method: method, headers: ghHeaders() };
+    var opts = { method: method, headers: ghHeaders(), cache: 'no-store' };
     if (body) {
         opts.headers = Object.assign({}, ghHeaders(), { 'Content-Type': 'application/json' });
         opts.body = JSON.stringify(body);
@@ -147,8 +147,19 @@ function ghApi(method, path, body) {
 }
 
 /* Commit one or more files in a SINGLE atomic commit via the Git Trees API.
+   Retries once if the branch moved under us (the "not a fast forward" race),
+   re-reading the latest position before trying again.
    opts = { upserts: [{ path, base64 }], deletes: [path], message }        */
 function commitChanges(opts) {
+    return commitOnce(opts).catch(function (err) {
+        if (/not a fast forward|\b422\b/i.test(err.message)) {
+            return commitOnce(opts);
+        }
+        throw err;
+    });
+}
+
+function commitOnce(opts) {
     var base = '/repos/' + CONFIG.owner + '/' + CONFIG.repo;
     var latestSha, baseTreeSha;
 
