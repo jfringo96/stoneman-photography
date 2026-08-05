@@ -28,6 +28,8 @@ var API = 'https://api.github.com';
 var TOKEN_KEY = 'sp_admin_token';
 var THUMB_MAX_EDGE = 1000;         // longest side of generated thumbnails (px)
 var THUMB_QUALITY  = 0.82;
+var BLOG_MAX_EDGE  = 1600;         // blog images are resized down to this
+var BLOG_QUALITY   = 0.85;
 var MAX_FEATURED   = 3;            // home page shows 3 featured photos
 
 
@@ -252,8 +254,8 @@ function readExif(file) {
     }).catch(function () { return {}; });
 }
 
-/* Resize a File down to a thumbnail JPEG Blob. */
-function makeThumb(file, maxEdge) {
+/* Resize a File down to a JPEG Blob no larger than maxEdge on its longest side. */
+function resizeToBlob(file, maxEdge, quality) {
     return new Promise(function (resolve, reject) {
         var url = URL.createObjectURL(file);
         var img = new Image();
@@ -265,12 +267,17 @@ function makeThumb(file, maxEdge) {
             canvas.getContext('2d').drawImage(img, 0, 0, w, h);
             URL.revokeObjectURL(url);
             canvas.toBlob(function (blob) {
-                blob ? resolve(blob) : reject(new Error('Could not create thumbnail.'));
-            }, 'image/jpeg', THUMB_QUALITY);
+                blob ? resolve(blob) : reject(new Error('Could not process that image.'));
+            }, 'image/jpeg', quality);
         };
         img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('Could not read that image.')); };
         img.src = url;
     });
+}
+
+/* Thumbnail helper for portfolio photos. */
+function makeThumb(file, maxEdge) {
+    return resizeToBlob(file, maxEdge, THUMB_QUALITY);
 }
 
 function fileToBase64(fileOrBlob) {
@@ -321,8 +328,21 @@ function loadContent() {
         state.byFilename = {};
         (state.content.portfolio || []).forEach(function (p) { state.byFilename[p.filename] = p; });
         state.featured = (state.content.featured_images || []).slice();
-        renderPhotos();
+        renderActiveTab();
     });
+}
+
+function currentTab() {
+    var t = document.querySelector('.tab.active');
+    return t ? t.getAttribute('data-tab') : 'photos';
+}
+
+/* Re-render whichever tab is currently open (used after a save/reload). */
+function renderActiveTab() {
+    var which = currentTab();
+    if (which === 'hero') loadHeroPanel();
+    else if (which === 'blog') renderBlogPanel();
+    else renderPhotos();
 }
 
 function renderPhotos() {
@@ -805,6 +825,213 @@ function removeHero(fn) {
 
 
 /* ----------------------------------------------------------
+   BLOG
+   Posts live in content.json (blog array): { title, date, body, images:[] }.
+   Body text supports blank-line-separated paragraphs. Blog images are
+   resized and stored in images/Blog/.
+   ---------------------------------------------------------- */
+
+var blogForm = null;   // { index, images: [{kind:'existing',name} | {kind:'new',file,previewUrl}] }
+
+function blogSrc(fn) {
+    return 'https://raw.githubusercontent.com/' + CONFIG.owner + '/' + CONFIG.repo +
+           '/' + CONFIG.branch + '/images/Blog/' + encodeURIComponent(fn);
+}
+function blogFlash(msg, type) { var el = $('blogStatus'); if (el) showStatus(el, msg, type); }
+
+function getBlogImageNames() {
+    var taken = {};
+    (state.content.blog || []).forEach(function (p) {
+        (p.images || []).forEach(function (n) { taken[n] = true; });
+    });
+    return taken;
+}
+
+function loadBlogPanel() {
+    if (!state.content.blog) state.content.blog = [];
+    renderBlogPanel();
+}
+
+function renderBlogPanel() {
+    var posts = state.content.blog || [];
+    var rows = posts.map(function (post, i) {
+        var thumb = (post.images && post.images[0])
+            ? '<img src="' + blogSrc(post.images[0]) + '" alt="">'
+            : '<div class="noimg">No image</div>';
+        return '' +
+        '<div class="blog-row" data-index="' + i + '">' +
+            '<span class="reorder">' +
+                '<button class="up" title="Move up">▲</button>' +
+                '<button class="down" title="Move down">▼</button>' +
+            '</span>' +
+            '<div class="blog-thumb">' + thumb + '</div>' +
+            '<div class="blog-rowmeta">' +
+                '<span class="blog-rowtitle">' + escapeHtml(post.title || '(untitled)') + '</span>' +
+                '<span class="blog-rowdate">' + escapeHtml(post.date || '') + '</span>' +
+            '</div>' +
+            '<button class="blog-edit">Edit</button>' +
+            '<button class="blog-del remove">Delete</button>' +
+        '</div>';
+    }).join('');
+
+    $('panelBody').innerHTML =
+        '<div class="blog-status status hidden" id="blogStatus"></div>' +
+        '<div class="photo-toolbar"><button id="newPostBtn">+ New blog post</button></div>' +
+        '<div class="post-form-holder" id="postFormHolder"></div>' +
+        '<div class="blog-list">' +
+            (rows || '<div class="placeholder">No blog posts yet. Click “New blog post” to write one.</div>') +
+        '</div>';
+
+    $('newPostBtn').addEventListener('click', function () { openPostForm(null); });
+    document.querySelectorAll('.blog-row').forEach(function (row) {
+        var i = parseInt(row.getAttribute('data-index'), 10);
+        row.querySelector('.up').addEventListener('click', function () { moveBlogPost(i, -1); });
+        row.querySelector('.down').addEventListener('click', function () { moveBlogPost(i, 1); });
+        row.querySelector('.blog-edit').addEventListener('click', function () { openPostForm(i); });
+        row.querySelector('.blog-del').addEventListener('click', function () { deletePost(i); });
+    });
+}
+
+function openPostForm(index) {
+    var post = (index === null)
+        ? { title: '', date: formatDate(new Date()), body: '', images: [] }
+        : state.content.blog[index];
+
+    blogForm = {
+        index: index,
+        images: (post.images || []).map(function (name) { return { kind: 'existing', name: name }; })
+    };
+
+    $('postFormHolder').innerHTML =
+        '<div class="add-form">' +
+            '<div class="af-field"><label for="pfTitle">Title</label>' +
+                '<input type="text" id="pfTitle" value="' + escapeHtml(post.title || '') + '"></div>' +
+            '<div class="af-field"><label for="pfDate">Date</label>' +
+                '<input type="text" id="pfDate" value="' + escapeHtml(post.date || '') + '"></div>' +
+            '<div class="af-field"><label for="pfBody">Body (leave a blank line between paragraphs)</label>' +
+                '<textarea id="pfBody" rows="7">' + escapeHtml(post.body || '') + '</textarea></div>' +
+            '<label class="btn-like">+ Add image(s)' +
+                '<input type="file" id="pfImages" accept="image/jpeg,image/png" multiple hidden></label>' +
+            '<div class="pf-images" id="pfImagesPreview"></div>' +
+            '<div class="af-actions">' +
+                '<button id="pfSave">Save post</button>' +
+                '<button class="secondary" id="pfCancel">Cancel</button>' +
+            '</div>' +
+            '<div class="status hidden" id="pfStatus"></div>' +
+        '</div>';
+
+    $('pfImages').addEventListener('change', onFormImagesChosen);
+    $('pfSave').addEventListener('click', savePost);
+    $('pfCancel').addEventListener('click', function () { $('postFormHolder').innerHTML = ''; blogForm = null; });
+    renderFormImages();
+    $('postFormHolder').scrollIntoView({ block: 'nearest' });
+}
+
+function onFormImagesChosen(e) {
+    Array.prototype.forEach.call(e.target.files, function (file) {
+        blogForm.images.push({ kind: 'new', file: file, previewUrl: URL.createObjectURL(file) });
+    });
+    e.target.value = '';
+    renderFormImages();
+}
+
+function renderFormImages() {
+    var wrap = $('pfImagesPreview');
+    if (!wrap) return;
+    wrap.innerHTML = blogForm.images.map(function (img, i) {
+        var src = img.kind === 'existing' ? blogSrc(img.name) : img.previewUrl;
+        return '<div class="pf-img"><img src="' + src + '" alt="">' +
+               '<button class="pf-img-x" data-i="' + i + '" title="Remove image">×</button></div>';
+    }).join('');
+    wrap.querySelectorAll('.pf-img-x').forEach(function (b) {
+        b.addEventListener('click', function () {
+            blogForm.images.splice(parseInt(this.getAttribute('data-i'), 10), 1);
+            renderFormImages();
+        });
+    });
+}
+
+function savePost() {
+    var status = $('pfStatus');
+    var title = $('pfTitle').value.trim();
+    if (!title) { showStatus(status, 'Please give the post a title.', 'error'); return; }
+    var date = $('pfDate').value.trim();
+    var body = $('pfBody').value;
+
+    $('pfSave').disabled = true;
+    showStatus(status, 'Preparing…', 'ok');
+
+    var taken = getBlogImageNames();
+    var upserts = [];
+    var finalNames = new Array(blogForm.images.length);
+    var chain = Promise.resolve();
+
+    blogForm.images.forEach(function (img, idx) {
+        if (img.kind === 'existing') { finalNames[idx] = img.name; return; }
+        chain = chain.then(function () {
+            var name = uniqueFilename(slugify(title) + '-' + (idx + 1), '.jpg', taken);
+            taken[name] = true;
+            return resizeToBlob(img.file, BLOG_MAX_EDGE, BLOG_QUALITY)
+                .then(fileToBase64)
+                .then(function (b64) {
+                    upserts.push({ path: 'images/Blog/' + name, base64: b64 });
+                    finalNames[idx] = name;
+                });
+        });
+    });
+
+    chain.then(function () {
+        showStatus(status, 'Saving…', 'ok');
+        if (!state.content.blog) state.content.blog = [];
+        var post = { title: title, date: date, body: body, images: finalNames };
+        if (blogForm.index === null) state.content.blog.unshift(post);
+        else state.content.blog[blogForm.index] = post;
+        upserts.push({ path: 'content.json', base64: contentToBase64(state.content) });
+        return commitChanges({
+            message: (blogForm.index === null ? 'Add' : 'Update') + ' blog post "' + title + '" via Site Manager',
+            upserts: upserts
+        });
+    }).then(function () {
+        blogForm = null;
+        return loadContent();
+    }).then(function () {
+        blogFlash('✓ Saved. The site will update within about a minute.', 'ok');
+    }).catch(function (err) {
+        showStatus(status, 'Could not save: ' + err.message, 'error');
+        if ($('pfSave')) $('pfSave').disabled = false;
+    });
+}
+
+function moveBlogPost(i, dir) {
+    var b = state.content.blog, j = i + dir;
+    if (j < 0 || j >= b.length) return;
+    var t = b[i]; b[i] = b[j]; b[j] = t;
+    blogFlash('Saving order…', 'ok');
+    commitChanges({
+        message: 'Reorder blog posts via Site Manager',
+        upserts: [{ path: 'content.json', base64: contentToBase64(state.content) }]
+    }).then(function () { return loadContent(); })
+      .then(function () { blogFlash('✓ Order saved.', 'ok'); })
+      .catch(function (err) { blogFlash('Could not reorder: ' + err.message, 'error'); });
+}
+
+function deletePost(index) {
+    var post = state.content.blog[index];
+    if (!confirm('Delete blog post "' + (post.title || '') + '"? (Recoverable from version history.)')) return;
+    blogFlash('Deleting…', 'ok');
+    var deletes = (post.images || []).map(function (n) { return 'images/Blog/' + n; });
+    state.content.blog.splice(index, 1);
+    commitChanges({
+        message: 'Delete blog post via Site Manager',
+        upserts: [{ path: 'content.json', base64: contentToBase64(state.content) }],
+        deletes: deletes
+    }).then(function () { return loadContent(); })
+      .then(function () { blogFlash('✓ Deleted.', 'ok'); })
+      .catch(function (err) { blogFlash('Could not delete: ' + err.message, 'error'); });
+}
+
+
+/* ----------------------------------------------------------
    CONNECT / LOGIN
    ---------------------------------------------------------- */
 
@@ -838,6 +1065,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (state.content) renderPhotos();
             } else if (which === 'hero') {
                 loadHeroPanel();
+            } else if (which === 'blog') {
+                loadBlogPanel();
             } else {
                 $('panelBody').innerHTML = '<div class="placeholder">This section is coming in a later phase.</div>';
             }

@@ -201,20 +201,42 @@ function populateFeaturedImages(portfolio, featuredImages) {
 }
 
 /* Build blog post list on blog.html from the blog array in content.json.
-   Renders nothing if the array is empty. */
+   Each post: { title, date, body, images: [filename, …] }. Renders nothing
+   if the array is empty. Body text supports blank-line-separated paragraphs. */
 function populateBlog(blog) {
     var container = document.querySelector('.blog-posts');
     if (!container) return;
     container.innerHTML = '';
     if (!blog || blog.length === 0) return;
+
+    function esc(s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
     blog.forEach(function (post) {
         var article = document.createElement('article');
         article.className = 'blog-post';
-        article.innerHTML =
-            '<h2>' + post.title + '</h2>' +
-            '<p class="post-date">' + post.date + '</p>' +
-            '<p class="post-excerpt">' + post.excerpt + '</p>' +
-            '<a href="' + (post.url || '#') + '" class="read-more">Read more</a>';
+
+        var html = '<h2>' + esc(post.title) + '</h2>';
+        if (post.date) html += '<span class="blog-date">' + esc(post.date) + '</span>';
+
+        (post.images || []).forEach(function (fn) {
+            html += '<img class="blog-image" src="images/Blog/' + encodeURIComponent(fn) +
+                    '" alt="' + esc(post.title) + '" loading="lazy">';
+        });
+
+        if (post.body) {
+            post.body.split(/\n\n+/).forEach(function (para) {
+                if (para.trim()) html += '<p class="post-body">' + esc(para).replace(/\n/g, '<br>') + '</p>';
+            });
+        } else if (post.excerpt) {
+            // Back-compat with any older excerpt/link style posts
+            html += '<p class="post-body">' + esc(post.excerpt) + '</p>';
+            if (post.url) html += '<a href="' + esc(post.url) + '" class="read-more">Read more</a>';
+        }
+
+        article.innerHTML = html;
         container.appendChild(article);
     });
 }
