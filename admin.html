@@ -109,6 +109,40 @@
 
         .panel-body { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; min-height: 200px; }
         .placeholder { color: var(--muted); text-align: center; padding: 2rem 1rem; }
+
+        /* ---------- Photos panel ---------- */
+        .photo-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+        .toolbar-right { display: flex; align-items: center; gap: 1rem; }
+        .featured-count { font-size: 0.8rem; color: var(--muted); }
+        .save-status { margin-bottom: 1rem; }
+
+        .photo-list { display: flex; flex-direction: column; gap: 0.5rem; }
+        .photo-row {
+            display: flex; align-items: center; gap: 0.85rem;
+            background: var(--panel-2); border: 1px solid var(--border);
+            border-radius: 8px; padding: 0.5rem 0.75rem;
+        }
+        .photo-row .drag { cursor: grab; color: var(--muted); font-size: 1.1rem; user-select: none; letter-spacing: -3px; }
+        .photo-row img { width: 64px; height: 48px; object-fit: cover; border-radius: 4px; background: var(--bg); flex-shrink: 0; }
+        .photo-meta { flex: 1; display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
+        .photo-title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .badge { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; padding: 0.15rem 0.5rem; border-radius: 20px; background: var(--bg); color: var(--muted); flex-shrink: 0; }
+        .badge.wildlife { color: var(--ok); }
+        .badge.landscape { color: var(--accent); }
+        .star { background: none; color: var(--muted); font-size: 1.2rem; padding: 0.2rem 0.4rem; }
+        .star.active { color: #f2c14e; }
+        .remove { background: none; color: var(--danger); font-weight: 400; padding: 0.3rem 0.6rem; font-size: 0.85rem; text-decoration: underline; }
+        .sortable-ghost { opacity: 0.4; }
+
+        /* ---------- Add-photo form ---------- */
+        .add-form { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; margin-bottom: 1.25rem; }
+        .af-row label, .af-field label { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 0.3rem; }
+        .af-preview { margin: 0.75rem 0; }
+        .af-preview img { max-width: 240px; max-height: 160px; border-radius: 6px; display: block; }
+        .af-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; margin: 0.75rem 0; }
+        .af-check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; margin: 0.5rem 0; }
+        .af-check input { width: auto; }
+        .af-actions { display: flex; gap: 0.6rem; margin-top: 0.75rem; }
     </style>
 </head>
 <body>
@@ -157,6 +191,9 @@
 
     </div>
 
-    <script src="js/admin.js?v=1"></script>
+    <!-- EXIF reading + drag-to-reorder (loaded from CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    <script src="js/admin.js?v=2"></script>
 </body>
 </html>
