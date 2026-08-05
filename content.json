@@ -9,16 +9,16 @@
     "nav_text_colour": "rgba(240,235,229,0.75)"
   },
   "featured_images": [
-    "Dawn-Chorus.jpg",
-    "Leopard.jpg",
-    "Eyes.jpg"
+    "Beautiful-Morning.jpg",
+    "Eyes.jpg",
+    "Lone-Squirrel.jpg"
   ],
   "portfolio": [
     {
       "filename": "Dawn-Chorus.jpg",
       "title": "Dawn Chorus",
       "category": "wildlife",
-      "featured": true,
+      "featured": false,
       "camera": "OM System OM-1 Mark II",
       "lens": "Olympus 300mm F4.0",
       "focal": "300mm",
@@ -44,7 +44,7 @@
       "filename": "Beautiful-Morning.jpg",
       "title": "Beautiful Morning",
       "category": "wildlife",
-      "featured": false,
+      "featured": true,
       "camera": "OM System OM-1 Mark II",
       "lens": "Olympus 300mm F4.0",
       "focal": "300mm",
@@ -83,7 +83,7 @@
       "filename": "Leopard.jpg",
       "title": "Leopard",
       "category": "wildlife",
-      "featured": true,
+      "featured": false,
       "camera": "OM System OM-5",
       "lens": "OM 100-400mm F5.0-6.3",
       "focal": "400mm",
@@ -174,7 +174,7 @@
       "filename": "Lone-Squirrel.jpg",
       "title": "Lone Squirrel",
       "category": "wildlife",
-      "featured": false,
+      "featured": true,
       "camera": "OM System OM-1 Mark II",
       "lens": "Olympus 300mm F4.0",
       "focal": "300mm",
