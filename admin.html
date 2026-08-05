@@ -116,6 +116,16 @@
         .featured-count { font-size: 0.8rem; color: var(--muted); }
         .save-status { margin-bottom: 1rem; }
 
+        /* Featured (home page) strip */
+        .featured-panel { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 0.85rem; margin-bottom: 1.25rem; }
+        .featured-head { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.6rem; }
+        .featured-strip { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+        .feat-item { display: flex; align-items: center; gap: 0.4rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.3rem 0.4rem; }
+        .feat-item img { width: 52px; height: 40px; object-fit: cover; border-radius: 4px; }
+        .feat-title { font-size: 0.8rem; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .feat-left, .feat-right { background: var(--panel); color: var(--text); padding: 0.25rem 0.5rem; font-size: 0.7rem; }
+        .feat-left:disabled, .feat-right:disabled { opacity: 0.3; cursor: default; }
+
         .photo-list { display: flex; flex-direction: column; gap: 0.5rem; }
         .photo-row {
             display: flex; align-items: center; gap: 0.85rem;
@@ -261,6 +271,6 @@
     <!-- EXIF reading + drag-to-reorder (loaded from CDN) -->
     <script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-    <script src="js/admin.js?v=9"></script>
+    <script src="js/admin.js?v=10"></script>
 </body>
 </html>

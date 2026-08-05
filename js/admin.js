@@ -428,6 +428,10 @@ function renderPhotos() {
             '</div>' +
         '</div>' +
         '<div class="save-status status hidden" id="saveStatus"></div>' +
+        '<div class="featured-panel">' +
+            '<div class="featured-head">Featured on the home page — left to right (use ◀ ▶ to arrange)</div>' +
+            '<div class="featured-strip" id="featuredStrip"></div>' +
+        '</div>' +
         '<div class="add-form-holder" id="addFormHolder"></div>' +
         '<div class="photo-list" id="photoList">' + rows + '</div>';
 
@@ -437,6 +441,7 @@ function renderPhotos() {
     }
 
     updateFeaturedCount();
+    renderFeaturedStrip();
     wirePhotoEvents();
 }
 
@@ -449,6 +454,43 @@ function imgSrc(filename) {
 function updateFeaturedCount() {
     var el = document.querySelector('.featured-count');
     if (el) el.textContent = state.featured.length + ' / ' + MAX_FEATURED + ' featured';
+}
+
+/* The strip showing the featured photos in their home-page (left-to-right)
+   order, with arrows to rearrange. Re-renders in place so it never disturbs an
+   unsaved reorder of the main photo list. */
+function renderFeaturedStrip() {
+    var strip = $('featuredStrip');
+    if (!strip) return;
+    if (!state.featured.length) {
+        strip.innerHTML = '<span class="help">No featured photos yet — star up to ' +
+                          MAX_FEATURED + ' photos in the list below.</span>';
+        return;
+    }
+    strip.innerHTML = state.featured.map(function (fn, i) {
+        var p = state.byFilename[fn];
+        return '<div class="feat-item">' +
+            '<button class="feat-left" data-i="' + i + '" title="Move left"' + (i === 0 ? ' disabled' : '') + '>◀</button>' +
+            '<img src="' + imgSrc(fn) + '" alt="">' +
+            '<span class="feat-title">' + escapeHtml(p ? p.title : fn) + '</span>' +
+            '<button class="feat-right" data-i="' + i + '" title="Move right"' + (i === state.featured.length - 1 ? ' disabled' : '') + '>▶</button>' +
+        '</div>';
+    }).join('');
+
+    strip.querySelectorAll('.feat-left').forEach(function (b) {
+        b.addEventListener('click', function () { moveFeatured(parseInt(this.getAttribute('data-i'), 10), -1); });
+    });
+    strip.querySelectorAll('.feat-right').forEach(function (b) {
+        b.addEventListener('click', function () { moveFeatured(parseInt(this.getAttribute('data-i'), 10), 1); });
+    });
+}
+
+function moveFeatured(i, dir) {
+    var j = i + dir;
+    if (j < 0 || j >= state.featured.length) return;
+    var t = state.featured[i]; state.featured[i] = state.featured[j]; state.featured[j] = t;
+    renderFeaturedStrip();
+    flashSave('Featured order changed — click "Save changes" to publish.', 'ok');
 }
 
 function wirePhotoEvents() {
@@ -490,6 +532,7 @@ function toggleFeatured(filename, btn) {
         btn.classList.add('active');
     }
     updateFeaturedCount();
+    renderFeaturedStrip();
 }
 
 function removePhoto(filename, row) {
