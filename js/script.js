@@ -528,13 +528,18 @@ function initInteractivity() {
         lightbox.classList.add('active');
         document.body.style.overflow = 'hidden';
 
-        // Load full res off-screen; once ready, insert the image and fade everything in
+        // Load full res off-screen; once ready, insert the image and fade everything in.
+        // onerror: full-res unavailable — still reveal EXIF so the lightbox isn't blank.
         var fullImg = new Image();
         fullImg.onload = function () {
             var imgEl = document.createElement('img');
             imgEl.src = fullResSrc;
             imgEl.alt = img.alt || '';
             lightboxContent.insertBefore(imgEl, lightboxContent.firstChild);
+            lightboxContent.style.transition = 'opacity 0.4s ease';
+            lightboxContent.style.opacity = '1';
+        };
+        fullImg.onerror = function () {
             lightboxContent.style.transition = 'opacity 0.4s ease';
             lightboxContent.style.opacity = '1';
         };
