@@ -625,5 +625,15 @@
       "iso": "4000",
       "date": "17 Feb 2025"
     }
+  ],
+  "blog": [
+    {
+      "title": "test",
+      "date": "5 Aug 2026",
+      "body": "fewf  ew wdf wef dwf wef ewfwd wew\n\nergerg fg er",
+      "images": [
+        "test-1.jpg"
+      ]
+    }
   ]
 }
