@@ -8,7 +8,11 @@
     "nav_background": "#2c2926",
     "nav_text_colour": "rgba(240,235,229,0.75)"
   },
-  "featured_images": ["Dawn-Chorus.jpg", "Yum!.jpg", "Leopard.jpg"],
+  "featured_images": [
+    "Dawn-Chorus.jpg",
+    "Leopard.jpg",
+    "Eyes.jpg"
+  ],
   "portfolio": [
     {
       "filename": "Dawn-Chorus.jpg",
@@ -144,7 +148,7 @@
       "filename": "Yum!.jpg",
       "title": "Yum!",
       "category": "wildlife",
-      "featured": true,
+      "featured": false,
       "camera": "OM System OM-1 Mark II",
       "lens": "Olympus 300mm F4.0",
       "focal": "300mm",
@@ -157,7 +161,7 @@
       "filename": "Eyes.jpg",
       "title": "Eyes",
       "category": "wildlife",
-      "featured": false,
+      "featured": true,
       "camera": "OM System OM-1 Mark II",
       "lens": "OM 60mm F2.8 Macro",
       "focal": "60mm",
