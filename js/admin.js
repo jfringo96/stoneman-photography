@@ -21,7 +21,7 @@
 var CONFIG = {
     owner:  'jfringo96',
     repo:   'stoneman-photography',
-    branch: 'admin-panel'          // <-- test branch; changes here do NOT go live
+    branch: 'master'               // LIVE — the Site Manager now edits the real site
 };
 
 var API = 'https://api.github.com';
