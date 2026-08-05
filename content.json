@@ -15,19 +15,6 @@
   ],
   "portfolio": [
     {
-      "filename": "duck.jpg",
-      "title": "Duck",
-      "category": "wildlife",
-      "featured": false,
-      "camera": "OM System OM-1 Mark II",
-      "lens": "Olympus 300mm F4.0",
-      "focal": "300mm",
-      "shutter": "1/1600",
-      "aperture": "f/4",
-      "iso": "1250",
-      "date": "2 Aug 2026"
-    },
-    {
       "filename": "Dawn-Chorus.jpg",
       "title": "Dawn Chorus",
       "category": "wildlife",
@@ -156,6 +143,19 @@
       "aperture": "f/6.3",
       "iso": "3200",
       "date": "20 Feb 2026"
+    },
+    {
+      "filename": "duck.jpg",
+      "title": "Duck",
+      "category": "wildlife",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "Olympus 300mm F4.0",
+      "focal": "300mm",
+      "shutter": "1/1600",
+      "aperture": "f/4",
+      "iso": "1250",
+      "date": "2 Aug 2026"
     },
     {
       "filename": "Yum!.jpg",
