@@ -342,6 +342,7 @@ function renderActiveTab() {
     var which = currentTab();
     if (which === 'hero') loadHeroPanel();
     else if (which === 'blog') renderBlogPanel();
+    else if (which === 'text') loadTextPanel();
     else renderPhotos();
 }
 
@@ -1032,6 +1033,138 @@ function deletePost(index) {
 
 
 /* ----------------------------------------------------------
+   PAGE TEXT
+   Prose that stays hardcoded in the HTML (for SEO / no flash) is edited
+   in place between <!-- edit:NAME --> markers. The hero title/tagline
+   live in content.json settings and are injected by script.js.
+   ---------------------------------------------------------- */
+
+var TEXT_FIELDS = [
+    { id: 'site_name', label: 'Home page title (hero)', kind: 'setting', key: 'site_name',
+      help: 'The large title on the home page.' },
+    { id: 'tagline', label: 'Home page tagline (hero)', kind: 'setting', key: 'tagline' },
+    { id: 'about_heading', label: 'About page heading', kind: 'html', file: 'about.html', marker: 'about-heading' },
+    { id: 'about_sub', label: 'About page subheading', kind: 'html', file: 'about.html', marker: 'about-sub' },
+    { id: 'about_bio', label: 'About bio', kind: 'html', file: 'about.html', marker: 'about-bio', multiline: true, rows: 6,
+      help: 'Leave a blank line between paragraphs.' },
+    { id: 'portfolio_blurb', label: 'Portfolio blurb', kind: 'html', file: 'portfolio.html', marker: 'portfolio-blurb', multiline: true, rows: 4,
+      help: 'The Contact link below this text is kept automatically.' }
+];
+
+function textFlash(msg, type) { var el = $('textStatus'); if (el) showStatus(el, msg, type); }
+
+function stripTags(s) { return s.replace(/<[^>]*>/g, ''); }
+function unescapeHtml(s) {
+    return s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+}
+
+function extractRegion(text, marker) {
+    var m = text.match(new RegExp('<!-- edit:' + marker + ' -->([\\s\\S]*?)<!-- /edit:' + marker + ' -->'));
+    return m ? m[1] : null;
+}
+function replaceRegion(text, marker, inner) {
+    var re = new RegExp('(<!-- edit:' + marker + ' -->)[\\s\\S]*?(<!-- /edit:' + marker + ' -->)');
+    return text.replace(re, function (_, open, close) { return open + inner + close; });
+}
+
+/* HTML region -> plain text for editing. */
+function regionToPlain(inner, multiline) {
+    if (multiline) {
+        var paras = [], re = /<p[^>]*>([\s\S]*?)<\/p>/gi, m;
+        while ((m = re.exec(inner))) paras.push(unescapeHtml(stripTags(m[1])).trim());
+        if (paras.length) return paras.join('\n\n');
+    }
+    return unescapeHtml(stripTags(inner)).trim();
+}
+
+/* Plain text -> HTML region for saving. */
+function plainToRegion(plain, multiline) {
+    if (multiline) {
+        var paras = plain.split(/\n\n+/).map(function (p) { return p.trim(); }).filter(Boolean);
+        return '\n        ' + paras.map(function (p) {
+            return '<p>' + escapeHtml(p).replace(/\n/g, '<br>') + '</p>';
+        }).join('\n        ') + '\n        ';
+    }
+    return escapeHtml(plain.trim());
+}
+
+function textFilePaths() {
+    var paths = TEXT_FIELDS.filter(function (f) { return f.kind === 'html'; }).map(function (f) { return f.file; });
+    return paths.filter(function (p, i) { return paths.indexOf(p) === i; });
+}
+
+function loadTextPanel() {
+    var body = $('panelBody');
+    body.innerHTML = '<div class="placeholder">Loading page text…</div>';
+    var files = {};
+    Promise.all(textFilePaths().map(function (p) {
+        return ghGetFile(p).then(function (f) { files[p] = f.text; });
+    })).then(function () {
+        var values = {};
+        TEXT_FIELDS.forEach(function (f) {
+            if (f.kind === 'setting') {
+                values[f.id] = (state.content.settings && state.content.settings[f.key]) || '';
+            } else {
+                var inner = extractRegion(files[f.file], f.marker);
+                values[f.id] = inner == null ? '' : regionToPlain(inner, f.multiline);
+            }
+        });
+        renderTextPanel(values);
+    }).catch(function (err) {
+        body.innerHTML = '<div class="status error">' + err.message + '</div>';
+    });
+}
+
+function renderTextPanel(values) {
+    var fields = TEXT_FIELDS.map(function (f) {
+        var input = f.multiline
+            ? '<textarea id="tf_' + f.id + '" rows="' + (f.rows || 5) + '">' + escapeHtml(values[f.id]) + '</textarea>'
+            : '<input type="text" id="tf_' + f.id + '" value="' + escapeHtml(values[f.id]) + '">';
+        return '<div class="tf-field"><label for="tf_' + f.id + '">' + f.label + '</label>' + input +
+               (f.help ? '<span class="help">' + f.help + '</span>' : '') + '</div>';
+    }).join('');
+
+    $('panelBody').innerHTML =
+        '<div class="text-status status hidden" id="textStatus"></div>' +
+        '<div class="text-form">' + fields +
+            '<div class="af-actions"><button id="saveTextBtn">Save page text</button></div>' +
+        '</div>';
+
+    $('saveTextBtn').addEventListener('click', saveText);
+}
+
+function saveText() {
+    $('saveTextBtn').disabled = true;
+    textFlash('Saving…', 'ok');
+
+    var files = {};
+    Promise.all(textFilePaths().map(function (p) {
+        return ghGetFile(p).then(function (f) { files[p] = f.text; });
+    })).then(function () {
+        TEXT_FIELDS.forEach(function (f) {
+            var val = $('tf_' + f.id).value;
+            if (f.kind === 'html') {
+                files[f.file] = replaceRegion(files[f.file], f.marker, plainToRegion(val, f.multiline));
+            } else {
+                if (!state.content.settings) state.content.settings = {};
+                state.content.settings[f.key] = val.trim();
+            }
+        });
+        var upserts = [{ path: 'content.json', base64: contentToBase64(state.content) }];
+        textFilePaths().forEach(function (p) { upserts.push({ path: p, base64: b64EncodeUnicode(files[p]) }); });
+        return commitChanges({ message: 'Update page text via Site Manager', upserts: upserts });
+    }).then(function () {
+        textFlash('✓ Saved. The site will update within about a minute.', 'ok');
+    }).catch(function (err) {
+        textFlash('Could not save: ' + err.message, 'error');
+    }).then(function () {
+        if ($('saveTextBtn')) $('saveTextBtn').disabled = false;
+    });
+}
+
+
+/* ----------------------------------------------------------
    CONNECT / LOGIN
    ---------------------------------------------------------- */
 
@@ -1067,6 +1200,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 loadHeroPanel();
             } else if (which === 'blog') {
                 loadBlogPanel();
+            } else if (which === 'text') {
+                loadTextPanel();
             } else {
                 $('panelBody').innerHTML = '<div class="placeholder">This section is coming in a later phase.</div>';
             }
