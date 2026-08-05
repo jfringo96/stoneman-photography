@@ -78,7 +78,9 @@ var msnry = null;
    ---------------------------------------------------------- */
 
 document.addEventListener('DOMContentLoaded', function () {
-    fetch('content.json')
+    // Cache-bust so edits made in the Site Manager show up immediately rather than
+    // waiting for the CDN/browser cache of content.json to expire.
+    fetch('content.json?t=' + Date.now())
         .then(function (response) { return response.json(); })
         .then(function (content) {
             applySettings(content.settings);
