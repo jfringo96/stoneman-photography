@@ -121,7 +121,7 @@
     {
       "filename": "Head-On.jpg",
       "title": "Head-On",
-      "category": "insects",
+      "category": "wildlife",
       "featured": false,
       "camera": "OM System OM-5",
       "lens": "OM 100-400mm F5.0-6.3",
@@ -143,19 +143,6 @@
       "aperture": "f/6.3",
       "iso": "3200",
       "date": "20 Feb 2026"
-    },
-    {
-      "filename": "duck.jpg",
-      "title": "Duck",
-      "category": "wildlife",
-      "featured": false,
-      "camera": "OM System OM-1 Mark II",
-      "lens": "Olympus 300mm F4.0",
-      "focal": "300mm",
-      "shutter": "1/1600",
-      "aperture": "f/4",
-      "iso": "1250",
-      "date": "2 Aug 2026"
     },
     {
       "filename": "Yum!.jpg",
@@ -635,10 +622,6 @@
     {
       "key": "landscape",
       "label": "Landscape and City"
-    },
-    {
-      "key": "insects",
-      "label": "Insects"
     }
   ]
 }
