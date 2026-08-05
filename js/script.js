@@ -518,32 +518,25 @@ function initInteractivity() {
         if (lightboxPrev) lightboxPrev.style.display = items.length > 1 ? '' : 'none';
         if (lightboxNext) lightboxNext.style.display = items.length > 1 ? '' : 'none';
 
-        // Hide instantly (no transition) to avoid flashing previous content
+        // Build content: image + EXIF inserted immediately so opacity never blocks them.
+        var imgEl = document.createElement('img');
+        imgEl.src = fullResSrc;
+        imgEl.alt = img.alt || '';
+
+        lightboxContent.innerHTML = '';
+        lightboxContent.appendChild(imgEl);
+        lightboxContent.insertAdjacentHTML('beforeend', buildMetaHTML(filename));
+
         lightboxContent.style.transition = 'none';
         lightboxContent.style.opacity = '0';
-
-        // No <img> in the DOM yet — avoids the broken-image icon while loading
-        lightboxContent.innerHTML = buildMetaHTML(filename);
 
         lightbox.classList.add('active');
         document.body.style.overflow = 'hidden';
 
-        // Load full res off-screen; once ready, insert the image and fade everything in.
-        // onerror: full-res unavailable — still reveal EXIF so the lightbox isn't blank.
-        var fullImg = new Image();
-        fullImg.onload = function () {
-            var imgEl = document.createElement('img');
-            imgEl.src = fullResSrc;
-            imgEl.alt = img.alt || '';
-            lightboxContent.insertBefore(imgEl, lightboxContent.firstChild);
+        requestAnimationFrame(function () {
             lightboxContent.style.transition = 'opacity 0.4s ease';
             lightboxContent.style.opacity = '1';
-        };
-        fullImg.onerror = function () {
-            lightboxContent.style.transition = 'opacity 0.4s ease';
-            lightboxContent.style.opacity = '1';
-        };
-        fullImg.src = fullResSrc;
+        });
     }
 
     // Shared function: open the lightbox for a given image element
