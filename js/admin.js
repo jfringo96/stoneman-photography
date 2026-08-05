@@ -130,6 +130,21 @@ function categoryOptions(selectedKey) {
     }).join('');
 }
 
+/* Pick a category key not already in `used`. */
+function uniqueKey(base, used) {
+    base = base || 'category';
+    var k = base, i = 2;
+    while (used[k]) { k = base + '-' + i; i++; }
+    return k;
+}
+
+/* Re-point every photo in oldKey to newKey. */
+function migratePhotoCategory(oldKey, newKey) {
+    (state.content.portfolio || []).forEach(function (p) {
+        if (p.category === oldKey) p.category = newKey;
+    });
+}
+
 
 /* ----------------------------------------------------------
    GITHUB API
@@ -356,6 +371,11 @@ function loadContent() {
         (state.content.portfolio || []).forEach(function (p) { state.byFilename[p.filename] = p; });
         state.featured = (state.content.featured_images || []).slice();
         ensureCategories();
+        // Snapshot category labels so a save can tell which were renamed.
+        state.catOriginalLabels = {};
+        (state.content.categories || []).forEach(function (c) {
+            if (c.key) state.catOriginalLabels[c.key] = c.label;
+        });
         renderActiveTab();
     });
 }
@@ -876,13 +896,35 @@ function removeCategory(i) {
 
 function saveCategories() {
     syncCategoryInputs();
-    var cats = state.content.categories, taken = {};
-    for (var i = 0; i < cats.length; i++) {
-        if (!cats[i].label.trim()) { catFlash('Every category needs a name.', 'error'); return; }
-        if (!cats[i].key) cats[i].key = slugify(cats[i].label);
-        if (taken[cats[i].key]) cats[i].key = cats[i].key + '-' + (i + 1);
-        taken[cats[i].key] = true;
+    var cats = state.content.categories;
+    var orig = state.catOriginalLabels || {};
+
+    for (var v = 0; v < cats.length; v++) {
+        if (!cats[v].label.trim()) { catFlash('Every category needs a name.', 'error'); return; }
     }
+
+    var used = {};
+    cats.forEach(function (c) { if (c.key) used[c.key] = true; });
+
+    cats.forEach(function (c) {
+        if (!c.key) {
+            // Brand-new category — derive its key from the name.
+            c.key = uniqueKey(slugify(c.label), used);
+            used[c.key] = true;
+        } else if (orig[c.key] !== undefined && orig[c.key] !== c.label) {
+            // Renamed — migrate the key (and its photos) to match the new name,
+            // leaving untouched categories exactly as they were.
+            var desired = slugify(c.label);
+            if (desired && desired !== c.key) {
+                delete used[c.key];
+                var newKey = uniqueKey(desired, used);
+                migratePhotoCategory(c.key, newKey);
+                c.key = newKey;
+                used[newKey] = true;
+            }
+        }
+    });
+
     $('saveCatBtn').disabled = true;
     catFlash('Saving…', 'ok');
     commitChanges({
