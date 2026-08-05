@@ -626,5 +626,19 @@
       "date": "17 Feb 2025"
     }
   ],
-  "blog": []
+  "blog": [],
+  "categories": [
+    {
+      "key": "wildlife",
+      "label": "Wildlife and Nature"
+    },
+    {
+      "key": "landscape",
+      "label": "Landscape and City"
+    },
+    {
+      "key": "test",
+      "label": "Test"
+    }
+  ]
 }
