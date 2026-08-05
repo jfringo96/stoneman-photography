@@ -15,6 +15,19 @@
   ],
   "portfolio": [
     {
+      "filename": "spotlight.jpg",
+      "title": "Spotlight",
+      "category": "wildlife",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "OM 60mm F2.8 Macro",
+      "focal": "60mm",
+      "shutter": "1/250",
+      "aperture": "f/2.8",
+      "iso": "1000",
+      "date": "12 Jul 2026"
+    },
+    {
       "filename": "Dawn-Chorus.jpg",
       "title": "Dawn Chorus",
       "category": "wildlife",
