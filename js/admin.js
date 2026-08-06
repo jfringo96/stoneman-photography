@@ -1169,12 +1169,20 @@ function loadBlogPanel() {
     renderBlogPanel();
 }
 
+function firstPostImage(post) {
+    if (post.blocks) {
+        for (var i = 0; i < post.blocks.length; i++) {
+            if (post.blocks[i].type === 'image' && post.blocks[i].filename) return post.blocks[i].filename;
+        }
+    }
+    return (post.images && post.images[0]) || null;
+}
+
 function renderBlogPanel() {
     var posts = state.content.blog || [];
     var rows = posts.map(function (post, i) {
-        var thumb = (post.images && post.images[0])
-            ? '<img src="' + blogSrc(post.images[0]) + '" alt="">'
-            : '<div class="noimg">No image</div>';
+        var first = firstPostImage(post);
+        var thumb = first ? '<img src="' + blogSrc(first) + '" alt="">' : '<div class="noimg">No image</div>';
         return '' +
         '<div class="blog-row" data-index="' + i + '">' +
             '<span class="reorder">' +
@@ -1209,15 +1217,23 @@ function renderBlogPanel() {
     });
 }
 
-function openPostForm(index) {
-    var post = (index === null)
-        ? { title: '', date: formatDate(new Date()), body: '', images: [] }
-        : state.content.blog[index];
+/* Build the editable block list for a post (converts old body/images posts too). */
+function postToEditBlocks(post) {
+    var src = post.blocks ? post.blocks : (function () {
+        var b = [];
+        (post.images || []).forEach(function (fn) { b.push({ type: 'image', filename: fn, size: 'full', align: 'full' }); });
+        if (post.body) b.push({ type: 'text', text: post.body });
+        return b;
+    })();
+    return src.map(function (b) {
+        if (b.type === 'image') return { type: 'image', kind: 'existing', filename: b.filename, size: b.size || 'medium', align: b.align || 'center' };
+        return { type: 'text', text: b.text || '' };
+    });
+}
 
-    blogForm = {
-        index: index,
-        images: (post.images || []).map(function (name) { return { kind: 'existing', name: name }; })
-    };
+function openPostForm(index) {
+    var post = (index === null) ? { title: '', date: formatDate(new Date()), blocks: [] } : state.content.blog[index];
+    blogForm = { index: index, blocks: postToEditBlocks(post) };
 
     $('postFormHolder').innerHTML =
         '<div class="add-form">' +
@@ -1225,11 +1241,12 @@ function openPostForm(index) {
                 '<input type="text" id="pfTitle" value="' + escapeHtml(post.title || '') + '"></div>' +
             '<div class="af-field"><label for="pfDate">Date</label>' +
                 '<input type="text" id="pfDate" value="' + escapeHtml(post.date || '') + '"></div>' +
-            '<div class="af-field"><label for="pfBody">Body (leave a blank line between paragraphs)</label>' +
-                '<textarea id="pfBody" rows="7">' + escapeHtml(post.body || '') + '</textarea></div>' +
-            '<label class="btn-like">+ Add image(s)' +
-                '<input type="file" id="pfImages" accept="image/jpeg,image/png" multiple hidden></label>' +
-            '<div class="pf-images" id="pfImagesPreview"></div>' +
+            '<div class="blocks-holder" id="blocksHolder"></div>' +
+            '<div class="block-add">' +
+                '<button class="secondary" id="addTextBlock">+ Add text</button>' +
+                '<label class="btn-like">+ Add image' +
+                    '<input type="file" id="addImageBlock" accept="image/jpeg,image/png" multiple hidden></label>' +
+            '</div>' +
             '<div class="af-actions">' +
                 '<button id="pfSave">Save post</button>' +
                 '<button class="secondary" id="pfCancel">Cancel</button>' +
@@ -1237,70 +1254,140 @@ function openPostForm(index) {
             '<div class="status hidden" id="pfStatus"></div>' +
         '</div>';
 
-    $('pfImages').addEventListener('change', onFormImagesChosen);
+    $('addTextBlock').addEventListener('click', function () {
+        syncBlockInputs(); blogForm.blocks.push({ type: 'text', text: '' }); renderBlocks();
+    });
+    $('addImageBlock').addEventListener('change', onBlockImageChosen);
     $('pfSave').addEventListener('click', savePost);
     $('pfCancel').addEventListener('click', function () { $('postFormHolder').innerHTML = ''; blogForm = null; });
-    renderFormImages();
+    renderBlocks();
     $('postFormHolder').scrollIntoView({ block: 'nearest' });
 }
 
-function onFormImagesChosen(e) {
-    Array.prototype.forEach.call(e.target.files, function (file) {
-        blogForm.images.push({ kind: 'new', file: file, previewUrl: URL.createObjectURL(file) });
-    });
-    e.target.value = '';
-    renderFormImages();
+function blkSelect(cls, options, sel) {
+    return '<select class="' + cls + '">' + options.map(function (o) {
+        return '<option value="' + o[0] + '"' + (o[0] === sel ? ' selected' : '') + '>' + o[1] + '</option>';
+    }).join('') + '</select>';
 }
 
-function renderFormImages() {
-    var wrap = $('pfImagesPreview');
-    if (!wrap) return;
-    wrap.innerHTML = blogForm.images.map(function (img, i) {
-        var src = img.kind === 'existing' ? blogSrc(img.name) : img.previewUrl;
-        return '<div class="pf-img"><img src="' + src + '" alt="">' +
-               '<button class="pf-img-x" data-i="' + i + '" title="Remove image">×</button></div>';
+function renderBlocks() {
+    var holder = $('blocksHolder');
+    if (!holder) return;
+    if (!blogForm.blocks.length) {
+        holder.innerHTML = '<p class="help">Add text and image blocks below — their top-to-bottom order is the order on the page.</p>';
+        return;
+    }
+    holder.innerHTML = blogForm.blocks.map(function (b, i) {
+        var ctrl = '<div class="blk-ctrl">' +
+            '<button class="blk-up" data-i="' + i + '" title="Move up"' + (i === 0 ? ' disabled' : '') + '>▲</button>' +
+            '<button class="blk-down" data-i="' + i + '" title="Move down"' + (i === blogForm.blocks.length - 1 ? ' disabled' : '') + '>▼</button>' +
+            '<button class="blk-del" data-i="' + i + '" title="Remove block">✕</button>' +
+        '</div>';
+        if (b.type === 'text') {
+            return '<div class="blk" data-i="' + i + '"><div class="blk-tag">Text</div>' +
+                '<textarea class="blk-text" rows="4" placeholder="Write a paragraph… (blank line = new paragraph)">' + escapeHtml(b.text || '') + '</textarea>' +
+                ctrl + '</div>';
+        }
+        var src = b.kind === 'existing' ? blogSrc(b.filename) : b.previewUrl;
+        return '<div class="blk" data-i="' + i + '"><div class="blk-tag">Image</div>' +
+            '<div class="blk-imgrow">' +
+                '<img class="blk-thumb" src="' + src + '" alt="">' +
+                '<div class="blk-opts">' +
+                    '<label>Size ' + blkSelect('blk-size', [['small','Small'],['medium','Medium'],['large','Large'],['full','Full width']], b.size) + '</label>' +
+                    '<label>Position ' + blkSelect('blk-align', [['left','Left (wrap)'],['center','Centre'],['right','Right (wrap)']], b.align) + '</label>' +
+                '</div>' +
+            '</div>' +
+            ctrl + '</div>';
     }).join('');
-    wrap.querySelectorAll('.pf-img-x').forEach(function (b) {
-        b.addEventListener('click', function () {
-            blogForm.images.splice(parseInt(this.getAttribute('data-i'), 10), 1);
-            renderFormImages();
+
+    holder.querySelectorAll('.blk-up').forEach(function (bt) {
+        bt.addEventListener('click', function () { syncBlockInputs(); moveBlock(parseInt(this.getAttribute('data-i'), 10), -1); });
+    });
+    holder.querySelectorAll('.blk-down').forEach(function (bt) {
+        bt.addEventListener('click', function () { syncBlockInputs(); moveBlock(parseInt(this.getAttribute('data-i'), 10), 1); });
+    });
+    holder.querySelectorAll('.blk-del').forEach(function (bt) {
+        bt.addEventListener('click', function () {
+            syncBlockInputs();
+            blogForm.blocks.splice(parseInt(this.getAttribute('data-i'), 10), 1);
+            renderBlocks();
         });
     });
 }
 
+/* Read the on-screen block inputs back into state before any re-render. */
+function syncBlockInputs() {
+    document.querySelectorAll('#blocksHolder .blk').forEach(function (el) {
+        var i = parseInt(el.getAttribute('data-i'), 10);
+        var b = blogForm.blocks[i];
+        if (!b) return;
+        if (b.type === 'text') {
+            var ta = el.querySelector('.blk-text');
+            if (ta) b.text = ta.value;
+        } else {
+            var s = el.querySelector('.blk-size'), a = el.querySelector('.blk-align');
+            if (s) b.size = s.value;
+            if (a) b.align = a.value;
+        }
+    });
+}
+
+function moveBlock(i, dir) {
+    var j = i + dir;
+    if (j < 0 || j >= blogForm.blocks.length) return;
+    var t = blogForm.blocks[i]; blogForm.blocks[i] = blogForm.blocks[j]; blogForm.blocks[j] = t;
+    renderBlocks();
+}
+
+function onBlockImageChosen(e) {
+    syncBlockInputs();
+    Array.prototype.forEach.call(e.target.files, function (file) {
+        blogForm.blocks.push({ type: 'image', kind: 'new', file: file, previewUrl: URL.createObjectURL(file), size: 'medium', align: 'center' });
+    });
+    e.target.value = '';
+    renderBlocks();
+}
+
 function savePost() {
+    syncBlockInputs();
     var status = $('pfStatus');
     var title = $('pfTitle').value.trim();
     if (!title) { showStatus(status, 'Please give the post a title.', 'error'); return; }
     var date = $('pfDate').value.trim();
-    var body = $('pfBody').value;
 
     $('pfSave').disabled = true;
     showStatus(status, 'Preparing…', 'ok');
 
     var taken = getBlogImageNames();
     var upserts = [];
-    var finalNames = new Array(blogForm.images.length);
     var chain = Promise.resolve();
 
-    blogForm.images.forEach(function (img, idx) {
-        if (img.kind === 'existing') { finalNames[idx] = img.name; return; }
-        chain = chain.then(function () {
-            var name = uniqueFilename(slugify(title) + '-' + (idx + 1), '.jpg', taken);
-            taken[name] = true;
-            return resizeToBlob(img.file, BLOG_MAX_EDGE, BLOG_QUALITY)
-                .then(fileToBase64)
-                .then(function (b64) {
-                    upserts.push({ path: 'images/Blog/' + name, base64: b64 });
-                    finalNames[idx] = name;
-                });
-        });
+    blogForm.blocks.forEach(function (b, idx) {
+        if (b.type === 'image' && b.kind === 'new') {
+            chain = chain.then(function () {
+                var name = uniqueFilename(slugify(title) + '-' + (idx + 1), '.jpg', taken);
+                taken[name] = true;
+                return resizeToBlob(b.file, BLOG_MAX_EDGE, BLOG_QUALITY)
+                    .then(fileToBase64)
+                    .then(function (b64) {
+                        upserts.push({ path: 'images/Blog/' + name, base64: b64 });
+                        b._finalName = name;
+                    });
+            });
+        }
     });
 
     chain.then(function () {
         showStatus(status, 'Saving…', 'ok');
+        var blocks = blogForm.blocks.map(function (b) {
+            if (b.type === 'text') return { type: 'text', text: b.text || '' };
+            return { type: 'image', filename: (b.kind === 'new' ? b._finalName : b.filename), size: b.size || 'medium', align: b.align || 'center' };
+        }).filter(function (b) {
+            return b.type === 'text' ? (b.text || '').trim() : b.filename;
+        });
+
         if (!state.content.blog) state.content.blog = [];
-        var post = { title: title, date: date, body: body, images: finalNames };
+        var post = { title: title, date: date, blocks: blocks };
         if (blogForm.index === null) state.content.blog.unshift(post);
         else state.content.blog[blogForm.index] = post;
         upserts.push({ path: 'content.json', base64: contentToBase64(state.content) });
@@ -1336,7 +1423,9 @@ function deletePost(index) {
     var post = state.content.blog[index];
     if (!confirm('Delete blog post "' + (post.title || '') + '"? (Recoverable from version history.)')) return;
     blogFlash('Deleting…', 'ok');
-    var deletes = (post.images || []).map(function (n) { return 'images/Blog/' + n; });
+    var deletes = [];
+    if (post.blocks) post.blocks.forEach(function (b) { if (b.type === 'image' && b.filename) deletes.push('images/Blog/' + b.filename); });
+    (post.images || []).forEach(function (n) { deletes.push('images/Blog/' + n); });
     state.content.blog.splice(index, 1);
     commitChanges({
         message: 'Delete blog post via Site Manager',

@@ -234,6 +234,35 @@ function populateBlog(blog) {
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
+    function textToParas(text) {
+        var out = '';
+        (text || '').split(/\n\n+/).forEach(function (para) {
+            if (para.trim()) out += '<p class="post-body">' + esc(para).replace(/\n/g, '<br>') + '</p>';
+        });
+        return out;
+    }
+
+    function imageTag(b, alt) {
+        if (!b.filename) return '';
+        var cls = (b.size === 'full' || b.align === 'full')
+            ? 'blog-image img-full'
+            : 'blog-image img-' + (b.size || 'medium') + ' img-' + (b.align || 'center');
+        return '<img class="' + cls + '" src="images/Blog/' + encodeURIComponent(b.filename) +
+               '" alt="' + esc(alt) + '" loading="lazy">';
+    }
+
+    /* Old-style posts ({ body, images }) become blocks so both render the same way. */
+    function asBlocks(post) {
+        if (post.blocks) return post.blocks;
+        var blocks = [];
+        (post.images || []).forEach(function (fn) {
+            blocks.push({ type: 'image', filename: fn, size: 'full', align: 'full' });
+        });
+        if (post.body) blocks.push({ type: 'text', text: post.body });
+        else if (post.excerpt) blocks.push({ type: 'text', text: post.excerpt });
+        return blocks;
+    }
+
     blog.forEach(function (post) {
         var article = document.createElement('article');
         article.className = 'blog-post';
@@ -241,20 +270,10 @@ function populateBlog(blog) {
         var html = '<h2>' + esc(post.title) + '</h2>';
         if (post.date) html += '<span class="blog-date">' + esc(post.date) + '</span>';
 
-        (post.images || []).forEach(function (fn) {
-            html += '<img class="blog-image" src="images/Blog/' + encodeURIComponent(fn) +
-                    '" alt="' + esc(post.title) + '" loading="lazy">';
+        asBlocks(post).forEach(function (b) {
+            if (b.type === 'text') html += textToParas(b.text);
+            else if (b.type === 'image') html += imageTag(b, post.title);
         });
-
-        if (post.body) {
-            post.body.split(/\n\n+/).forEach(function (para) {
-                if (para.trim()) html += '<p class="post-body">' + esc(para).replace(/\n/g, '<br>') + '</p>';
-            });
-        } else if (post.excerpt) {
-            // Back-compat with any older excerpt/link style posts
-            html += '<p class="post-body">' + esc(post.excerpt) + '</p>';
-            if (post.url) html += '<a href="' + esc(post.url) + '" class="read-more">Read more</a>';
-        }
 
         article.innerHTML = html;
         container.appendChild(article);

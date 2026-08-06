@@ -812,15 +812,34 @@ body.home-page .featured-item {
 }
 
 /* Blog post images and body paragraphs */
+.blog-post::after { content: ''; display: table; clear: both; }  /* contain floated images */
+
 .blog-image {
-    width: 100%;
     border-radius: 6px;
     margin: 0.5rem 0 1.25rem;
     display: block;
+    max-width: 100%;
+    height: auto;
 }
+
+/* Sizes (share of the ~800px column) */
+.img-small  { width: 35%; }
+.img-medium { width: 55%; }
+.img-large  { width: 75%; }
+.img-full   { width: 100%; clear: both; }
+
+/* Position: left/right float so text wraps around; centre is a centred block */
+.img-left   { float: left;  margin: 0.4rem 1.5rem 1rem 0; }
+.img-right  { float: right; margin: 0.4rem 0 1rem 1.5rem; }
+.img-center { margin-left: auto; margin-right: auto; clear: both; }
 
 .post-body {
     line-height: 1.7;
+}
+
+/* On phones, every blog image goes full-width and stacks — floats don't read well small */
+@media (max-width: 767px) {
+    .blog-image { float: none; width: 100%; margin: 0.5rem 0 1.25rem; }
 }
 
 /* "Read more" link */
