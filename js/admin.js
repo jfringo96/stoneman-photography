@@ -1154,6 +1154,12 @@ function blogSrc(fn) {
     return 'https://raw.githubusercontent.com/' + CONFIG.owner + '/' + CONFIG.repo +
            '/' + CONFIG.branch + '/images/Blog/' + encodeURIComponent(fn);
 }
+
+/* Raw GitHub URL for any repo-relative path (handles spaces in folders/names). */
+function rawSrc(path) {
+    return 'https://raw.githubusercontent.com/' + CONFIG.owner + '/' + CONFIG.repo +
+           '/' + CONFIG.branch + '/' + path.split('/').map(encodeURIComponent).join('/');
+}
 function blogFlash(msg, type) { var el = $('blogStatus'); if (el) showStatus(el, msg, type); }
 
 function getBlogImageNames() {
@@ -1226,7 +1232,9 @@ function postToEditBlocks(post) {
         return b;
     })();
     return src.map(function (b) {
-        if (b.type === 'image') return { type: 'image', kind: 'existing', filename: b.filename, size: b.size || 'medium', align: b.align || 'center' };
+        if (b.type === 'image') {
+            return { type: 'image', src: b.src || (b.filename ? 'images/Blog/' + b.filename : ''), size: b.size || 'medium', align: b.align || 'center' };
+        }
         return { type: 'text', text: b.text || '' };
     });
 }
@@ -1244,9 +1252,11 @@ function openPostForm(index) {
             '<div class="blocks-holder" id="blocksHolder"></div>' +
             '<div class="block-add">' +
                 '<button class="secondary" id="addTextBlock">+ Add text</button>' +
-                '<label class="btn-like">+ Add image' +
+                '<label class="btn-like">+ Upload image' +
                     '<input type="file" id="addImageBlock" accept="image/jpeg,image/png" multiple hidden></label>' +
+                '<button class="secondary" id="addLibImage">+ From library</button>' +
             '</div>' +
+            '<div class="library-picker hidden" id="libraryPicker"></div>' +
             '<div class="af-actions">' +
                 '<button id="pfSave">Save post</button>' +
                 '<button class="secondary" id="pfCancel">Cancel</button>' +
@@ -1258,6 +1268,7 @@ function openPostForm(index) {
         syncBlockInputs(); blogForm.blocks.push({ type: 'text', text: '' }); renderBlocks();
     });
     $('addImageBlock').addEventListener('change', onBlockImageChosen);
+    $('addLibImage').addEventListener('click', openLibraryPicker);
     $('pfSave').addEventListener('click', savePost);
     $('pfCancel').addEventListener('click', function () { $('postFormHolder').innerHTML = ''; blogForm = null; });
     renderBlocks();
@@ -1288,7 +1299,7 @@ function renderBlocks() {
                 '<textarea class="blk-text" rows="4" placeholder="Write a paragraph… (blank line = new paragraph)">' + escapeHtml(b.text || '') + '</textarea>' +
                 ctrl + '</div>';
         }
-        var src = b.kind === 'existing' ? blogSrc(b.filename) : b.previewUrl;
+        var src = b.file ? b.previewUrl : rawSrc(b.src);
         return '<div class="blk" data-i="' + i + '"><div class="blk-tag">Image</div>' +
             '<div class="blk-imgrow">' +
                 '<img class="blk-thumb" src="' + src + '" alt="">' +
@@ -1342,10 +1353,35 @@ function moveBlock(i, dir) {
 function onBlockImageChosen(e) {
     syncBlockInputs();
     Array.prototype.forEach.call(e.target.files, function (file) {
-        blogForm.blocks.push({ type: 'image', kind: 'new', file: file, previewUrl: URL.createObjectURL(file), size: 'medium', align: 'center' });
+        blogForm.blocks.push({ type: 'image', file: file, previewUrl: URL.createObjectURL(file), size: 'medium', align: 'center' });
     });
     e.target.value = '';
     renderBlocks();
+}
+
+/* Picker to reuse an existing portfolio photo (no new copy is stored). */
+function openLibraryPicker() {
+    syncBlockInputs();
+    var holder = $('libraryPicker');
+    holder.innerHTML =
+        '<div class="lib-head"><span>Choose an existing photo to reuse</span>' +
+            '<button class="link" id="libClose">Close</button></div>' +
+        '<div class="lib-grid">' +
+            (state.content.portfolio || []).map(function (p) {
+                return '<button class="lib-item" data-fn="' + escapeHtml(p.filename) + '">' +
+                       '<img src="' + imgSrc(p.filename) + '" alt="" loading="lazy">' +
+                       '<span>' + escapeHtml(p.title) + '</span></button>';
+            }).join('') +
+        '</div>';
+    holder.classList.remove('hidden');
+    $('libClose').addEventListener('click', function () { holder.classList.add('hidden'); holder.innerHTML = ''; });
+    holder.querySelectorAll('.lib-item').forEach(function (bt) {
+        bt.addEventListener('click', function () {
+            blogForm.blocks.push({ type: 'image', src: 'images/Thumb/' + this.getAttribute('data-fn'), size: 'medium', align: 'center' });
+            holder.classList.add('hidden'); holder.innerHTML = '';
+            renderBlocks();
+        });
+    });
 }
 
 function savePost() {
@@ -1363,7 +1399,7 @@ function savePost() {
     var chain = Promise.resolve();
 
     blogForm.blocks.forEach(function (b, idx) {
-        if (b.type === 'image' && b.kind === 'new') {
+        if (b.type === 'image' && b.file) {
             chain = chain.then(function () {
                 var name = uniqueFilename(slugify(title) + '-' + (idx + 1), '.jpg', taken);
                 taken[name] = true;
@@ -1371,7 +1407,7 @@ function savePost() {
                     .then(fileToBase64)
                     .then(function (b64) {
                         upserts.push({ path: 'images/Blog/' + name, base64: b64 });
-                        b._finalName = name;
+                        b._finalSrc = 'images/Blog/' + name;
                     });
             });
         }
@@ -1381,9 +1417,9 @@ function savePost() {
         showStatus(status, 'Saving…', 'ok');
         var blocks = blogForm.blocks.map(function (b) {
             if (b.type === 'text') return { type: 'text', text: b.text || '' };
-            return { type: 'image', filename: (b.kind === 'new' ? b._finalName : b.filename), size: b.size || 'medium', align: b.align || 'center' };
+            return { type: 'image', src: (b.file ? b._finalSrc : b.src), size: b.size || 'medium', align: b.align || 'center' };
         }).filter(function (b) {
-            return b.type === 'text' ? (b.text || '').trim() : b.filename;
+            return b.type === 'text' ? (b.text || '').trim() : b.src;
         });
 
         if (!state.content.blog) state.content.blog = [];
@@ -1423,8 +1459,14 @@ function deletePost(index) {
     var post = state.content.blog[index];
     if (!confirm('Delete blog post "' + (post.title || '') + '"? (Recoverable from version history.)')) return;
     blogFlash('Deleting…', 'ok');
+    // Only remove images this post actually owns (uploaded into images/Blog/),
+    // never a reused portfolio photo referenced from images/Thumb/.
     var deletes = [];
-    if (post.blocks) post.blocks.forEach(function (b) { if (b.type === 'image' && b.filename) deletes.push('images/Blog/' + b.filename); });
+    if (post.blocks) post.blocks.forEach(function (b) {
+        if (b.type !== 'image') return;
+        var src = b.src || (b.filename ? 'images/Blog/' + b.filename : '');
+        if (src.indexOf('images/Blog/') === 0) deletes.push(src);
+    });
     (post.images || []).forEach(function (n) { deletes.push('images/Blog/' + n); });
     state.content.blog.splice(index, 1);
     commitChanges({

@@ -216,7 +216,16 @@
         .blk-ctrl button:hover:not(:disabled) { color: var(--text); }
         .blk-ctrl button:disabled { opacity: 0.3; cursor: default; }
         .blk-del { color: var(--danger) !important; }
-        .block-add { display: flex; gap: 0.6rem; margin-bottom: 1rem; }
+        .block-add { display: flex; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap; }
+
+        /* Reuse-from-library picker */
+        .library-picker { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.85rem; margin-bottom: 1rem; }
+        .lib-head { display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.6rem; }
+        .lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 0.5rem; max-height: 320px; overflow-y: auto; }
+        .lib-item { background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px; padding: 0; overflow: hidden; display: flex; flex-direction: column; text-align: center; }
+        .lib-item img { width: 100%; height: 66px; object-fit: cover; display: block; }
+        .lib-item span { font-size: 0.62rem; color: var(--text); padding: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .lib-item:hover { border-color: var(--accent); }
 
         /* ---------- Page-text panel ---------- */
         .text-status { margin-bottom: 1rem; }
@@ -288,6 +297,6 @@
     <!-- EXIF reading + drag-to-reorder (loaded from CDN) -->
     <script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-    <script src="js/admin.js?v=11"></script>
+    <script src="js/admin.js?v=12"></script>
 </body>
 </html>

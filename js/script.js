@@ -243,11 +243,13 @@ function populateBlog(blog) {
     }
 
     function imageTag(b, alt) {
-        if (!b.filename) return '';
+        // b.src is a full repo-relative path; older posts used b.filename (in images/Blog/).
+        var src = b.src || (b.filename ? 'images/Blog/' + b.filename : '');
+        if (!src) return '';
         var cls = (b.size === 'full' || b.align === 'full')
             ? 'blog-image img-full'
             : 'blog-image img-' + (b.size || 'medium') + ' img-' + (b.align || 'center');
-        return '<img class="' + cls + '" src="images/Blog/' + encodeURIComponent(b.filename) +
+        return '<img class="' + cls + '" src="' + encodeURI(src) +
                '" alt="' + esc(alt) + '" loading="lazy">';
     }
 
