@@ -54,45 +54,6 @@
       "date": "5 Apr 2026"
     },
     {
-      "filename": "Golden-Gazelle.jpg",
-      "title": "Golden Gazelle",
-      "category": "wildlife",
-      "featured": false,
-      "camera": "OM System OM-5",
-      "lens": "OM 100-400mm F5.0-6.3",
-      "focal": "374mm",
-      "shutter": "1/1000",
-      "aperture": "f/6.3",
-      "iso": "2000",
-      "date": "3 Feb 2026"
-    },
-    {
-      "filename": "Samburu-Zebra.jpg",
-      "title": "Samburu Zebra",
-      "category": "wildlife",
-      "featured": false,
-      "camera": "OM System OM-5",
-      "lens": "OM 100-400mm F5.0-6.3",
-      "focal": "400mm",
-      "shutter": "1/2500",
-      "aperture": "f/6.3",
-      "iso": "1000",
-      "date": "1 Feb 2026"
-    },
-    {
-      "filename": "Crescent Island Monkey.jpg",
-      "title": "Crescent Island Monkey",
-      "category": "wildlife",
-      "featured": false,
-      "camera": "OM System OM-5",
-      "lens": "OM 100-400mm F5.0-6.3",
-      "focal": "400mm",
-      "shutter": "1/2500",
-      "aperture": "f/6.3",
-      "iso": "1250",
-      "date": "28 Jan 2026"
-    },
-    {
       "filename": "Eyes.jpg",
       "title": "Eyes",
       "category": "wildlife",
@@ -132,32 +93,6 @@
       "date": "2 Sep 2025"
     },
     {
-      "filename": "Leopard.jpg",
-      "title": "Leopard",
-      "category": "wildlife",
-      "featured": false,
-      "camera": "OM System OM-5",
-      "lens": "OM 100-400mm F5.0-6.3",
-      "focal": "400mm",
-      "shutter": "1/1600",
-      "aperture": "f/6.3",
-      "iso": "2500",
-      "date": "2 Feb 2026"
-    },
-    {
-      "filename": "Above-the-Trees.jpg",
-      "title": "Above the Trees",
-      "category": "wildlife",
-      "featured": false,
-      "camera": "OM System OM-5",
-      "lens": "OM 100-400mm F5.0-6.3",
-      "focal": "123mm",
-      "shutter": "1/3200",
-      "aperture": "f/5.4",
-      "iso": "800",
-      "date": "28 Jan 2026"
-    },
-    {
       "filename": "Yum!.jpg",
       "title": "Yum!",
       "category": "wildlife",
@@ -195,6 +130,45 @@
       "aperture": "f/4",
       "iso": "400",
       "date": "15 Apr 2026"
+    },
+    {
+      "filename": "Crescent Island Monkey.jpg",
+      "title": "Crescent Island Monkey",
+      "category": "wildlife",
+      "featured": false,
+      "camera": "OM System OM-5",
+      "lens": "OM 100-400mm F5.0-6.3",
+      "focal": "400mm",
+      "shutter": "1/2500",
+      "aperture": "f/6.3",
+      "iso": "1250",
+      "date": "28 Jan 2026"
+    },
+    {
+      "filename": "Golden-Gazelle.jpg",
+      "title": "Golden Gazelle",
+      "category": "wildlife",
+      "featured": false,
+      "camera": "OM System OM-5",
+      "lens": "OM 100-400mm F5.0-6.3",
+      "focal": "374mm",
+      "shutter": "1/1000",
+      "aperture": "f/6.3",
+      "iso": "2000",
+      "date": "3 Feb 2026"
+    },
+    {
+      "filename": "Samburu-Zebra.jpg",
+      "title": "Samburu Zebra",
+      "category": "wildlife",
+      "featured": false,
+      "camera": "OM System OM-5",
+      "lens": "OM 100-400mm F5.0-6.3",
+      "focal": "400mm",
+      "shutter": "1/2500",
+      "aperture": "f/6.3",
+      "iso": "1000",
+      "date": "1 Feb 2026"
     },
     {
       "filename": "Blue-Dragonfly.jpg",
@@ -312,6 +286,32 @@
       "aperture": "f/6.3",
       "iso": "1250",
       "date": "17 Jan 2026"
+    },
+    {
+      "filename": "Leopard.jpg",
+      "title": "Leopard",
+      "category": "wildlife",
+      "featured": false,
+      "camera": "OM System OM-5",
+      "lens": "OM 100-400mm F5.0-6.3",
+      "focal": "400mm",
+      "shutter": "1/1600",
+      "aperture": "f/6.3",
+      "iso": "2500",
+      "date": "2 Feb 2026"
+    },
+    {
+      "filename": "Above-the-Trees.jpg",
+      "title": "Above the Trees",
+      "category": "wildlife",
+      "featured": false,
+      "camera": "OM System OM-5",
+      "lens": "OM 100-400mm F5.0-6.3",
+      "focal": "123mm",
+      "shutter": "1/3200",
+      "aperture": "f/5.4",
+      "iso": "800",
+      "date": "28 Jan 2026"
     },
     {
       "filename": "Autumn-Mandarin.jpg",
