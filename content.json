@@ -15,17 +15,17 @@
   ],
   "portfolio": [
     {
-      "filename": "ladybird.jpg",
-      "title": "Ladybird",
-      "category": "insects-and-small-things",
+      "filename": "barn-owl.jpg",
+      "title": "Barn owl",
+      "category": "wildlife",
       "featured": false,
       "camera": "OM System OM-1 Mark II",
       "lens": "Olympus 300mm F4.0",
       "focal": "300mm",
-      "shutter": "1/1250",
+      "shutter": "1/1600",
       "aperture": "f/4",
-      "iso": "1000",
-      "date": "8 Jun 2026"
+      "iso": "2500",
+      "date": "16 Nov 2026"
     },
     {
       "filename": "Over-the-Shoulder.jpg",
@@ -351,6 +351,19 @@
       "aperture": "f/6.3",
       "iso": "2500",
       "date": "2 Feb 2026"
+    },
+    {
+      "filename": "ladybird.jpg",
+      "title": "Ladybird",
+      "category": "insects-and-small-things",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "Olympus 300mm F4.0",
+      "focal": "300mm",
+      "shutter": "1/1250",
+      "aperture": "f/4",
+      "iso": "1000",
+      "date": "8 Jun 2026"
     },
     {
       "filename": "Above-the-Trees.jpg",
