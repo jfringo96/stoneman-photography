@@ -15,19 +15,6 @@
   ],
   "portfolio": [
     {
-      "filename": "barn-owl.jpg",
-      "title": "Barn owl",
-      "category": "wildlife",
-      "featured": false,
-      "camera": "OM System OM-1 Mark II",
-      "lens": "Olympus 300mm F4.0",
-      "focal": "300mm",
-      "shutter": "1/1600",
-      "aperture": "f/4",
-      "iso": "2500",
-      "date": "16 Nov 2026"
-    },
-    {
       "filename": "Over-the-Shoulder.jpg",
       "title": "Over the Shoulder",
       "category": "wildlife",
@@ -299,6 +286,19 @@
       "aperture": "f/9",
       "iso": "200",
       "date": "2 Mar 2025"
+    },
+    {
+      "filename": "barn-owl.jpg",
+      "title": "Barn owl",
+      "category": "wildlife",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "Olympus 300mm F4.0",
+      "focal": "300mm",
+      "shutter": "1/1600",
+      "aperture": "f/4",
+      "iso": "2500",
+      "date": "16 Nov 2026"
     },
     {
       "filename": "From-My-Window.jpg",
