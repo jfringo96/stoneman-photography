@@ -538,7 +538,29 @@ function toggleFeatured(filename, btn) {
     renderFeaturedStrip();
 }
 
+/* Where else a portfolio photo is used. Blog posts and projects reference
+   portfolio photos by their images/Thumb/ path rather than copying them, so
+   deleting the photo would leave a broken image behind. */
+function photoUsage(filename) {
+    var ref = 'images/Thumb/' + filename;
+    var used = [];
+    [['blog', 'blog post'], ['projects', 'project']].forEach(function (pair) {
+        (state.content[pair[0]] || []).forEach(function (item) {
+            var hit = (item.blocks || []).some(function (b) { return b.src === ref; }) ||
+                      item.cover === filename || item.cover === ref;
+            if (hit) used.push(pair[1] + ' "' + (item.title || 'untitled') + '"');
+        });
+    });
+    return used;
+}
+
 function removePhoto(filename, row) {
+    var used = photoUsage(filename);
+    if (used.length) {
+        if (!confirm('"' + filename + '" is used by ' + used.join(' and ') + '.' +
+                     '\n\n' +
+                     'Removing it will leave a broken image there. Remove it anyway?')) return;
+    }
     if (!confirm('Remove "' + filename + '" from the site? (You can undo via version history.)')) return;
     row.parentNode.removeChild(row);
     var fi = state.featured.indexOf(filename);
@@ -1381,15 +1403,25 @@ function onBlockImageChosen(e) {
     renderBlocks();
 }
 
-/* Picker to reuse an existing portfolio photo (no new copy is stored).
+/* Picker to reuse an existing photo (no new copy is stored).
    With no argument it appends an image block; given onPick it calls that with
-   the chosen filename instead (used to set a project cover). */
-function openLibraryPicker(onPick) {
+   the chosen photo instead (used to set a project cover). `extras` adds images
+   that aren't in the portfolio - a project's own uploads, for its cover. Each
+   item hands back either a bare portfolio filename or a full repo path, both of
+   which projCoverSrc and the site's projectImageSrc already understand. */
+function openLibraryPicker(onPick, extras) {
     if (!onPick) syncBlockInputs();
     var holder = $('libraryPicker');
+    var extraItems = (extras || []).map(function (e) {
+        return '<button class="lib-item" data-fn="' + escapeHtml(e.value) + '">' +
+               '<img src="' + rawSrc(e.value) + '" alt="" loading="lazy">' +
+               '<span>' + escapeHtml(e.label) + '</span></button>';
+    }).join('');
     holder.innerHTML =
         '<div class="lib-head"><span>Choose an existing photo to reuse</span>' +
             '<button class="link" id="libClose">Close</button></div>' +
+        (extraItems ? '<div class="lib-sub">From this project</div><div class="lib-grid">' + extraItems + '</div>' +
+                      '<div class="lib-sub">From the portfolio</div>' : '') +
         '<div class="lib-grid">' +
             (state.content.portfolio || []).map(function (p) {
                 return '<button class="lib-item" data-fn="' + escapeHtml(p.filename) + '">' +
@@ -1855,11 +1887,25 @@ function renderProjectCover() {
             (cover ? '<button class="secondary" id="prCoverClear">Remove</button>' : '') +
         '</div>';
     $('prCoverPick').addEventListener('click', function () {
-        openLibraryPicker(function (fn) { editForm.cover = fn; renderProjectCover(); });
+        openLibraryPicker(function (fn) { editForm.cover = fn; renderProjectCover(); }, projectOwnImages());
     });
     if ($('prCoverClear')) {
         $('prCoverClear').addEventListener('click', function () { editForm.cover = ''; renderProjectCover(); });
     }
+}
+
+/* Images uploaded into THIS project, offered as cover options alongside the
+   portfolio. Blocks added in this session have no path until the project is
+   saved, so they can't be a cover yet. */
+function projectOwnImages() {
+    var dir = BLOCK_IMAGE_DIRS.project;
+    var out = [];
+    (editForm && editForm.blocks || []).forEach(function (b, i) {
+        if (b.type === 'image' && b.src && b.src.indexOf(dir) === 0) {
+            out.push({ value: b.src, label: 'Image ' + (i + 1) });
+        }
+    });
+    return out;
 }
 
 /* Open the live project page with ?preview=1, which shows drafts too.
