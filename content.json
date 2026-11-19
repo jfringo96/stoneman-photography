@@ -718,6 +718,16 @@
     }
   ],
   "blog": [],
+  "projects": [
+    {
+      "slug": "brecon-beacons",
+      "title": "The Brecon Beacons",
+      "subtitle": "",
+      "cover": "",
+      "status": "draft",
+      "blocks": []
+    }
+  ],
   "categories": [
     {
       "key": "wildlife",
