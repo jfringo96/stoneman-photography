@@ -15,17 +15,17 @@
   ],
   "portfolio": [
     {
-      "filename": "bug-eyed.jpg",
-      "title": "Bug eyed",
-      "category": "insects-and-small-things",
+      "filename": "crab-for-dinner.jpg",
+      "title": "Crab for dinner",
+      "category": "wildlife",
       "featured": false,
       "camera": "OM System OM-1 Mark II",
-      "lens": "OM 60mm F2.8 Macro",
-      "focal": "60mm",
-      "shutter": "1/200",
-      "aperture": "f/4.5",
-      "iso": "800",
-      "date": "14 Jul 2026"
+      "lens": "OM 300mm F4.0 + MC-20",
+      "focal": "600mm",
+      "shutter": "1/2000",
+      "aperture": "f/8",
+      "iso": "1600",
+      "date": "16 Nov 2026"
     },
     {
       "filename": "Over-the-Shoulder.jpg",
@@ -208,6 +208,19 @@
       "aperture": "f/6.3",
       "iso": "1600",
       "date": "27 Aug 2025"
+    },
+    {
+      "filename": "bug-eyed.jpg",
+      "title": "Bug eyed",
+      "category": "insects-and-small-things",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "OM 60mm F2.8 Macro",
+      "focal": "60mm",
+      "shutter": "1/200",
+      "aperture": "f/4.5",
+      "iso": "800",
+      "date": "14 Jul 2026"
     },
     {
       "filename": "Head-On.jpg",
