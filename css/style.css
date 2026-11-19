@@ -11,6 +11,7 @@
    7. Portfolio Page
    8. Lightbox
    9. Blog Page
+   9b. Projects Pages (list + single project)
    10. About Page
    11. Contact Page
    12. Footer
@@ -246,6 +247,20 @@ body.dark-page .blog-date { color: rgba(200,184,154,0.5); }
 body.dark-page .blog-post p { color: rgba(240,235,229,0.65); }
 body.dark-page .read-more { color: var(--colour-accent); }
 body.dark-page .read-more:hover { color: #f0ebe5; }
+
+/* Stone projects */
+body.dark-page .projects-empty { color: rgba(240,235,229,0.5); }
+body.dark-page .project-card-title { color: #f0ebe5; }
+body.dark-page .project-card-sub { color: rgba(200,184,154,0.6); }
+body.dark-page .project-card-media,
+body.dark-page .project-card-nocover { background-color: rgba(240,235,229,0.06); }
+body.dark-page .project-head h1 { color: #f0ebe5; }
+body.dark-page .project-back a { color: var(--colour-accent); }
+body.dark-page .project-back a:hover { color: #f0ebe5; }
+body.dark-page .project-draft-note {
+    border-color: rgba(200,184,154,0.4);
+    color: var(--colour-accent);
+}
 
 /* Stone portfolio blurb */
 body.dark-page .portfolio-blurb::before {
@@ -851,6 +866,167 @@ body.home-page .featured-item {
 
 .read-more:hover {
     color: #666666;
+}
+
+
+/* ----------------------------------------------------------
+   9b. PROJECTS PAGES
+   projects.html shows a card per project; project.html renders
+   one project. A project body reuses the blog block classes
+   (.blog-image / .img-* / .post-body) so posts and projects read
+   the same way and only need styling once.
+   ---------------------------------------------------------- */
+
+/* --- The card grid on projects.html --- */
+.projects-grid {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 0 2rem 4rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 2.5rem;
+}
+
+/* A single project shouldn't stretch the full width of the page */
+.projects-grid.single {
+    grid-template-columns: minmax(0, 620px);
+    justify-content: center;
+}
+
+.projects-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #666666;
+}
+
+.project-card {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+}
+
+.project-card-media {
+    display: block;
+    position: relative;
+    overflow: hidden;
+    border-radius: 6px;
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+.project-card-media img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+    transition: transform 0.4s ease, opacity 0.4s ease;
+}
+
+/* Same subtle zoom as the featured images on the home page */
+.project-card:hover .project-card-media img {
+    transform: scale(1.04);
+    opacity: 0.9;
+}
+
+/* "Click here for more" over the photo. Only on devices that really hover —
+   on a touchscreen the card is simply tapped, so the prompt would just be noise. */
+.project-card-hover { display: none; }
+
+@media (hover: hover) {
+    .project-card-hover {
+        display: flex;
+        position: absolute;
+        inset: 0;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(26, 24, 22, 0.55);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .project-card-hover span {
+        border: 1px solid rgba(240, 235, 229, 0.85);
+        border-radius: 4px;
+        padding: 0.6rem 1.2rem;
+        color: #f0ebe5;
+        font-size: 0.8rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+    }
+
+    .project-card:hover .project-card-hover,
+    .project-card:focus-visible .project-card-hover {
+        opacity: 1;
+    }
+}
+
+/* Placeholder when a project has no cover photo chosen yet */
+.project-card-nocover {
+    display: block;
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+.project-card-body {
+    display: block;
+    padding-top: 0.85rem;
+}
+
+.project-card-title {
+    display: block;
+    font-size: 1.3rem;
+    line-height: 1.4;
+}
+
+.project-card-sub {
+    display: block;
+    margin-top: 0.3rem;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #888888;
+}
+
+/* --- A single project on project.html --- */
+.project-detail {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 2rem 4rem;
+}
+
+.project-head {
+    text-align: center;
+    padding: 3.5rem 0 1.5rem;
+}
+
+.project-cover {
+    display: block;
+    width: 100%;
+    border-radius: 6px;
+    margin-bottom: 2.5rem;
+}
+
+/* Carries .blog-post too, so override the list spacing/divider it brings */
+.project-body {
+    padding: 0;
+    border-bottom: none;
+}
+
+.project-back {
+    margin-top: 3rem;
+    text-align: center;
+}
+
+/* Only shown on ?preview=1 for an unpublished project */
+.project-draft-note {
+    border: 1px solid #d9c9a3;
+    border-radius: 6px;
+    padding: 0.6rem 1rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
 }
 
 

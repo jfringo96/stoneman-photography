@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Basic page setup -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A photography project by Stoneman Photography.">
+
+    <!-- Each published project has its own page at /project/<slug>/. This page is the
+         preview renderer (?p=<slug>&preview=1) and a fallback, so keep it out of search. -->
+    <meta name="robots" content="noindex">
+    <title>Project | Stoneman Photography</title>
+
+    <!-- Shared stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/favicon-512.png">
+    <link rel="apple-touch-icon" href="/favicon-512.png">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Project | Stoneman Photography">
+    <meta property="og:description" content="A photography project by Stoneman Photography.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://stonemanphotography.co.uk/projects.html">
+
+    <!-- Title and canonical are rewritten by script.js to match the project in ?p= -->
+    <link rel="canonical" href="https://stonemanphotography.co.uk/projects.html">
+</head>
+<body class="dark-page">
+
+    <!-- ======== NAVIGATION ======== -->
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="logo">Stoneman Photography</a>
+            <button class="menu-toggle" aria-label="Toggle menu" aria-expanded="false">&#9776;</button>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="portfolio.html">Portfolio</a></li>
+                <li><a href="projects.html">Projects</a></li>
+                <li><a href="blog.html">Blog</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+
+    <!-- Renders whichever project the ?p= slug names, including drafts when the URL
+         also has preview=1. Published projects get their own generated page at
+         /project/<slug>/ which renders through this same code. -->
+    <main class="project-detail">
+        <!-- Populated from content.json -->
+    </main>
+
+
+    <!-- ======== FOOTER ======== -->
+    <footer>
+        <p>&copy; 2026 Stoneman Photography. All rights reserved.</p>
+        <p><a href="copyright.html">Copyright &amp; Image Use</a></p>
+    </footer>
+
+
+    <!-- Shared JavaScript -->
+    <script src="js/script.js?v=10"></script>
+
+</body>
+</html>

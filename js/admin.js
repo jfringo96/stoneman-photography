@@ -31,6 +31,8 @@ var THUMB_QUALITY  = 0.82;
 var BLOG_MAX_EDGE  = 1600;         // blog images are resized down to this
 var BLOG_QUALITY   = 0.85;
 var MAX_FEATURED   = 3;            // home page shows 3 featured photos
+var SCRIPT_VERSION = 10;           // script.js?v=N used by generated project pages —
+                                   // keep in step with the HTML pages when script.js changes
 
 
 /* In-memory copy of the site content while editing. */
@@ -392,6 +394,7 @@ function renderActiveTab() {
     else if (which === 'blog') renderBlogPanel();
     else if (which === 'text') loadTextPanel();
     else if (which === 'categories') renderCategoriesPanel();
+    else if (which === 'projects') renderProjectsPanel();
     else renderPhotos();
 }
 
@@ -1148,7 +1151,16 @@ function removeHero(fn) {
    resized and stored in images/Blog/.
    ---------------------------------------------------------- */
 
-var blogForm = null;   // { index, images: [{kind:'existing',name} | {kind:'new',file,previewUrl}] }
+/* The block editor is shared by blog posts and projects. While a form is open:
+   { kind: 'blog' | 'project', index: null for new, blocks: [...] }  */
+var editForm = null;
+
+/* Where a block editor's uploaded images are stored, per kind. */
+var BLOCK_IMAGE_DIRS = { blog: 'images/Blog/', project: 'images/Projects/' };
+
+function blockImageDir() {
+    return BLOCK_IMAGE_DIRS[(editForm && editForm.kind) || 'blog'];
+}
 
 function blogSrc(fn) {
     return 'https://raw.githubusercontent.com/' + CONFIG.owner + '/' + CONFIG.repo +
@@ -1162,10 +1174,20 @@ function rawSrc(path) {
 }
 function blogFlash(msg, type) { var el = $('blogStatus'); if (el) showStatus(el, msg, type); }
 
-function getBlogImageNames() {
+function getBlockImageNames() {
     var taken = {};
-    (state.content.blog || []).forEach(function (p) {
-        (p.images || []).forEach(function (n) { taken[n] = true; });
+    function addSrc(src) {
+        if (!src) return;
+        var dirs = Object.keys(BLOCK_IMAGE_DIRS).map(function (k) { return BLOCK_IMAGE_DIRS[k]; });
+        for (var i = 0; i < dirs.length; i++) {
+            if (src.indexOf(dirs[i]) === 0) { taken[src.slice(dirs[i].length)] = true; return; }
+        }
+    }
+    ['blog', 'projects'].forEach(function (key) {
+        (state.content[key] || []).forEach(function (item) {
+            (item.images || []).forEach(function (n) { taken[n] = true; });   // legacy blog posts
+            (item.blocks || []).forEach(function (b) { addSrc(b.src); });
+        });
     });
     return taken;
 }
@@ -1241,7 +1263,7 @@ function postToEditBlocks(post) {
 
 function openPostForm(index) {
     var post = (index === null) ? { title: '', date: formatDate(new Date()), blocks: [] } : state.content.blog[index];
-    blogForm = { index: index, blocks: postToEditBlocks(post) };
+    editForm = { kind: 'blog', index: index, blocks: postToEditBlocks(post) };
 
     $('postFormHolder').innerHTML =
         '<div class="add-form">' +
@@ -1265,12 +1287,12 @@ function openPostForm(index) {
         '</div>';
 
     $('addTextBlock').addEventListener('click', function () {
-        syncBlockInputs(); blogForm.blocks.push({ type: 'text', text: '' }); renderBlocks();
+        syncBlockInputs(); editForm.blocks.push({ type: 'text', text: '' }); renderBlocks();
     });
     $('addImageBlock').addEventListener('change', onBlockImageChosen);
-    $('addLibImage').addEventListener('click', openLibraryPicker);
+    $('addLibImage').addEventListener('click', function () { openLibraryPicker(); });
     $('pfSave').addEventListener('click', savePost);
-    $('pfCancel').addEventListener('click', function () { $('postFormHolder').innerHTML = ''; blogForm = null; });
+    $('pfCancel').addEventListener('click', function () { $('postFormHolder').innerHTML = ''; editForm = null; });
     renderBlocks();
     $('postFormHolder').scrollIntoView({ block: 'nearest' });
 }
@@ -1284,14 +1306,14 @@ function blkSelect(cls, options, sel) {
 function renderBlocks() {
     var holder = $('blocksHolder');
     if (!holder) return;
-    if (!blogForm.blocks.length) {
+    if (!editForm.blocks.length) {
         holder.innerHTML = '<p class="help">Add text and image blocks below — their top-to-bottom order is the order on the page.</p>';
         return;
     }
-    holder.innerHTML = blogForm.blocks.map(function (b, i) {
+    holder.innerHTML = editForm.blocks.map(function (b, i) {
         var ctrl = '<div class="blk-ctrl">' +
             '<button class="blk-up" data-i="' + i + '" title="Move up"' + (i === 0 ? ' disabled' : '') + '>▲</button>' +
-            '<button class="blk-down" data-i="' + i + '" title="Move down"' + (i === blogForm.blocks.length - 1 ? ' disabled' : '') + '>▼</button>' +
+            '<button class="blk-down" data-i="' + i + '" title="Move down"' + (i === editForm.blocks.length - 1 ? ' disabled' : '') + '>▼</button>' +
             '<button class="blk-del" data-i="' + i + '" title="Remove block">✕</button>' +
         '</div>';
         if (b.type === 'text') {
@@ -1320,7 +1342,7 @@ function renderBlocks() {
     holder.querySelectorAll('.blk-del').forEach(function (bt) {
         bt.addEventListener('click', function () {
             syncBlockInputs();
-            blogForm.blocks.splice(parseInt(this.getAttribute('data-i'), 10), 1);
+            editForm.blocks.splice(parseInt(this.getAttribute('data-i'), 10), 1);
             renderBlocks();
         });
     });
@@ -1330,7 +1352,7 @@ function renderBlocks() {
 function syncBlockInputs() {
     document.querySelectorAll('#blocksHolder .blk').forEach(function (el) {
         var i = parseInt(el.getAttribute('data-i'), 10);
-        var b = blogForm.blocks[i];
+        var b = editForm.blocks[i];
         if (!b) return;
         if (b.type === 'text') {
             var ta = el.querySelector('.blk-text');
@@ -1345,23 +1367,25 @@ function syncBlockInputs() {
 
 function moveBlock(i, dir) {
     var j = i + dir;
-    if (j < 0 || j >= blogForm.blocks.length) return;
-    var t = blogForm.blocks[i]; blogForm.blocks[i] = blogForm.blocks[j]; blogForm.blocks[j] = t;
+    if (j < 0 || j >= editForm.blocks.length) return;
+    var t = editForm.blocks[i]; editForm.blocks[i] = editForm.blocks[j]; editForm.blocks[j] = t;
     renderBlocks();
 }
 
 function onBlockImageChosen(e) {
     syncBlockInputs();
     Array.prototype.forEach.call(e.target.files, function (file) {
-        blogForm.blocks.push({ type: 'image', file: file, previewUrl: URL.createObjectURL(file), size: 'medium', align: 'center' });
+        editForm.blocks.push({ type: 'image', file: file, previewUrl: URL.createObjectURL(file), size: 'medium', align: 'center' });
     });
     e.target.value = '';
     renderBlocks();
 }
 
-/* Picker to reuse an existing portfolio photo (no new copy is stored). */
-function openLibraryPicker() {
-    syncBlockInputs();
+/* Picker to reuse an existing portfolio photo (no new copy is stored).
+   With no argument it appends an image block; given onPick it calls that with
+   the chosen filename instead (used to set a project cover). */
+function openLibraryPicker(onPick) {
+    if (!onPick) syncBlockInputs();
     var holder = $('libraryPicker');
     holder.innerHTML =
         '<div class="lib-head"><span>Choose an existing photo to reuse</span>' +
@@ -1377,8 +1401,10 @@ function openLibraryPicker() {
     $('libClose').addEventListener('click', function () { holder.classList.add('hidden'); holder.innerHTML = ''; });
     holder.querySelectorAll('.lib-item').forEach(function (bt) {
         bt.addEventListener('click', function () {
-            blogForm.blocks.push({ type: 'image', src: 'images/Thumb/' + this.getAttribute('data-fn'), size: 'medium', align: 'center' });
+            var fn = this.getAttribute('data-fn');
             holder.classList.add('hidden'); holder.innerHTML = '';
+            if (onPick) { onPick(fn); return; }
+            editForm.blocks.push({ type: 'image', src: 'images/Thumb/' + fn, size: 'medium', align: 'center' });
             renderBlocks();
         });
     });
@@ -1394,11 +1420,11 @@ function savePost() {
     $('pfSave').disabled = true;
     showStatus(status, 'Preparing…', 'ok');
 
-    var taken = getBlogImageNames();
+    var taken = getBlockImageNames();
     var upserts = [];
     var chain = Promise.resolve();
 
-    blogForm.blocks.forEach(function (b, idx) {
+    editForm.blocks.forEach(function (b, idx) {
         if (b.type === 'image' && b.file) {
             chain = chain.then(function () {
                 var name = uniqueFilename(slugify(title) + '-' + (idx + 1), '.jpg', taken);
@@ -1406,8 +1432,8 @@ function savePost() {
                 return resizeToBlob(b.file, BLOG_MAX_EDGE, BLOG_QUALITY)
                     .then(fileToBase64)
                     .then(function (b64) {
-                        upserts.push({ path: 'images/Blog/' + name, base64: b64 });
-                        b._finalSrc = 'images/Blog/' + name;
+                        upserts.push({ path: blockImageDir() + name, base64: b64 });
+                        b._finalSrc = blockImageDir() + name;
                     });
             });
         }
@@ -1415,7 +1441,7 @@ function savePost() {
 
     chain.then(function () {
         showStatus(status, 'Saving…', 'ok');
-        var blocks = blogForm.blocks.map(function (b) {
+        var blocks = editForm.blocks.map(function (b) {
             if (b.type === 'text') return { type: 'text', text: b.text || '' };
             return { type: 'image', src: (b.file ? b._finalSrc : b.src), size: b.size || 'medium', align: b.align || 'center' };
         }).filter(function (b) {
@@ -1424,15 +1450,15 @@ function savePost() {
 
         if (!state.content.blog) state.content.blog = [];
         var post = { title: title, date: date, blocks: blocks };
-        if (blogForm.index === null) state.content.blog.unshift(post);
-        else state.content.blog[blogForm.index] = post;
+        if (editForm.index === null) state.content.blog.unshift(post);
+        else state.content.blog[editForm.index] = post;
         upserts.push({ path: 'content.json', base64: contentToBase64(state.content) });
         return commitChanges({
-            message: (blogForm.index === null ? 'Add' : 'Update') + ' blog post "' + title + '" via Site Manager',
+            message: (editForm.index === null ? 'Add' : 'Update') + ' blog post "' + title + '" via Site Manager',
             upserts: upserts
         });
     }).then(function () {
-        blogForm = null;
+        editForm = null;
         return loadContent();
     }).then(function () {
         blogFlash('✓ Saved. The site will update within about a minute.', 'ok');
@@ -1495,7 +1521,8 @@ var TEXT_FIELDS = [
     { id: 'about_bio', label: 'About bio', kind: 'html', file: 'about.html', marker: 'about-bio', multiline: true, rows: 6,
       help: 'Leave a blank line between paragraphs.' },
     { id: 'portfolio_blurb', label: 'Portfolio blurb', kind: 'html', file: 'portfolio.html', marker: 'portfolio-blurb', multiline: true, rows: 4,
-      help: 'The Contact link below this text is kept automatically.' }
+      help: 'The Contact link below this text is kept automatically.' },
+    { id: 'projects_intro', label: 'Projects page intro', kind: 'html', file: 'projects.html', marker: 'projects-intro', multiline: true, rows: 3 }
 ];
 
 function textFlash(msg, type) { var el = $('textStatus'); if (el) showStatus(el, msg, type); }
@@ -1651,6 +1678,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 loadTextPanel();
             } else if (which === 'categories') {
                 loadCategoriesPanel();
+            } else if (which === 'projects') {
+                loadProjectsPanel();
             } else {
                 $('panelBody').innerHTML = '<div class="placeholder">This section is coming in a later phase.</div>';
             }
@@ -1676,3 +1705,450 @@ document.addEventListener('DOMContentLoaded', function () {
         showLogin();
     }
 });
+
+
+/* ----------------------------------------------------------
+   PROJECTS
+   Stored in content.json as projects: [{ slug, title, subtitle,
+   cover, status, blocks }]. The site has one project.html page
+   that renders whichever project the ?p=<slug> in the URL names,
+   so adding a project here never needs a new file.
+
+   Uses the same block editor as the blog; only the surrounding
+   fields (slug, cover, status) differ. Images uploaded into a
+   project go to images/Projects/.
+   ---------------------------------------------------------- */
+
+function projFlash(msg, type) { var el = $('projStatus'); if (el) showStatus(el, msg, type); }
+
+function loadProjectsPanel() {
+    if (!state.content.projects) state.content.projects = [];
+    renderProjectsPanel();
+}
+
+/* A cover is either a bare portfolio filename (images/Thumb/) or a full path. */
+function projCoverSrc(cover) {
+    if (!cover) return '';
+    return cover.indexOf('/') === -1 ? imgSrc(cover) : rawSrc(cover);
+}
+
+/* Slug must be unique across projects — it is the project's page address. */
+function uniqueSlug(base, skipIndex) {
+    // slugify() falls back to 'photo', which is meaningless for a project page.
+    base = (base || '').trim() ? slugify(base) : 'project';
+    var used = {};
+    (state.content.projects || []).forEach(function (p, i) {
+        if (i !== skipIndex && p.slug) used[p.slug] = true;
+    });
+    var slug = base, n = 2;
+    while (used[slug]) { slug = base + '-' + n; n++; }
+    return slug;
+}
+
+function renderProjectsPanel() {
+    var projects = state.content.projects || [];
+    var rows = projects.map(function (proj, i) {
+        var cover = projCoverSrc(proj.cover);
+        var thumb = cover ? '<img src="' + cover + '" alt="">' : '<div class="noimg">No cover</div>';
+        var isDraft = proj.status === 'draft';
+        return '' +
+        '<div class="blog-row proj-row" data-index="' + i + '">' +
+            '<span class="reorder">' +
+                '<button class="up" title="Move up">▲</button>' +
+                '<button class="down" title="Move down">▼</button>' +
+            '</span>' +
+            '<div class="blog-thumb">' + thumb + '</div>' +
+            '<div class="blog-rowmeta">' +
+                '<span class="blog-rowtitle">' + escapeHtml(proj.title || '(untitled)') +
+                    (isDraft ? ' <span class="badge draft">draft</span>' : '') + '</span>' +
+                '<span class="blog-rowdate">' + (isDraft ? 'not published yet'
+                    : '/project/' + escapeHtml(proj.slug || '') + '/') + '</span>' +
+            '</div>' +
+            '<button class="proj-edit blog-edit">Edit</button>' +
+            '<button class="proj-del remove">Delete</button>' +
+        '</div>';
+    }).join('');
+
+    $('panelBody').innerHTML =
+        '<div class="blog-status status hidden" id="projStatus"></div>' +
+        '<div class="photo-toolbar"><button id="newProjBtn">+ New project</button></div>' +
+        '<div class="post-form-holder" id="projFormHolder"></div>' +
+        '<div class="blog-list">' +
+            (rows || '<div class="placeholder">No projects yet. Click “New project” to start one.</div>') +
+        '</div>' +
+        '<p class="help">Projects appear on the Projects page in this order. A draft is hidden from ' +
+        'the site until you set it to Published — use Preview to check it first.</p>';
+
+    $('newProjBtn').addEventListener('click', function () { openProjectForm(null); });
+    document.querySelectorAll('.proj-row').forEach(function (row) {
+        var i = parseInt(row.getAttribute('data-index'), 10);
+        row.querySelector('.up').addEventListener('click', function () { moveProject(i, -1); });
+        row.querySelector('.down').addEventListener('click', function () { moveProject(i, 1); });
+        row.querySelector('.proj-edit').addEventListener('click', function () { openProjectForm(i); });
+        row.querySelector('.proj-del').addEventListener('click', function () { deleteProject(i); });
+    });
+}
+
+function openProjectForm(index) {
+    var proj = (index === null)
+        ? { title: '', subtitle: '', slug: '', cover: '', status: 'draft', blocks: [] }
+        : state.content.projects[index];
+    editForm = { kind: 'project', index: index, blocks: postToEditBlocks(proj), cover: proj.cover || '' };
+
+    $('projFormHolder').innerHTML =
+        '<div class="add-form">' +
+            '<div class="af-grid">' +
+                '<div class="af-field"><label for="prTitle">Title</label>' +
+                    '<input type="text" id="prTitle" value="' + escapeHtml(proj.title || '') + '"></div>' +
+                '<div class="af-field"><label for="prSubtitle">Subtitle (optional)</label>' +
+                    '<input type="text" id="prSubtitle" value="' + escapeHtml(proj.subtitle || '') + '"></div>' +
+                '<div class="af-field"><label for="prSlug">Page address</label>' +
+                    '<input type="text" id="prSlug" value="' + escapeHtml(proj.slug || '') + '" placeholder="made from the title">' +
+                    '<span class="help">The end of the project’s web address. Changing it breaks any link already shared.</span></div>' +
+                '<div class="af-field"><label for="prVisibility">Visibility</label>' +
+                    '<select id="prVisibility">' +
+                        '<option value="draft"' + (proj.status === 'draft' ? ' selected' : '') + '>Draft — hidden from the site</option>' +
+                        '<option value="published"' + (proj.status !== 'draft' ? ' selected' : '') + '>Published — visible to everyone</option>' +
+                    '</select></div>' +
+            '</div>' +
+            '<div class="af-row"><label>Cover photo (shown on the Projects page)</label>' +
+                '<div class="proj-cover" id="prCoverBox"></div></div>' +
+            '<div class="blocks-holder" id="blocksHolder"></div>' +
+            '<div class="block-add">' +
+                '<button class="secondary" id="addTextBlock">+ Add text</button>' +
+                '<label class="btn-like">+ Upload image' +
+                    '<input type="file" id="addImageBlock" accept="image/jpeg,image/png" multiple hidden></label>' +
+                '<button class="secondary" id="addLibImage">+ From library</button>' +
+            '</div>' +
+            '<div class="library-picker hidden" id="libraryPicker"></div>' +
+            '<div class="af-actions">' +
+                '<button id="prSave">Save project</button>' +
+                '<button class="secondary" id="prPreview">Preview</button>' +
+                '<button class="secondary" id="prCancel">Cancel</button>' +
+            '</div>' +
+            '<div class="status hidden" id="prFormStatus"></div>' +
+        '</div>';
+
+    $('addTextBlock').addEventListener('click', function () {
+        syncBlockInputs(); editForm.blocks.push({ type: 'text', text: '' }); renderBlocks();
+    });
+    $('addImageBlock').addEventListener('change', onBlockImageChosen);
+    $('addLibImage').addEventListener('click', function () { openLibraryPicker(); });
+    $('prSave').addEventListener('click', saveProject);
+    $('prPreview').addEventListener('click', previewProject);
+    $('prCancel').addEventListener('click', function () { $('projFormHolder').innerHTML = ''; editForm = null; });
+    renderProjectCover();
+    renderBlocks();
+    $('projFormHolder').scrollIntoView({ block: 'nearest' });
+}
+
+/* The cover chooser inside the project form. */
+function renderProjectCover() {
+    var box = $('prCoverBox');
+    if (!box) return;
+    var cover = projCoverSrc(editForm.cover);
+    box.innerHTML =
+        (cover ? '<img class="proj-cover-thumb" src="' + cover + '" alt="">'
+               : '<div class="noimg">No cover chosen</div>') +
+        '<div class="proj-cover-btns">' +
+            '<button class="secondary" id="prCoverPick">' + (cover ? 'Change' : 'Choose') + ' cover</button>' +
+            (cover ? '<button class="secondary" id="prCoverClear">Remove</button>' : '') +
+        '</div>';
+    $('prCoverPick').addEventListener('click', function () {
+        openLibraryPicker(function (fn) { editForm.cover = fn; renderProjectCover(); });
+    });
+    if ($('prCoverClear')) {
+        $('prCoverClear').addEventListener('click', function () { editForm.cover = ''; renderProjectCover(); });
+    }
+}
+
+/* Open the live project page with ?preview=1, which shows drafts too.
+   Unsaved edits are not included — it previews what is saved. */
+function previewProject() {
+    var slug = $('prSlug').value.trim() || slugify($('prTitle').value.trim());
+    if (!slug) { showStatus($('prFormStatus'), 'Give the project a title first.', 'error'); return; }
+    if (editForm.index === null) {
+        showStatus($('prFormStatus'), 'Save the project once before previewing it.', 'error');
+        return;
+    }
+    // A published project has a real page; a draft is only viewable through the
+    // preview renderer. Either way this shows what is SAVED, not unsaved edits.
+    var published = $('prVisibility').value === 'published';
+    var url = published
+        ? projectPageUrl(slug)
+        : 'https://stonemanphotography.co.uk/project.html?p=' + encodeURIComponent(slug) + '&preview=1';
+    window.open(url, '_blank');
+}
+
+function saveProject() {
+    syncBlockInputs();
+    var status = $('prFormStatus');
+    var title = $('prTitle').value.trim();
+    if (!title) { showStatus(status, 'Please give the project a title.', 'error'); return; }
+
+    var index = editForm.index;
+    var slug = uniqueSlug($('prSlug').value.trim() || title, index === null ? -1 : index);
+
+    $('prSave').disabled = true;
+    showStatus(status, 'Preparing…', 'ok');
+
+    var taken = getBlockImageNames();
+    var upserts = [];
+    var chain = Promise.resolve();
+
+    editForm.blocks.forEach(function (b, idx) {
+        if (b.type === 'image' && b.file) {
+            chain = chain.then(function () {
+                var name = uniqueFilename(slug + '-' + (idx + 1), '.jpg', taken);
+                taken[name] = true;
+                return resizeToBlob(b.file, BLOG_MAX_EDGE, BLOG_QUALITY)
+                    .then(fileToBase64)
+                    .then(function (b64) {
+                        upserts.push({ path: blockImageDir() + name, base64: b64 });
+                        b._finalSrc = blockImageDir() + name;
+                    });
+            });
+        }
+    });
+
+    chain.then(function () {
+        showStatus(status, 'Saving…', 'ok');
+        var blocks = editForm.blocks.map(function (b) {
+            if (b.type === 'text') return { type: 'text', text: b.text || '' };
+            return { type: 'image', src: (b.file ? b._finalSrc : b.src), size: b.size || 'medium', align: b.align || 'center' };
+        }).filter(function (b) {
+            return b.type === 'text' ? (b.text || '').trim() : b.src;
+        });
+
+        if (!state.content.projects) state.content.projects = [];
+        var proj = {
+            slug: slug,
+            title: title,
+            subtitle: $('prSubtitle').value.trim(),
+            cover: editForm.cover || '',
+            status: $('prVisibility').value === 'published' ? 'published' : 'draft',
+            blocks: blocks
+        };
+        // What this project looked like before this save, so we know which page
+        // file (if any) is now stale.
+        var prev = index === null ? null : state.content.projects[index];
+        var deletes = [];
+        if (prev && prev.slug && prev.status !== 'draft' &&
+            (prev.slug !== proj.slug || proj.status === 'draft')) {
+            deletes.push(projectPagePath(prev.slug));
+        }
+
+        if (index === null) state.content.projects.unshift(proj);
+        else state.content.projects[index] = proj;
+
+        // A published project has its own page; a draft deliberately has none.
+        if (proj.status !== 'draft') {
+            upserts.push({ path: projectPagePath(proj.slug), base64: b64EncodeUnicode(buildProjectPage(proj)) });
+        }
+        upserts.push({ path: 'content.json', base64: contentToBase64(state.content) });
+
+        return sitemapUpsert(state.content.projects).then(function (sm) {
+            if (sm) upserts.push(sm);
+            return commitChanges({
+                message: (index === null ? 'Add' : 'Update') + ' project "' + title + '" via Site Manager',
+                upserts: upserts,
+                deletes: deletes
+            });
+        });
+    }).then(function () {
+        editForm = null;
+        return loadContent();
+    }).then(function () {
+        projFlash('✓ Saved. The site will update within about a minute.', 'ok');
+    }).catch(function (err) {
+        showStatus(status, 'Could not save: ' + err.message, 'error');
+        if ($('prSave')) $('prSave').disabled = false;
+    });
+}
+
+function moveProject(i, dir) {
+    var list = state.content.projects, j = i + dir;
+    if (j < 0 || j >= list.length) return;
+    var t = list[i]; list[i] = list[j]; list[j] = t;
+    projFlash('Saving order…', 'ok');
+    commitChanges({
+        message: 'Reorder projects via Site Manager',
+        upserts: [{ path: 'content.json', base64: contentToBase64(state.content) }]
+    }).then(loadContent)
+      .then(function () { projFlash('✓ Order saved.', 'ok'); })
+      .catch(function (err) { projFlash('Could not reorder: ' + err.message, 'error'); });
+}
+
+function deleteProject(index) {
+    var proj = state.content.projects[index];
+    if (!proj) return;
+    if (!window.confirm('Delete the project “' + (proj.title || 'untitled') + '”? (Recoverable from version history.)')) return;
+
+    // Only delete images this project owns (uploaded into images/Projects/).
+    // Reused portfolio photos are left alone — they belong to the gallery.
+    var dir = BLOCK_IMAGE_DIRS.project;
+    var deletes = [];
+    (proj.blocks || []).forEach(function (b) {
+        if (b.src && b.src.indexOf(dir) === 0) deletes.push(b.src);
+    });
+    if (proj.cover && proj.cover.indexOf(dir) === 0) deletes.push(proj.cover);
+
+    // Published projects have a page of their own; drafts never do.
+    if (proj.slug && proj.status !== 'draft') deletes.push(projectPagePath(proj.slug));
+
+    state.content.projects.splice(index, 1);
+    projFlash('Deleting…', 'ok');
+    sitemapUpsert(state.content.projects).then(function (sm) {
+        var upserts = [{ path: 'content.json', base64: contentToBase64(state.content) }];
+        if (sm) upserts.push(sm);
+        return commitChanges({
+            message: 'Delete project "' + (proj.title || 'untitled') + '" via Site Manager',
+            upserts: upserts,
+            deletes: deletes
+        });
+    }).then(loadContent)
+      .then(function () { projFlash('✓ Deleted.', 'ok'); })
+      .catch(function (err) { projFlash('Could not delete: ' + err.message, 'error'); });
+}
+
+
+/* ----------------------------------------------------------
+   PROJECT PAGES
+   Every PUBLISHED project gets its own real page committed at
+   project/<slug>/index.html, so it has a proper web address, its
+   own title and a tidy link to share.
+
+   The page is a thin shell: the title/description/canonical are
+   baked in for search engines and link previews, but the content
+   itself is still rendered from content.json by script.js (the
+   slug is in data-project). That way a project's words and photos
+   live in exactly one place and the page can never drift out of
+   date with content.json.
+
+   A draft has no page at all — it is previewed through
+   project.html?p=<slug>&preview=1 instead.
+   ---------------------------------------------------------- */
+
+function projectPagePath(slug) {
+    return 'project/' + slug + '/index.html';
+}
+
+function projectPageUrl(slug) {
+    return 'https://stonemanphotography.co.uk/project/' + slug + '/';
+}
+
+/* First line of the first text block, for the meta description. */
+function projectSummary(proj) {
+    var text = '';
+    (proj.blocks || []).forEach(function (b) {
+        if (!text && b.type === 'text' && (b.text || '').trim()) text = b.text.trim();
+    });
+    text = text.replace(/\s+/g, ' ');
+    if (text.length > 155) text = text.slice(0, 152).replace(/\s+\S*$/, '') + '…';
+    return text || (proj.title + ' — a photography project by Stoneman Photography.');
+}
+
+/* The generated page. <base href="/"> lets it sit in a subfolder while every
+   relative path inside (css, js, images, content.json, nav links) still
+   resolves from the site root, exactly as on the top-level pages. */
+function buildProjectPage(proj) {
+    var title = escapeHtml(proj.title) + ' | Stoneman Photography';
+    var desc = escapeHtml(projectSummary(proj));
+    var url = projectPageUrl(proj.slug);
+    var cover = proj.cover
+        ? 'https://stonemanphotography.co.uk/' +
+          (proj.cover.indexOf('/') === -1 ? 'images/Thumb/' + proj.cover : proj.cover)
+              .split('/').map(encodeURIComponent).join('/')
+        : '';
+
+    return '<!DOCTYPE html>\n' +
+'<html lang="en">\n' +
+'<head>\n' +
+'    <!-- Generated by the Site Manager. Edit this project in the Projects tab,\n' +
+'         not here: saving the project rewrites this file. -->\n' +
+'    <meta charset="UTF-8">\n' +
+'    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
+'    <base href="/">\n' +
+'    <meta name="description" content="' + desc + '">\n' +
+'    <title>' + title + '</title>\n' +
+'\n' +
+'    <link rel="stylesheet" href="css/style.css">\n' +
+'\n' +
+'    <link rel="icon" type="image/png" href="/favicon-512.png">\n' +
+'    <link rel="apple-touch-icon" href="/favicon-512.png">\n' +
+'\n' +
+'    <meta property="og:title" content="' + title + '">\n' +
+'    <meta property="og:description" content="' + desc + '">\n' +
+'    <meta property="og:type" content="article">\n' +
+'    <meta property="og:url" content="' + url + '">\n' +
+(cover ? '    <meta property="og:image" content="' + cover + '">\n' : '') +
+'    <link rel="canonical" href="' + url + '">\n' +
+'</head>\n' +
+'<body class="dark-page">\n' +
+'\n' +
+'    <!-- ======== NAVIGATION ======== -->\n' +
+'    <nav>\n' +
+'        <div class="nav-container">\n' +
+'            <a href="index.html" class="logo">Stoneman Photography</a>\n' +
+'            <button class="menu-toggle" aria-label="Toggle menu" aria-expanded="false">&#9776;</button>\n' +
+'            <ul class="nav-links">\n' +
+'                <li><a href="index.html">Home</a></li>\n' +
+'                <li><a href="portfolio.html">Portfolio</a></li>\n' +
+'                <li><a href="projects.html">Projects</a></li>\n' +
+'                <li><a href="blog.html">Blog</a></li>\n' +
+'                <li><a href="about.html">About</a></li>\n' +
+'                <li><a href="contact.html">Contact</a></li>\n' +
+'            </ul>\n' +
+'        </div>\n' +
+'    </nav>\n' +
+'\n' +
+'\n' +
+'    <!-- Rendered from the projects array in content.json by script.js -->\n' +
+'    <main class="project-detail" data-project="' + escapeHtml(proj.slug) + '">\n' +
+'    </main>\n' +
+'\n' +
+'\n' +
+'    <!-- ======== FOOTER ======== -->\n' +
+'    <footer>\n' +
+'        <p>&copy; 2026 Stoneman Photography. All rights reserved.</p>\n' +
+'        <p><a href="copyright.html">Copyright &amp; Image Use</a></p>\n' +
+'    </footer>\n' +
+'\n' +
+'\n' +
+'    <script src="js/script.js?v=' + SCRIPT_VERSION + '"></script>\n' +
+'\n' +
+'</body>\n' +
+'</html>\n';
+}
+
+/* The <url> entries for published projects, for the managed region of sitemap.xml. */
+function projectSitemapRegion(projects) {
+    var today = new Date().toISOString().slice(0, 10);
+    var entries = (projects || []).filter(function (p) {
+        return p.status !== 'draft' && p.slug;
+    }).map(function (p) {
+        return '  <url>\n' +
+               '    <loc>' + projectPageUrl(p.slug) + '</loc>\n' +
+               '    <lastmod>' + today + '</lastmod>\n' +
+               '    <changefreq>monthly</changefreq>\n' +
+               '    <priority>0.7</priority>\n' +
+               '  </url>';
+    });
+    return entries.length ? '\n' + entries.join('\n') + '\n  ' : '\n  ';
+}
+
+/* Rewrite the projects region of sitemap.xml, returning an upsert (or nothing
+   if it is already correct). Never touches the hand-written entries above it. */
+function sitemapUpsert(projects) {
+    return ghGetFile('sitemap.xml').then(function (f) {
+        var open = '<!-- projects:start -->', close = '<!-- projects:end -->';
+        if (f.text.indexOf(open) === -1 || f.text.indexOf(close) === -1) return null;
+        var re = new RegExp(open.replace(/[-[\]{}()*+?.,\\^$|#]/g, '\\$&') +
+                            '[\\s\\S]*?' + close.replace(/[-[\]{}()*+?.,\\^$|#]/g, '\\$&'));
+        var updated = f.text.replace(re, open + projectSitemapRegion(projects) + close);
+        if (updated === f.text) return null;
+        return { path: 'sitemap.xml', base64: b64EncodeUnicode(updated) };
+    }).catch(function () {
+        return null;   // a sitemap problem must never block saving a project
+    });
+}

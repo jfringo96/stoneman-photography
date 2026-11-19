@@ -91,10 +91,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 populateFeaturedImages(content.portfolio, content.featured_images);
             }
             populateBlog(content.blog);
+            populateProjectsList(content.projects);
+            populateProjectDetail(content.projects);
             initInteractivity();
         })
         .catch(function () {
-            // content.json unavailable — existing hardcoded HTML and photoData take over
+            // content.json unavailable — existing hardcoded HTML and photoData take over.
+            // The project pages have no hardcoded fallback (they are built entirely from
+            // content.json), so they say so rather than sitting empty.
+            projectsUnavailable();
             initInteractivity();
         });
 });
@@ -210,60 +215,76 @@ function populateFeaturedImages(portfolio, featuredImages) {
 function populateCategories(categories) {
     var container = document.querySelector('.filter-buttons');
     if (!container || !categories || !categories.length) return;
-    function esc(s) {
-        return String(s == null ? '' : s)
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
     container.innerHTML = categories.map(function (cat, i) {
         return '<button class="category-btn' + (i === 0 ? ' active' : '') +
                '" data-category="' + esc(cat.key) + '">' + esc(cat.label) + '</button>';
     }).join('');
 }
 
+/* ----------------------------------------------------------
+   SHARED BLOCK RENDERER
+   Blog posts and projects use one content format: an array of
+   blocks, each either { type: 'text', text } or
+   { type: 'image', src, size, align }. Both render through these
+   helpers so the two always look and behave the same way.
+   ---------------------------------------------------------- */
+
+/* Escape text before putting it into HTML. */
+function esc(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/* Blank-line-separated text becomes paragraphs; single newlines become <br>. */
+function textToParas(text) {
+    var out = '';
+    (text || '').split(/\n\n+/).forEach(function (para) {
+        if (para.trim()) out += '<p class="post-body">' + esc(para).replace(/\n/g, '<br>') + '</p>';
+    });
+    return out;
+}
+
+/* An image block. b.src is a full repo-relative path; older blog
+   posts used b.filename (always in images/Blog/). */
+function imageTag(b, alt) {
+    var src = b.src || (b.filename ? 'images/Blog/' + b.filename : '');
+    if (!src) return '';
+    var cls = (b.size === 'full' || b.align === 'full')
+        ? 'blog-image img-full'
+        : 'blog-image img-' + (b.size || 'medium') + ' img-' + (b.align || 'center');
+    return '<img class="' + cls + '" src="' + encodeURI(src) +
+           '" alt="' + esc(alt) + '" loading="lazy">';
+}
+
+/* Old-style blog posts ({ body, images }) become blocks so both render the same way. */
+function asBlocks(item) {
+    if (item.blocks) return item.blocks;
+    var blocks = [];
+    (item.images || []).forEach(function (fn) {
+        blocks.push({ type: 'image', filename: fn, size: 'full', align: 'full' });
+    });
+    if (item.body) blocks.push({ type: 'text', text: item.body });
+    else if (item.excerpt) blocks.push({ type: 'text', text: item.excerpt });
+    return blocks;
+}
+
+/* Render a block list to HTML. */
+function blocksToHTML(blocks, alt) {
+    var html = '';
+    blocks.forEach(function (b) {
+        if (b.type === 'text') html += textToParas(b.text);
+        else if (b.type === 'image') html += imageTag(b, alt);
+    });
+    return html;
+}
+
 /* Build blog post list on blog.html from the blog array in content.json.
-   Each post: { title, date, body, images: [filename, …] }. Renders nothing
-   if the array is empty. Body text supports blank-line-separated paragraphs. */
+   Renders nothing if the array is empty. */
 function populateBlog(blog) {
     var container = document.querySelector('.blog-posts');
     if (!container) return;
     container.innerHTML = '';
     if (!blog || blog.length === 0) return;
-
-    function esc(s) {
-        return String(s == null ? '' : s)
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
-
-    function textToParas(text) {
-        var out = '';
-        (text || '').split(/\n\n+/).forEach(function (para) {
-            if (para.trim()) out += '<p class="post-body">' + esc(para).replace(/\n/g, '<br>') + '</p>';
-        });
-        return out;
-    }
-
-    function imageTag(b, alt) {
-        // b.src is a full repo-relative path; older posts used b.filename (in images/Blog/).
-        var src = b.src || (b.filename ? 'images/Blog/' + b.filename : '');
-        if (!src) return '';
-        var cls = (b.size === 'full' || b.align === 'full')
-            ? 'blog-image img-full'
-            : 'blog-image img-' + (b.size || 'medium') + ' img-' + (b.align || 'center');
-        return '<img class="' + cls + '" src="' + encodeURI(src) +
-               '" alt="' + esc(alt) + '" loading="lazy">';
-    }
-
-    /* Old-style posts ({ body, images }) become blocks so both render the same way. */
-    function asBlocks(post) {
-        if (post.blocks) return post.blocks;
-        var blocks = [];
-        (post.images || []).forEach(function (fn) {
-            blocks.push({ type: 'image', filename: fn, size: 'full', align: 'full' });
-        });
-        if (post.body) blocks.push({ type: 'text', text: post.body });
-        else if (post.excerpt) blocks.push({ type: 'text', text: post.excerpt });
-        return blocks;
-    }
 
     blog.forEach(function (post) {
         var article = document.createElement('article');
@@ -271,15 +292,150 @@ function populateBlog(blog) {
 
         var html = '<h2>' + esc(post.title) + '</h2>';
         if (post.date) html += '<span class="blog-date">' + esc(post.date) + '</span>';
-
-        asBlocks(post).forEach(function (b) {
-            if (b.type === 'text') html += textToParas(b.text);
-            else if (b.type === 'image') html += imageTag(b, post.title);
-        });
+        html += blocksToHTML(asBlocks(post), post.title);
 
         article.innerHTML = html;
         container.appendChild(article);
     });
+}
+
+
+/* ----------------------------------------------------------
+   PROJECTS
+   projects.html lists the projects; project.html renders whichever
+   one the ?p= slug in the URL names. Both read the same projects
+   array from content.json, so adding a project never needs a new
+   HTML file — only a content change from the Site Manager.
+   ---------------------------------------------------------- */
+
+/* A project cover or image: a bare filename means an existing portfolio
+   photo (images/Thumb/), anything containing a slash is a full path. */
+function projectImageSrc(name) {
+    if (!name) return '';
+    return name.indexOf('/') === -1 ? 'images/Thumb/' + name : name;
+}
+
+/* Every published project has its own page at /project/<slug>/, written by the
+   Site Manager. Drafts have no page and are previewed through project.html. */
+function projectUrl(slug) {
+    return '/project/' + encodeURIComponent(slug || '') + '/';
+}
+
+/* Drafts are hidden from the live site. A project with no status is published,
+   so projects added by hand still show. */
+function isPublished(project) {
+    return project && project.status !== 'draft';
+}
+
+/* Read a query-string value: ?p= names which project to show, and
+   ?preview=1 lets a draft through so it can be checked before publishing. */
+function urlParam(name) {
+    var m = new RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : '';
+}
+
+/* Card grid on projects.html. */
+function populateProjectsList(projects) {
+    var grid = document.querySelector('.projects-grid');
+    if (!grid) return;
+
+    var live = (projects || []).filter(isPublished);
+    if (!live.length) {
+        grid.innerHTML = '<p class="projects-empty">No projects published yet &mdash; check back soon.</p>';
+        return;
+    }
+
+    // A lone project would otherwise stretch the full width of the page.
+    grid.classList.toggle('single', live.length === 1);
+
+    grid.innerHTML = live.map(function (p) {
+        var cover = projectImageSrc(p.cover);
+        var media = cover
+            ? '<img src="' + encodeURI(cover) + '" alt="' + esc(p.title) + '" loading="lazy">'
+            : '<span class="project-card-nocover"></span>';
+        // The whole card is one link, so the photo and the name below it both
+        // open the project and it stays a single stop for keyboard users.
+        return '<a class="project-card" href="' + projectUrl(p.slug) + '">' +
+                   '<span class="project-card-media">' + media +
+                       '<span class="project-card-hover"><span>Click here for more</span></span>' +
+                   '</span>' +
+                   '<span class="project-card-body">' +
+                       '<span class="project-card-title">' + esc(p.title) + '</span>' +
+                       (p.subtitle ? '<span class="project-card-sub">' + esc(p.subtitle) + '</span>' : '') +
+                   '</span>' +
+               '</a>';
+    }).join('');
+}
+
+/* The single-project page. */
+function populateProjectDetail(projects) {
+    var holder = document.querySelector('.project-detail');
+    if (!holder) return;
+
+    // A generated project page carries its slug in data-project. project.html is
+    // the preview/fallback renderer and takes it from ?p= instead.
+    var slug = holder.getAttribute('data-project') || urlParam('p');
+    var preview = urlParam('preview') === '1';
+    var project = (projects || []).filter(function (p) {
+        return p.slug === slug && (isPublished(p) || preview);
+    })[0];
+
+    if (!project) {
+        showProjectMissing(holder);
+        return;
+    }
+
+    document.title = project.title + ' | Stoneman Photography';
+    var canonical = document.querySelector('link[rel="canonical"]');
+    if (canonical) {
+        canonical.setAttribute('href',
+            'https://stonemanphotography.co.uk' + projectUrl(project.slug));
+    }
+
+    var html = '';
+    if (!isPublished(project)) {
+        html += '<p class="project-draft-note">Draft preview &mdash; this project is not visible on the site yet.</p>';
+    }
+    html += '<header class="project-head">' +
+                '<h1>' + esc(project.title) + '</h1>' +
+                (project.subtitle ? '<p class="page-header-sub">' + esc(project.subtitle) + '</p>' : '') +
+            '</header>';
+
+    var cover = projectImageSrc(project.cover);
+    if (cover) {
+        html += '<img class="project-cover" src="' + encodeURI(cover) +
+                '" alt="' + esc(project.title) + '">';
+    }
+
+    html += '<div class="project-body blog-post">' +
+                blocksToHTML(asBlocks(project), project.title) +
+            '</div>';
+    html += '<p class="project-back"><a href="/projects.html">&#8249; All projects</a></p>';
+
+    holder.innerHTML = html;
+}
+
+/* Shown when the ?p= slug matches nothing — a mistyped or retired link. */
+function showProjectMissing(holder) {
+    document.title = 'Project not found | Stoneman Photography';
+    holder.innerHTML =
+        '<header class="project-head"><h1>Project not found</h1></header>' +
+        '<p class="project-body post-body">That project does not exist, or it may have been taken down.</p>' +
+        '<p class="project-back"><a href="/projects.html">&#8249; All projects</a></p>';
+}
+
+/* content.json could not be loaded (offline, or opened over file://).
+   Only the project pages need this — every other page has hardcoded fallback content. */
+function projectsUnavailable() {
+    var msg = 'Projects could not be loaded. Please refresh the page.';
+    var grid = document.querySelector('.projects-grid');
+    if (grid) grid.innerHTML = '<p class="projects-empty">' + msg + '</p>';
+    var holder = document.querySelector('.project-detail');
+    if (holder) {
+        holder.innerHTML = '<header class="project-head"><h1>Projects</h1></header>' +
+            '<p class="project-body post-body">' + msg + '</p>' +
+            '<p class="project-back"><a href="/projects.html">&#8249; All projects</a></p>';
+    }
 }
 
 
@@ -347,11 +503,19 @@ function initInteractivity() {
     // ==============================================
 
     // Get the current page filename from the URL
-    var currentPage = window.location.pathname.split('/').pop();
+    var currentPath = window.location.pathname;
+    var currentPage = currentPath.split('/').pop();
 
     // If we're at the root with no filename, it's the home page
     if (currentPage === '' || currentPage === '/') {
         currentPage = 'index.html';
+    }
+
+    // A project page is /project/<slug>/, which ends in a slash and would
+    // otherwise look like the home page. Both it and the preview renderer
+    // should light up the Projects link.
+    if (currentPage === 'project.html' || /\/project\/[^/]+\/?$/.test(currentPath)) {
+        currentPage = 'projects.html';
     }
 
     // Find all nav links and mark the one that matches the current page
