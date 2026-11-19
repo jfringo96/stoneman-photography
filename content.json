@@ -15,8 +15,8 @@
   ],
   "portfolio": [
     {
-      "filename": "crab-for-dinner.jpg",
-      "title": "Crab for dinner",
+      "filename": "godwit-rex.jpg",
+      "title": "Godwit-rex",
       "category": "wildlife",
       "featured": false,
       "camera": "OM System OM-1 Mark II",
@@ -24,7 +24,7 @@
       "focal": "600mm",
       "shutter": "1/2000",
       "aperture": "f/8",
-      "iso": "1600",
+      "iso": "640",
       "date": "16 Nov 2026"
     },
     {
@@ -403,6 +403,19 @@
       "aperture": "f/8",
       "iso": "500",
       "date": "20 Jan 2026"
+    },
+    {
+      "filename": "crab-for-dinner.jpg",
+      "title": "Crab for dinner",
+      "category": "wildlife",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "OM 300mm F4.0 + MC-20",
+      "focal": "600mm",
+      "shutter": "1/2000",
+      "aperture": "f/8",
+      "iso": "1600",
+      "date": "16 Nov 2026"
     },
     {
       "filename": "blackheath-crow.jpg",
