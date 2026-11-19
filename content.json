@@ -15,6 +15,19 @@
   ],
   "portfolio": [
     {
+      "filename": "abergavenny-or-balamory.jpg",
+      "title": "Abergavenny or balamory",
+      "category": "landscape",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "OM 12-40mm F2.8 II",
+      "focal": "40mm",
+      "shutter": "1/40",
+      "aperture": "f/4.5",
+      "iso": "2500",
+      "date": "27 Oct 2026"
+    },
+    {
       "filename": "Over-the-Shoulder.jpg",
       "title": "Over the Shoulder",
       "category": "wildlife",
@@ -614,16 +627,6 @@
     }
   ],
   "blog": [],
-  "projects": [
-    {
-      "slug": "brecon-beacons",
-      "title": "The Brecon Beacons",
-      "subtitle": "",
-      "cover": "",
-      "status": "draft",
-      "blocks": []
-    }
-  ],
   "categories": [
     {
       "key": "wildlife",
