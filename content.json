@@ -620,6 +620,10 @@
       "label": "Wildlife and Nature"
     },
     {
+      "key": "insects-and-small-things",
+      "label": "Insects and small things"
+    },
+    {
       "key": "landscape",
       "label": "Landscape and City"
     }
