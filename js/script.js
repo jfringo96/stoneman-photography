@@ -564,21 +564,13 @@ function initInteractivity() {
                 }
             });
 
-            // Re-run Masonry so it only places visible items
+            // Re-lay out Masonry in place so it only places visible items.
+            // reloadItems() re-runs the ':not(.hidden)' item selector; we never
+            // destroy Masonry, because that collapses the gallery for a moment
+            // and can throw the page back to the top.
             if (msnry) {
-                var gal = document.querySelector('.masonry-gallery');
-                var cs2 = window.getComputedStyle(gal);
-                var inner2 = gal.clientWidth - parseFloat(cs2.paddingLeft) - parseFloat(cs2.paddingRight);
-                var cols2 = window.innerWidth > 1199 ? 3 : window.innerWidth > 767 ? 2 : 1;
-                var colW2 = Math.floor((inner2 - 14 * (cols2 - 1)) / cols2);
-                msnry.destroy();
-                msnry = new Masonry(gal, {
-                    itemSelector: '.gallery-item:not(.hidden)',
-                    columnWidth: colW2,
-                    gutter: 14,
-                    horizontalOrder: true,
-                    transitionDuration: 0
-                });
+                msnry.reloadItems();
+                msnry.layout();
             }
         });
     });
@@ -644,20 +636,27 @@ function initInteractivity() {
                 });
             });
 
-            // Rebuild on resize so column count and item widths stay in sync.
+            // Keep column count and item widths in sync on resize.
+            // Mobile browsers fire 'resize' when the address bar hides/shows
+            // while scrolling (height-only), so ignore events where the width
+            // hasn't changed, debounce the rest, and update Masonry in place
+            // rather than destroying it (destroy collapses the gallery and
+            // resets the scroll position to the top).
+            var lastWidth = window.innerWidth;
+            var resizeTimer = null;
             window.addEventListener('resize', function () {
-                var newColW = calcColWidth();
-                applyColWidth(newColW);
-                if (msnry) {
-                    msnry.destroy();
-                    msnry = new Masonry(msnryGallery, {
-                        itemSelector: '.gallery-item:not(.hidden)',
-                        columnWidth: newColW,
-                        gutter: 14,
-                        horizontalOrder: true,
-                        transitionDuration: 0
-                    });
-                }
+                if (window.innerWidth === lastWidth) return;
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(function () {
+                    if (window.innerWidth === lastWidth) return;
+                    lastWidth = window.innerWidth;
+                    var newColW = calcColWidth();
+                    applyColWidth(newColW);
+                    if (msnry) {
+                        msnry.options.columnWidth = newColW;
+                        msnry.layout();
+                    }
+                }, 150);
             });
         });
     }
