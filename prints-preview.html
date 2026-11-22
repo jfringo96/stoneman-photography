@@ -406,7 +406,7 @@
         { key: '4:3',   a: 4, b: 3, r: 4 / 3, note: 'Standard camera sensor size' },
         { key: '7:5',   a: 7, b: 5, r: 1.4, tol: 0.035, note: 'Between 4:3 and 3:2' },
         { key: '5:4',   a: 5, b: 4, r: 5 / 4, note: 'A little squarer' },
-        { key: '1:1',   title: 'Square', r: 1, note: 'Equal sides', recrop: true },
+        { key: '1:1',   title: 'Square', r: 1, recrop: true },
         { key: '2:1',   a: 2, b: 1, r: 2, title: 'Panoramic', note: 'Wide views', recrop: true },
         { key: '3:1',   a: 3, b: 1, r: 3, title: 'Panoramic', note: 'Very wide views', recrop: true }
     ];
@@ -440,13 +440,13 @@
         {
             key: 'standard',
             name: 'Standard',
-            description: 'Good-quality photographic paper, suitable for most prints.',
+            description: 'Fujifilm Lustre: good-quality photographic paper with a subtle sheen, suitable for most prints.',
             sizes: placeholderPrices(STANDARD_SIZES, 0.006, 8)
         },
         {
             key: 'fine-art',
             name: 'Fine Art',
-            description: 'Art-print quality paper, for special prints to display as a centrepiece.',
+            description: 'Hahnemühle Photo Rag 308: a matte cotton art paper, for special prints to display as a centrepiece.',
             sizes: placeholderPrices(FINE_ART_SIZES, 0.011, 15)
         }
     ];
@@ -551,7 +551,7 @@
                         '<summary class="group-head">' +
                             '<span class="group-shape-box" aria-hidden="true">' + icon + '</span>' +
                             '<span class="group-text"><span class="group-title">' + escapeHTML(title) + '</span>' +
-                            '<span class="group-note">' + escapeHTML(g.note) + '</span></span>' +
+                            (g.note ? '<span class="group-note">' + escapeHTML(g.note) + '</span>' : '') + '</span>' +
                             '<span class="group-meta"><strong>from ' + fmtPrice(from) + '</strong>' + count + '</span>' +
                             '<span class="group-chevron" aria-hidden="true"></span>' +
                         '</summary>' +
