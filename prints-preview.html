@@ -138,24 +138,57 @@
             text-align: center;
         }
 
-        /* ---- Size groups: one card per aspect ratio ---- */
+        /* ---- Size groups: one drop-down per aspect ratio ---- */
         .size-groups {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
-            align-items: start;
+            max-width: 720px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
         }
         .size-group {
             border: 1px solid rgba(200,184,154,0.18);
-            padding: 1.1rem 1.25rem 0.4rem;
             background: rgba(240,235,229,0.02);
+            transition: border-color 0.3s ease;
         }
+        .size-group[open] { border-color: rgba(200,184,154,0.4); }
         .group-head {
             display: flex;
             align-items: center;
             gap: 0.9rem;
-            padding-bottom: 0.8rem;
-            border-bottom: 1px solid rgba(200,184,154,0.3);
+            padding: 0.9rem 1.25rem;
+            cursor: pointer;
+            list-style: none;
+            user-select: none;
+        }
+        .group-head::-webkit-details-marker { display: none; }
+        .group-head:focus-visible { outline: 2px solid var(--colour-accent); outline-offset: 2px; }
+        @media (hover: hover) {
+            .group-head:hover .group-title { color: var(--colour-accent); }
+        }
+        .group-text { flex: 1; min-width: 0; }
+        .group-meta {
+            text-align: right;
+            font-size: 0.8rem;
+            color: rgba(240,235,229,0.55);
+            white-space: nowrap;
+        }
+        .group-meta strong { display: block; color: #f0ebe5; font-weight: 500; font-size: 0.9rem; }
+        .group-chevron {
+            flex: 0 0 auto;
+            width: 9px;
+            height: 9px;
+            border-right: 1.5px solid var(--colour-accent);
+            border-bottom: 1.5px solid var(--colour-accent);
+            transform: rotate(45deg);
+            margin: -4px 0.25rem 0 0.25rem;
+            transition: transform 0.25s ease;
+        }
+        .size-group[open] .group-chevron { transform: rotate(-135deg); margin-top: 4px; }
+        .size-group .size-list {
+            margin: 0 1.25rem;
+            padding: 0.2rem 0 0.4rem;
+            border-top: 1px solid rgba(200,184,154,0.3);
         }
         .group-shape-box {
             flex: 0 0 34px;
@@ -196,7 +229,9 @@
         @media (max-width: 767px) {
             .prints-section { padding: 0.5rem 1rem 2.5rem; }
             .print-toggle-btn { padding: 0.5rem 0.8rem; }
-            .size-groups { grid-template-columns: 1fr; }
+            .group-head { padding: 0.8rem 0.9rem; gap: 0.7rem; }
+            .size-group .size-list { margin: 0 0.9rem; }
+            .group-note { display: none; }
         }
     </style>
 </head>
@@ -324,13 +359,16 @@
            '30x40cm'      centimetres
            '16x20in'      inches
        Either way round is fine; Landscape/Portrait decides which way it shows.
-       Sizes are sorted into shape groups (4:3, 3:2, square, ...) automatically.
+       Sizes are sorted into shape groups (4:3, 3:2, square, ...) automatically,
+       each shown as a drop-down.
 
        PLACEHOLDER PRICES: worked out from the print's area for this mock-up.
        Replace with real prices, e.g. { size: 'A4', price: 25 }
        ================================================================== */
     var FINE_ART_SIZES = [
         'A6', 'A5', 'A4', 'A3', 'A2', 'A1', 'A0',
+        '18x24cm', '24x30cm', '30x40cm', '40x50cm', '50x70cm', '60x80cm', '70x100cm',
+        '30x30cm', '40x40cm', '50x50cm',
         '4x6in', '5x7in', '8x10in', '10x12in', '11x14in', '12x16in', '16x20in',
         '8x8in', '10x10in', '12x12in', '16x16in', '20x20in', '24x24in', '30x30in',
         '24x16in', '24x20in', '30x20in', '40x30in',
@@ -338,7 +376,7 @@
         '24x48in', '24x72in', '30x60in', '30x90in', '36x72in', '36x108in'
     ];
     var STANDARD_SIZES = [
-        'A5', 'A4', 'A3', '5x7in', '12x16in', '16x20in', '10x10in',
+        'A5', 'A4', 'A3', '18x24cm', '30x40cm', '24x30cm', '40x50cm', '30x30cm',
         '4x6in', '8x10in', '24x16in', '30x20in'
     ];
     function placeholderPrices(list, perSqCm, base) {
@@ -398,7 +436,7 @@
     ];
 
     (function () {
-        var state = { orientation: 'landscape', paper: PRINT_PAPERS[0].key };
+        var state = { orientation: 'landscape', paper: PRINT_PAPERS[0].key, open: {} };
 
         var paperButtons = document.getElementById('paper-buttons');
         var groupsEl     = document.getElementById('size-groups');
@@ -495,14 +533,19 @@
                     var title = g.a ? ratioText(g.a, g.b) : '';
                     if (g.title) title = g.a ? g.title + ' ' + title : g.title;
                     var icon = g.r ? shapeIcon(g.r) : '';
-                    return '<section class="size-group">' +
-                        '<div class="group-head">' +
+                    var from = Math.min.apply(null, items.map(function (i) { return i.price; }));
+                    var count = items.length + (items.length === 1 ? ' size' : ' sizes');
+                    return '<details class="size-group" data-group="' + escapeHTML(g.key) + '"' +
+                               (state.open[g.key] ? ' open' : '') + '>' +
+                        '<summary class="group-head">' +
                             '<span class="group-shape-box" aria-hidden="true">' + icon + '</span>' +
-                            '<span><span class="group-title">' + escapeHTML(title) + '</span>' +
+                            '<span class="group-text"><span class="group-title">' + escapeHTML(title) + '</span>' +
                             '<span class="group-note">' + escapeHTML(g.note) + '</span></span>' +
-                        '</div>' +
+                            '<span class="group-meta"><strong>from ' + fmtPrice(from) + '</strong>' + count + '</span>' +
+                            '<span class="group-chevron" aria-hidden="true"></span>' +
+                        '</summary>' +
                         '<ul class="size-list">' + items.map(rowHTML).join('') + '</ul>' +
-                    '</section>';
+                    '</details>';
                 }).join('');
         }
 
@@ -534,6 +577,12 @@
             setPressed(orientGroup, 'data-orientation', state.orientation);
             render();
         });
+
+        // 'toggle' doesn't bubble, so listen in the capture phase
+        groupsEl.addEventListener('toggle', function (e) {
+            var key = e.target.getAttribute && e.target.getAttribute('data-group');
+            if (key) state.open[key] = e.target.open;
+        }, true);
 
         render();
     })();
