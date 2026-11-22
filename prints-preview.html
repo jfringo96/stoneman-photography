@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- PREVIEW PAGE for the planned "Contact / Prints" page.
+    <!-- PREVIEW PAGE for the planned Prints page (its own tab; contact.html stays as it is).
          Not linked from anywhere, not in sitemap.xml, and marked noindex (here and in _headers).
          Its styles and script live in this file so the live site is untouched until it goes live. -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <meta name="description" content="Contact Stoneman Photography and order prints: sizes, paper types and prices.">
-    <title>Contact / Prints (preview) | Stoneman Photography</title>
+    <meta name="description" content="Order prints from Stoneman Photography: sizes, paper types and prices.">
+    <title>Prints (preview) | Stoneman Photography</title>
 
     <link rel="stylesheet" href="css/style.css">
     <link rel="icon" type="image/png" href="/favicon-512.png">
@@ -38,19 +38,7 @@
         .prints-section {
             max-width: 760px;
             margin: 0 auto;
-            padding: 1rem 2rem 4rem;
-        }
-        .prints-section h2 {
-            color: #f0ebe5;
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
-        .prints-section h2::before {
-            content: '';
-            display: block;
-            width: 60px;
-            margin: 0 auto 2.5rem;
-            border-top: 1px solid rgba(200,184,154,0.4);
+            padding: 0 2rem 3.5rem;
         }
         .prints-intro p {
             color: rgba(240,235,229,0.7);
@@ -58,6 +46,26 @@
             margin-bottom: 1rem;
         }
         .prints-intro strong { color: #f0ebe5; font-weight: 500; }
+        .prints-intro a { color: var(--colour-accent); text-decoration: underline; text-underline-offset: 3px; }
+        .prints-intro a:hover { color: #f0ebe5; }
+
+        /* ---- Order form heading at the bottom ---- */
+        .order-section {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0 2rem 1.5rem;
+            text-align: center;
+            scroll-margin-top: 90px;
+        }
+        .order-section::before {
+            content: '';
+            display: block;
+            width: 60px;
+            margin: 0 auto 2.5rem;
+            border-top: 1px solid rgba(200,184,154,0.4);
+        }
+        .order-section h2 { color: #f0ebe5; margin-bottom: 0.75rem; }
+        .order-section p { color: rgba(240,235,229,0.6); }
 
         .prints-controls {
             display: flex;
@@ -198,51 +206,25 @@
                 <li><a href="projects.html">Projects</a></li>
                 <li><a href="blog.html">Blog</a></li>
                 <li><a href="about.html">About</a></li>
-                <li><a href="prints-preview.html" class="active">Contact / Prints</a></li>
+                <li><a href="prints-preview.html" class="active">Prints</a></li>
+                <li><a href="contact.html">Contact</a></li>
             </ul>
         </div>
     </nav>
 
 
-    <!-- ======== CONTACT (unchanged from contact.html) ======== -->
+    <!-- ======== PRINTS ======== -->
     <header class="page-header">
-        <h1>Get in Touch</h1>
-        <p>Interested in my work or have a project in mind? I'd love to hear from you.</p>
+        <h1>Prints</h1>
+        <p>Sizes, papers and prices for prints of my photos.</p>
     </header>
 
-    <div class="contact-form-container">
-        <form class="contact-form" action="https://formspree.io/f/mbdwgwpk" method="POST" novalidate>
-            <div class="form-group">
-                <label for="name">Name</label>
-                <input type="text" id="name" name="name" required placeholder="Your name">
-                <div class="error-message"></div>
-            </div>
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" required placeholder="you@example.com">
-                <div class="error-message"></div>
-            </div>
-            <div class="form-group">
-                <label for="message">Message</label>
-                <textarea id="message" name="message" required placeholder="What would you like to say?"></textarea>
-                <div class="error-message"></div>
-            </div>
-            <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off">
-            <button type="submit" class="submit-btn">Send Message</button>
-        </form>
-        <div class="form-success">
-            <p>Thank you for your message! I'll get back to you as soon as I can.</p>
-        </div>
-    </div>
 
-
-    <!-- ======== PRINTS ======== -->
     <section class="prints-section" id="prints">
-        <h2>Prints</h2>
-
         <div class="prints-intro">
             <p>Below you'll find the sizes, papers and prices for prints. To order one, send me a
-            message using the form above with the <strong>title of the photo</strong>, the
+            message using the <a href="#order">contact form below</a> or on the
+            <a href="contact.html">Contact page</a>, with the <strong>title of the photo</strong>, the
             <strong>size</strong> and the <strong>paper</strong> you'd like, and I'll get back to you.</p>
 
             <p>Choose from the sizes below, and use the toggle to switch between landscape and
@@ -290,6 +272,40 @@
 
         <p class="prices-note">Prices include printing. Postage is quoted when you order.</p>
     </section>
+
+
+    <!-- ======== ORDER / CONTACT FORM (same form as contact.html) ======== -->
+    <section class="order-section" id="order">
+        <h2>Order a print</h2>
+        <p>Let me know the title of the photo, the size and the paper you'd like.</p>
+    </section>
+
+    <div class="contact-form-container">
+        <form class="contact-form" action="https://formspree.io/f/mbdwgwpk" method="POST" novalidate>
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" id="name" name="name" required placeholder="Your name">
+                <div class="error-message"></div>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required placeholder="you@example.com">
+                <div class="error-message"></div>
+            </div>
+            <div class="form-group">
+                <label for="message">Message</label>
+                <textarea id="message" name="message" required placeholder="Photo title, size and paper (and anything else you'd like to ask)"></textarea>
+                <div class="error-message"></div>
+            </div>
+            <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off">
+            <button type="submit" class="submit-btn">Send Message</button>
+        </form>
+        <div class="form-success">
+            <p>Thank you for your message! I'll get back to you as soon as I can.</p>
+        </div>
+    </div>
+
+
 
 
     <!-- ======== FOOTER ======== -->
