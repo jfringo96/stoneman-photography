@@ -36,10 +36,11 @@
 
         /* ---- Prints section ---- */
         .prints-section {
-            max-width: 760px;
+            max-width: 1100px;
             margin: 0 auto;
             padding: 0 2rem 3.5rem;
         }
+        .prints-intro { max-width: 700px; margin: 0 auto; }
         .prints-intro p {
             color: rgba(240,235,229,0.7);
             line-height: 1.7;
@@ -130,64 +131,72 @@
             min-height: 1.5em;
         }
 
-        .prices-table {
-            width: 100%;
-            border-collapse: collapse;
+        .prices-note {
+            margin-top: 1.5rem;
+            font-size: 0.85rem;
+            color: rgba(240,235,229,0.45);
+            text-align: center;
         }
-        .prices-table caption {
-            position: absolute;
-            width: 1px; height: 1px;
-            overflow: hidden;
-            clip: rect(0 0 0 0);
+
+        /* ---- Size groups: one card per aspect ratio ---- */
+        .size-groups {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            align-items: start;
         }
-        .prices-table th {
-            text-align: left;
-            font-size: 0.75rem;
-            font-weight: 500;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: rgba(200,184,154,0.7);
-            padding: 0 0.75rem 0.75rem;
+        .size-group {
+            border: 1px solid rgba(200,184,154,0.18);
+            padding: 1.1rem 1.25rem 0.4rem;
+            background: rgba(240,235,229,0.02);
+        }
+        .group-head {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            padding-bottom: 0.8rem;
             border-bottom: 1px solid rgba(200,184,154,0.3);
         }
-        .prices-table td {
-            padding: 0.9rem 0.75rem;
-            border-bottom: 1px solid rgba(200,184,154,0.12);
-            color: rgba(240,235,229,0.8);
-            vertical-align: middle;
-        }
-        .prices-table .col-price { text-align: right; }
-        .prices-table td.col-price { color: #f0ebe5; font-weight: 500; }
-        .size-cell { display: flex; align-items: center; gap: 0.9rem; }
-        .size-shape-box {
+        .group-shape-box {
             flex: 0 0 34px;
             height: 34px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
-        .size-shape {
-            border: 1.5px solid rgba(200,184,154,0.6);
+        .group-shape {
+            border: 1.5px solid var(--colour-accent);
             transition: width 0.3s ease, height 0.3s ease;
         }
-        .size-name { color: #f0ebe5; }
-        .size-dims-in, .ratio-note {
+        .group-title { color: #f0ebe5; font-size: 1.15rem; line-height: 1.2; }
+        .group-note {
             display: block;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
+            color: rgba(200,184,154,0.7);
+            letter-spacing: 0.03em;
+        }
+        .size-list { list-style: none; margin: 0; padding: 0; }
+        .size-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(200,184,154,0.1);
+        }
+        .size-row:last-child { border-bottom: 0; }
+        .size-main { color: #f0ebe5; }
+        .size-sub {
+            display: block;
+            font-size: 0.78rem;
             color: rgba(240,235,229,0.45);
         }
-        .prices-note {
-            margin-top: 1.25rem;
-            font-size: 0.85rem;
-            color: rgba(240,235,229,0.45);
-            text-align: center;
-        }
+        .size-price { color: #f0ebe5; font-weight: 500; white-space: nowrap; }
 
         @media (max-width: 767px) {
             .prints-section { padding: 0.5rem 1rem 2.5rem; }
-            .prices-table th, .prices-table td { padding-left: 0.4rem; padding-right: 0.4rem; }
-            .size-shape-box { display: none; }
             .print-toggle-btn { padding: 0.5rem 0.8rem; }
+            .size-groups { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -258,19 +267,9 @@
 
         <p class="paper-description" id="paper-description" aria-live="polite"></p>
 
-        <table class="prices-table">
-            <caption id="prices-caption"></caption>
-            <thead>
-                <tr>
-                    <th scope="col">Size</th>
-                    <th scope="col">Aspect ratio</th>
-                    <th scope="col" class="col-price">Price</th>
-                </tr>
-            </thead>
-            <tbody id="prices-body"></tbody>
-        </table>
+        <div class="size-groups" id="size-groups" aria-live="polite"></div>
 
-        <p class="prices-note">Prices include printing. Postage is quoted when you order.</p>
+        <p class="prices-note">Prices include printing. Postage is quoted when you order. Other sizes may be possible on request.</p>
     </section>
 
 
@@ -318,40 +317,85 @@
 
     <script>
     /* ==================================================================
-       PRINT OPTIONS — PLACEHOLDER DATA
-       Each paper has its own list of sizes, so the two papers can have
-       different sizes and a different number of them.
-         long / short : the print's long and short edge, in cm
-                        (landscape shows long x short, portrait short x long)
-         name         : optional label shown above the dimensions, e.g. "A4"
-         price        : in pounds
+       PRINT OPTIONS
+       Each paper has its own list of sizes, so the two papers can offer
+       different sizes. Write a size as:
+           'A4'           an A size (A0 to A6)
+           '30x40cm'      centimetres
+           '16x20in'      inches
+       Either way round is fine; Landscape/Portrait decides which way it shows.
+       Sizes are sorted into shape groups (4:3, 3:2, square, ...) automatically.
+
+       PLACEHOLDER PRICES: worked out from the print's area for this mock-up.
+       Replace with real prices, e.g. { size: 'A4', price: 25 }
        ================================================================== */
+    var FINE_ART_SIZES = [
+        'A6', 'A5', 'A4', 'A3', 'A2', 'A1', 'A0',
+        '18x24cm', '24x30cm', '30x40cm', '40x50cm', '50x70cm', '60x80cm', '70x100cm',
+        '30x30cm', '40x40cm', '50x50cm',
+        '4x6in', '5x7in', '8x10in', '10x12in', '11x14in', '12x16in', '16x20in',
+        '8x8in', '10x10in', '12x12in', '16x16in', '20x20in', '24x24in', '30x30in',
+        '24x16in', '24x20in', '30x20in', '40x30in',
+        '10x20in', '10x30in', '12x36in', '16x36in', '16x48in', '20x40in', '20x60in',
+        '24x48in', '24x72in', '30x60in', '30x90in', '36x72in', '36x108in'
+    ];
+    var STANDARD_SIZES = [
+        'A5', 'A4', 'A3', '18x24cm', '30x40cm', '24x30cm', '40x50cm', '30x30cm',
+        '4x6in', '8x10in', '24x16in', '30x20in'
+    ];
+    function placeholderPrices(list, perSqCm, base) {
+        return list.map(function (size) {
+            var d = parseSize(size);
+            return { size: size, price: Math.round((base + d.longCm * d.shortCm * perSqCm) / 5) * 5 };
+        });
+    }
+
+    /* Shape groups, in the order they appear on the page. 'r' is the long edge
+       divided by the short edge; 'tol' is how close a size must be to count. */
+    var SHAPE_GROUPS = [
+        { key: '4:3',   a: 4, b: 3, r: 4 / 3, note: 'The shape my camera shoots' },
+        { key: '3:2',   a: 3, b: 2, r: 3 / 2, note: 'Classic photo shape' },
+        { key: '5:4',   a: 5, b: 4, r: 5 / 4, note: 'A little squarer' },
+        { key: 'A',     title: 'A sizes', r: Math.SQRT2, note: 'Standard paper sizes, easy to frame' },
+        { key: '1:1',   title: 'Square', r: 1, note: 'Equal sides' },
+        { key: '7:5',   a: 7, b: 5, r: 1.4, tol: 0.035, note: 'Between 4:3 and 3:2' },
+        { key: '2:1',   a: 2, b: 1, r: 2, title: 'Panoramic', note: 'Wide views' },
+        { key: '3:1',   a: 3, b: 1, r: 3, title: 'Panoramic', note: 'Very wide views' },
+        { key: 'other', title: 'Other sizes', r: null, note: 'Shape shown for each size' }
+    ];
+
+    var A_SIZES_MM = { A0: [1189, 841], A1: [841, 594], A2: [594, 420], A3: [420, 297],
+                       A4: [297, 210], A5: [210, 148], A6: [148, 105] };
+
+    // 'A4' / '30x40cm' / '16x20in' -> { name, unit, long, short, longCm, shortCm }
+    function parseSize(str) {
+        var s = String(str).replace(/\s+/g, '').replace(/["”]/g, 'in');
+        var a = /^A([0-6])$/i.exec(s);
+        if (a) {
+            var mm = A_SIZES_MM['A' + a[1]];
+            return { name: 'A' + a[1], unit: 'A', long: mm[0] / 10, short: mm[1] / 10,
+                     longCm: mm[0] / 10, shortCm: mm[1] / 10 };
+        }
+        var m = /^(\d+(?:\.\d+)?)[x×](\d+(?:\.\d+)?)(cm|in)$/i.exec(s);
+        if (!m) { console.warn('Unrecognised print size:', str); return null; }
+        var x = parseFloat(m[1]), y = parseFloat(m[2]), unit = m[3].toLowerCase();
+        var k = unit === 'in' ? 2.54 : 1;
+        return { unit: unit, long: Math.max(x, y), short: Math.min(x, y),
+                 longCm: Math.max(x, y) * k, shortCm: Math.min(x, y) * k };
+    }
+
     var PRINT_PAPERS = [
         {
             key: 'standard',
             name: 'Standard',
             description: 'Good-quality photographic paper, suitable for most prints.',
-            sizes: [
-                { long: 18,   short: 13,   price: 12 },
-                { long: 29.7, short: 21,   price: 20, name: 'A4' },
-                { long: 30,   short: 20,   price: 22 },
-                { long: 42,   short: 29.7, price: 32, name: 'A3' },
-                { long: 45,   short: 30,   price: 35 },
-                { long: 60,   short: 40,   price: 55 }
-            ]
+            sizes: placeholderPrices(STANDARD_SIZES, 0.006, 8)
         },
         {
             key: 'fine-art',
             name: 'Fine Art',
             description: 'Art-print quality paper, for special prints to display as a centrepiece.',
-            sizes: [
-                { long: 18,   short: 13,   price: 20 },
-                { long: 29.7, short: 21,   price: 32, name: 'A4' },
-                { long: 30,   short: 20,   price: 35 },
-                { long: 42,   short: 29.7, price: 50, name: 'A3' },
-                { long: 45,   short: 30,   price: 55 },
-                { long: 60,   short: 40,   price: 85 }
-            ]
+            sizes: placeholderPrices(FINE_ART_SIZES, 0.011, 15)
         }
     ];
 
@@ -359,42 +403,70 @@
         var state = { orientation: 'landscape', paper: PRINT_PAPERS[0].key };
 
         var paperButtons = document.getElementById('paper-buttons');
-        var tbody        = document.getElementById('prices-body');
-        var caption      = document.getElementById('prices-caption');
+        var groupsEl     = document.getElementById('size-groups');
         var paperDesc    = document.getElementById('paper-description');
 
-        function fmtNum(n) {
-            // 29.7 -> "29.7", 30 -> "30"
-            return String(Math.round(n * 10) / 10);
-        }
-        function fmtPrice(p) {
-            return '£' + (p % 1 === 0 ? p : p.toFixed(2));
-        }
-        function ratioLabel(long, short) {
-            var r = long / short;
-            var known = [
-                [1, '1:1'], [1.25, '5:4'], [4 / 3, '4:3'], [1.4, '7:5'],
-                [Math.SQRT2, 'A size (√2)'], [1.5, '3:2'], [16 / 9, '16:9'], [2, '2:1'], [3, '3:1']
-            ];
-            for (var i = 0; i < known.length; i++) {
-                if (Math.abs(r - known[i][0]) < 0.012) return known[i][1];
-            }
-            // Not a standard ratio: show the print's own proportions, e.g. 18:13
-            var a = Math.round(long * 10), b = Math.round(short * 10);
-            var gcd = function (x, y) { return y ? gcd(y, x % y) : x; };
-            var g = gcd(a, b);
-            return (a / g) + ':' + (b / g);
-        }
-        function orientedRatio(label) {
-            // "3:2" -> "2:3" in portrait; leave named ratios alone
-            if (state.orientation === 'landscape') return label;
-            var m = /^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/.exec(label);
-            return m ? m[2] + ':' + m[1] : label;
-        }
         function escapeHTML(s) {
             return String(s).replace(/[&<>"]/g, function (c) {
                 return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
             });
+        }
+        function n1(n) { return String(Math.round(n * 10) / 10); }   // 29.7, 30
+        function n0(n) { return String(Math.round(n)); }
+        function fmtPrice(p) { return '£' + (p % 1 === 0 ? p : p.toFixed(2)); }
+
+        // [width, height] for the current orientation
+        function wh(long, short) {
+            return state.orientation === 'portrait' ? [short, long] : [long, short];
+        }
+        function dims(long, short, fmt, unit) {
+            var d = wh(long, short);
+            return fmt(d[0]) + ' × ' + fmt(d[1]) + ' ' + unit;
+        }
+        function ratioText(a, b) {
+            return state.orientation === 'portrait' ? b + ':' + a : a + ':' + b;
+        }
+        function exactRatio(d) {
+            var x = Math.round(d.long * 10), y = Math.round(d.short * 10);
+            var gcd = function (p, q) { return q ? gcd(q, p % q) : p; };
+            var g = gcd(x, y);
+            return ratioText(x / g, y / g);
+        }
+
+        function groupFor(d) {
+            if (d.unit === 'A') return 'A';
+            var r = d.long / d.short;
+            for (var i = 0; i < SHAPE_GROUPS.length; i++) {
+                var g = SHAPE_GROUPS[i];
+                if (g.key === 'A' || g.r === null) continue;
+                if (Math.abs(r - g.r) <= (g.tol || 0.012)) return g.key;
+            }
+            return 'other';
+        }
+
+        function shapeIcon(r) {
+            // the group's shape, fitted inside a 34px box
+            var big = 32, small = Math.max(6, Math.round(big / r));
+            var d = wh(big, small);
+            return '<span class="group-shape" style="width:' + d[0] + 'px;height:' + d[1] + 'px"></span>';
+        }
+
+        function rowHTML(item) {
+            var d = item.d, main, sub;
+            if (d.unit === 'A') {
+                main = d.name;
+                sub  = dims(d.longCm, d.shortCm, n1, 'cm') + ' (' + dims(d.longCm / 2.54, d.shortCm / 2.54, n1, 'in') + ')';
+            } else if (d.unit === 'cm') {
+                main = dims(d.long, d.short, n1, 'cm');
+                sub  = '(' + dims(d.longCm / 2.54, d.shortCm / 2.54, n1, 'in') + ')';
+            } else {
+                main = dims(d.long, d.short, n1, 'in');
+                sub  = '(' + dims(d.longCm, d.shortCm, n0, 'cm') + ')';
+            }
+            if (item.group === 'other') sub += ' · ' + exactRatio(d);
+            return '<li class="size-row"><span><span class="size-main">' + escapeHTML(main) +
+                   '</span><span class="size-sub">' + escapeHTML(sub) + '</span></span>' +
+                   '<span class="size-price">' + fmtPrice(item.price) + '</span></li>';
         }
 
         function currentPaper() {
@@ -406,34 +478,34 @@
 
         function render() {
             var paper = currentPaper();
-            var portrait = state.orientation === 'portrait';
-            var maxLong = Math.max.apply(null, paper.sizes.map(function (s) { return s.long; }));
-
             paperDesc.textContent = paper.description || '';
-            caption.textContent = paper.name + ' paper, ' + state.orientation + ' sizes and prices';
 
-            tbody.innerHTML = paper.sizes.map(function (s) {
-                var w = portrait ? s.short : s.long;
-                var h = portrait ? s.long : s.short;
-                // Shape preview, scaled so the largest print fills the 34px box
-                var scale = 34 / maxLong;
-                var shape = '<span class="size-shape" style="width:' + Math.max(6, w * scale) +
-                            'px;height:' + Math.max(6, h * scale) + 'px"></span>';
-                var dims = fmtNum(w) + ' × ' + fmtNum(h) + ' cm';
-                var inches = fmtNum(w / 2.54) + ' × ' + fmtNum(h / 2.54) + ' in';
-                return '<tr>' +
-                    '<td><div class="size-cell">' +
-                        '<span class="size-shape-box" aria-hidden="true">' + shape + '</span>' +
-                        '<span>' +
-                            (s.name ? '<span class="size-name">' + escapeHTML(s.name) + '</span> · ' : '') +
-                            '<span class="size-name">' + dims + '</span>' +
-                            '<span class="size-dims-in">' + inches + '</span>' +
-                        '</span>' +
-                    '</div></td>' +
-                    '<td>' + escapeHTML(orientedRatio(ratioLabel(s.long, s.short))) + '</td>' +
-                    '<td class="col-price">' + fmtPrice(s.price) + '</td>' +
-                '</tr>';
-            }).join('');
+            // Sort this paper's sizes into their shape groups
+            var buckets = {};
+            paper.sizes.forEach(function (s) {
+                var d = parseSize(s.size);
+                if (!d) return;
+                var g = groupFor(d);
+                (buckets[g] = buckets[g] || []).push({ d: d, price: s.price, group: g });
+            });
+
+            groupsEl.innerHTML = SHAPE_GROUPS.filter(function (g) { return buckets[g.key]; })
+                .map(function (g) {
+                    var items = buckets[g.key].sort(function (x, y) {
+                        return x.d.longCm * x.d.shortCm - y.d.longCm * y.d.shortCm;
+                    });
+                    var title = g.a ? ratioText(g.a, g.b) : '';
+                    if (g.title) title = g.a ? g.title + ' ' + title : g.title;
+                    var icon = g.r ? shapeIcon(g.r) : '';
+                    return '<section class="size-group">' +
+                        '<div class="group-head">' +
+                            '<span class="group-shape-box" aria-hidden="true">' + icon + '</span>' +
+                            '<span><span class="group-title">' + escapeHTML(title) + '</span>' +
+                            '<span class="group-note">' + escapeHTML(g.note) + '</span></span>' +
+                        '</div>' +
+                        '<ul class="size-list">' + items.map(rowHTML).join('') + '</ul>' +
+                    '</section>';
+                }).join('');
         }
 
         function setPressed(container, attr, value) {
