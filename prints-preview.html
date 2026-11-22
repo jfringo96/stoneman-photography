@@ -380,10 +380,10 @@
         'A6', 'A5', 'A4', 'A3', 'A2', 'A1', 'A0',
         '18x24cm', '24x30cm', '30x40cm', '40x50cm', '50x70cm', '60x80cm', '70x100cm',
         '30x30cm', '40x40cm', '50x50cm',
-        '4x6in', '5x7in', '8x10in', '10x12in', '11x14in', '12x16in', '16x20in',
+        '4x6in', '5x7in', '8x10in', '12x16in', '16x20in',
         '8x8in', '10x10in', '12x12in', '16x16in', '20x20in', '24x24in', '30x30in',
-        '24x16in', '24x20in', '30x20in', '40x30in',
-        '10x20in', '10x30in', '12x36in', '16x36in', '16x48in', '20x40in', '20x60in',
+        '24x16in', '30x20in', '40x30in',
+        '10x20in', '10x30in', '12x36in', '16x48in', '20x40in', '20x60in',
         '24x48in', '24x72in', '30x60in', '30x90in', '36x72in', '36x108in'
     ];
     var STANDARD_SIZES = [
@@ -405,7 +405,6 @@
         { key: '4:3',   a: 4, b: 3, r: 4 / 3, note: 'The shape my camera shoots' },
         { key: '7:5',   a: 7, b: 5, r: 1.4, tol: 0.035, note: 'Between 4:3 and 3:2' },
         { key: '5:4',   a: 5, b: 4, r: 5 / 4, note: 'A little squarer' },
-        { key: 'other', title: 'Other sizes', r: null, note: 'Shape shown for each size' },
         { key: '1:1',   title: 'Square', r: 1, note: 'Equal sides', recrop: true },
         { key: '2:1',   a: 2, b: 1, r: 2, title: 'Panoramic', note: 'Wide views', recrop: true },
         { key: '3:1',   a: 3, b: 1, r: 3, title: 'Panoramic', note: 'Very wide views', recrop: true }
@@ -478,12 +477,6 @@
         function ratioText(a, b) {
             return state.orientation === 'portrait' ? b + ':' + a : a + ':' + b;
         }
-        function exactRatio(d) {
-            var x = Math.round(d.long * 10), y = Math.round(d.short * 10);
-            var gcd = function (p, q) { return q ? gcd(q, p % q) : p; };
-            var g = gcd(x, y);
-            return ratioText(x / g, y / g);
-        }
 
         function groupFor(d) {
             if (d.unit === 'A') return 'A';
@@ -493,6 +486,8 @@
                 if (g.key === 'A' || g.r === null) continue;
                 if (Math.abs(r - g.r) <= (g.tol || 0.012)) return g.key;
             }
+            // Not one of the shapes above: not shown on the page
+            console.warn('Print size fits no shape group, so it is hidden:', d);
             return 'other';
         }
 
@@ -515,7 +510,6 @@
                 main = dims(d.long, d.short, n1, 'in');
                 sub  = '(' + dims(d.longCm, d.shortCm, n0, 'cm') + ')';
             }
-            if (item.group === 'other') sub += ' · ' + exactRatio(d);
             return '<li class="size-row"><span><span class="size-main">' + escapeHTML(main) +
                    '</span><span class="size-sub">' + escapeHTML(sub) + '</span></span>' +
                    '<span class="size-price">' + fmtPrice(item.price) + '</span></li>';
