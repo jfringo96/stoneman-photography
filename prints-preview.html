@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- PREVIEW PAGE for the planned "Contact / Prints" page.
+         Not linked from anywhere, not in sitemap.xml, and marked noindex (here and in _headers).
+         Its styles and script live in this file so the live site is untouched until it goes live. -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="description" content="Contact Stoneman Photography and order prints: sizes, paper types and prices.">
+    <title>Contact / Prints (preview) | Stoneman Photography</title>
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/png" href="/favicon-512.png">
+    <link rel="apple-touch-icon" href="/favicon-512.png">
+
+    <style>
+        /* ---- Preview-only banner (remove when the page goes live) ---- */
+        .preview-banner {
+            background: rgba(200,184,154,0.12);
+            border-bottom: 1px solid rgba(200,184,154,0.3);
+            color: var(--colour-accent);
+            text-align: center;
+            font-size: 0.8rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem;
+            position: fixed;
+            left: 0; right: 0; bottom: 0;
+            z-index: 50;
+            background: #3a352f;
+            border-bottom: 0;
+            border-top: 1px solid rgba(200,184,154,0.3);
+        }
+        footer { padding-bottom: 4rem; }
+
+        /* ---- Prints section ---- */
+        .prints-section {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 1rem 2rem 4rem;
+        }
+        .prints-section h2 {
+            color: #f0ebe5;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .prints-section h2::before {
+            content: '';
+            display: block;
+            width: 60px;
+            margin: 0 auto 2.5rem;
+            border-top: 1px solid rgba(200,184,154,0.4);
+        }
+        .prints-intro p {
+            color: rgba(240,235,229,0.7);
+            line-height: 1.7;
+            margin-bottom: 1rem;
+        }
+        .prints-intro strong { color: #f0ebe5; font-weight: 500; }
+
+        .prints-controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1.25rem 2rem;
+            margin: 2rem 0 1.5rem;
+        }
+        .toggle-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .toggle-label {
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(200,184,154,0.7);
+        }
+        .toggle-buttons { display: flex; }
+        .print-toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1.1rem;
+            border: 2px solid rgba(200,184,154,0.4);
+            background: transparent;
+            color: rgba(240,235,229,0.7);
+            font: inherit;
+            font-size: 0.8rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .print-toggle-btn + .print-toggle-btn { border-left-width: 0; }
+        .print-toggle-btn[aria-pressed="true"] {
+            background: var(--colour-accent);
+            border-color: var(--colour-accent);
+            color: var(--colour-bg);
+        }
+        @media (hover: hover) {
+            .print-toggle-btn:hover { color: #f0ebe5; }
+            .print-toggle-btn[aria-pressed="true"]:hover { color: var(--colour-bg); }
+        }
+        /* little rectangle showing the orientation */
+        .orient-icon {
+            display: inline-block;
+            border: 1.5px solid currentColor;
+            border-radius: 1px;
+        }
+        .orient-icon.landscape { width: 15px; height: 10px; }
+        .orient-icon.portrait  { width: 10px; height: 15px; }
+
+        .paper-description {
+            text-align: center;
+            font-style: italic;
+            color: rgba(240,235,229,0.55);
+            margin-bottom: 1.25rem;
+            min-height: 1.5em;
+        }
+
+        .prices-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .prices-table caption {
+            position: absolute;
+            width: 1px; height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+        }
+        .prices-table th {
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(200,184,154,0.7);
+            padding: 0 0.75rem 0.75rem;
+            border-bottom: 1px solid rgba(200,184,154,0.3);
+        }
+        .prices-table td {
+            padding: 0.9rem 0.75rem;
+            border-bottom: 1px solid rgba(200,184,154,0.12);
+            color: rgba(240,235,229,0.8);
+            vertical-align: middle;
+        }
+        .prices-table .col-price { text-align: right; }
+        .prices-table td.col-price { color: #f0ebe5; font-weight: 500; }
+        .size-cell { display: flex; align-items: center; gap: 0.9rem; }
+        .size-shape-box {
+            flex: 0 0 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .size-shape {
+            border: 1.5px solid rgba(200,184,154,0.6);
+            transition: width 0.3s ease, height 0.3s ease;
+        }
+        .size-name { color: #f0ebe5; }
+        .size-dims-in, .ratio-note {
+            display: block;
+            font-size: 0.8rem;
+            color: rgba(240,235,229,0.45);
+        }
+        .prices-note {
+            margin-top: 1.25rem;
+            font-size: 0.85rem;
+            color: rgba(240,235,229,0.45);
+            text-align: center;
+        }
+
+        @media (max-width: 767px) {
+            .prints-section { padding: 0.5rem 1rem 2.5rem; }
+            .prices-table th, .prices-table td { padding-left: 0.4rem; padding-right: 0.4rem; }
+            .size-shape-box { display: none; }
+            .print-toggle-btn { padding: 0.5rem 0.8rem; }
+        }
+    </style>
+</head>
+<body class="dark-page">
+
+    <div class="preview-banner">Preview only: not linked from the site or shown to search engines. Prices are placeholders.</div>
+
+    <!-- ======== NAVIGATION ======== -->
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="logo">Stoneman Photography</a>
+            <button class="menu-toggle" aria-label="Toggle menu" aria-expanded="false">&#9776;</button>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="portfolio.html">Portfolio</a></li>
+                <li><a href="projects.html">Projects</a></li>
+                <li><a href="blog.html">Blog</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="prints-preview.html" class="active">Contact / Prints</a></li>
+            </ul>
+        </div>
+    </nav>
+
+
+    <!-- ======== CONTACT (unchanged from contact.html) ======== -->
+    <header class="page-header">
+        <h1>Get in Touch</h1>
+        <p>Interested in my work or have a project in mind? I'd love to hear from you.</p>
+    </header>
+
+    <div class="contact-form-container">
+        <form class="contact-form" action="https://formspree.io/f/mbdwgwpk" method="POST" novalidate>
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" id="name" name="name" required placeholder="Your name">
+                <div class="error-message"></div>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required placeholder="you@example.com">
+                <div class="error-message"></div>
+            </div>
+            <div class="form-group">
+                <label for="message">Message</label>
+                <textarea id="message" name="message" required placeholder="What would you like to say?"></textarea>
+                <div class="error-message"></div>
+            </div>
+            <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off">
+            <button type="submit" class="submit-btn">Send Message</button>
+        </form>
+        <div class="form-success">
+            <p>Thank you for your message! I'll get back to you as soon as I can.</p>
+        </div>
+    </div>
+
+
+    <!-- ======== PRINTS ======== -->
+    <section class="prints-section" id="prints">
+        <h2>Prints</h2>
+
+        <div class="prints-intro">
+            <p>Below you'll find the sizes, papers and prices for prints. To order one, send me a
+            message using the form above with the <strong>title of the photo</strong>, the
+            <strong>size</strong> and the <strong>paper</strong> you'd like, and I'll get back to you.</p>
+
+            <p>Choose from the sizes below, and use the toggle to switch between landscape and
+            portrait. A print may be cropped slightly differently from the version shown on the site
+            to fit the size you pick. If the difference would be significant, I'll let you know and
+            suggest an aspect ratio that suits the photo better.</p>
+
+            <p>There are two papers to choose from. <strong>Standard</strong> is good-quality
+            photographic paper and is suitable for most prints. <strong>Fine Art</strong> is closer
+            to the paper used for gallery art prints: higher quality, for special prints you want to
+            display as a centrepiece.</p>
+        </div>
+
+        <div class="prints-controls">
+            <div class="toggle-group">
+                <span class="toggle-label" id="orient-label">Orientation</span>
+                <div class="toggle-buttons" role="group" aria-labelledby="orient-label">
+                    <button type="button" class="print-toggle-btn" data-orientation="landscape" aria-pressed="true">
+                        <span class="orient-icon landscape" aria-hidden="true"></span>Landscape
+                    </button>
+                    <button type="button" class="print-toggle-btn" data-orientation="portrait" aria-pressed="false">
+                        <span class="orient-icon portrait" aria-hidden="true"></span>Portrait
+                    </button>
+                </div>
+            </div>
+            <div class="toggle-group">
+                <span class="toggle-label" id="paper-label">Paper</span>
+                <div class="toggle-buttons" id="paper-buttons" role="group" aria-labelledby="paper-label"></div>
+            </div>
+        </div>
+
+        <p class="paper-description" id="paper-description" aria-live="polite"></p>
+
+        <table class="prices-table">
+            <caption id="prices-caption"></caption>
+            <thead>
+                <tr>
+                    <th scope="col">Size</th>
+                    <th scope="col">Aspect ratio</th>
+                    <th scope="col" class="col-price">Price</th>
+                </tr>
+            </thead>
+            <tbody id="prices-body"></tbody>
+        </table>
+
+        <p class="prices-note">Prices include printing. Postage is quoted when you order.</p>
+    </section>
+
+
+    <!-- ======== FOOTER ======== -->
+    <footer>
+        <p>&copy; 2026 Stoneman Photography. All rights reserved.</p>
+        <p><a href="copyright.html">Copyright &amp; Image Use</a></p>
+    </footer>
+
+    <script src="js/script.js?v=11"></script>
+
+    <script>
+    /* ==================================================================
+       PRINT OPTIONS — PLACEHOLDER DATA
+       Each paper has its own list of sizes, so the two papers can have
+       different sizes and a different number of them.
+         long / short : the print's long and short edge, in cm
+                        (landscape shows long x short, portrait short x long)
+         name         : optional label shown above the dimensions, e.g. "A4"
+         price        : in pounds
+       ================================================================== */
+    var PRINT_PAPERS = [
+        {
+            key: 'standard',
+            name: 'Standard',
+            description: 'Good-quality photographic paper, suitable for most prints.',
+            sizes: [
+                { long: 18,   short: 13,   price: 12 },
+                { long: 29.7, short: 21,   price: 20, name: 'A4' },
+                { long: 30,   short: 20,   price: 22 },
+                { long: 42,   short: 29.7, price: 32, name: 'A3' },
+                { long: 45,   short: 30,   price: 35 },
+                { long: 60,   short: 40,   price: 55 }
+            ]
+        },
+        {
+            key: 'fine-art',
+            name: 'Fine Art',
+            description: 'Art-print quality paper, for special prints to display as a centrepiece.',
+            sizes: [
+                { long: 18,   short: 13,   price: 20 },
+                { long: 29.7, short: 21,   price: 32, name: 'A4' },
+                { long: 30,   short: 20,   price: 35 },
+                { long: 42,   short: 29.7, price: 50, name: 'A3' },
+                { long: 45,   short: 30,   price: 55 },
+                { long: 60,   short: 40,   price: 85 }
+            ]
+        }
+    ];
+
+    (function () {
+        var state = { orientation: 'landscape', paper: PRINT_PAPERS[0].key };
+
+        var paperButtons = document.getElementById('paper-buttons');
+        var tbody        = document.getElementById('prices-body');
+        var caption      = document.getElementById('prices-caption');
+        var paperDesc    = document.getElementById('paper-description');
+
+        function fmtNum(n) {
+            // 29.7 -> "29.7", 30 -> "30"
+            return String(Math.round(n * 10) / 10);
+        }
+        function fmtPrice(p) {
+            return '£' + (p % 1 === 0 ? p : p.toFixed(2));
+        }
+        function ratioLabel(long, short) {
+            var r = long / short;
+            var known = [
+                [1, '1:1'], [1.25, '5:4'], [4 / 3, '4:3'], [1.4, '7:5'],
+                [Math.SQRT2, 'A size (√2)'], [1.5, '3:2'], [16 / 9, '16:9'], [2, '2:1'], [3, '3:1']
+            ];
+            for (var i = 0; i < known.length; i++) {
+                if (Math.abs(r - known[i][0]) < 0.012) return known[i][1];
+            }
+            // Not a standard ratio: show the print's own proportions, e.g. 18:13
+            var a = Math.round(long * 10), b = Math.round(short * 10);
+            var gcd = function (x, y) { return y ? gcd(y, x % y) : x; };
+            var g = gcd(a, b);
+            return (a / g) + ':' + (b / g);
+        }
+        function orientedRatio(label) {
+            // "3:2" -> "2:3" in portrait; leave named ratios alone
+            if (state.orientation === 'landscape') return label;
+            var m = /^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/.exec(label);
+            return m ? m[2] + ':' + m[1] : label;
+        }
+        function escapeHTML(s) {
+            return String(s).replace(/[&<>"]/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+            });
+        }
+
+        function currentPaper() {
+            for (var i = 0; i < PRINT_PAPERS.length; i++) {
+                if (PRINT_PAPERS[i].key === state.paper) return PRINT_PAPERS[i];
+            }
+            return PRINT_PAPERS[0];
+        }
+
+        function render() {
+            var paper = currentPaper();
+            var portrait = state.orientation === 'portrait';
+            var maxLong = Math.max.apply(null, paper.sizes.map(function (s) { return s.long; }));
+
+            paperDesc.textContent = paper.description || '';
+            caption.textContent = paper.name + ' paper, ' + state.orientation + ' sizes and prices';
+
+            tbody.innerHTML = paper.sizes.map(function (s) {
+                var w = portrait ? s.short : s.long;
+                var h = portrait ? s.long : s.short;
+                // Shape preview, scaled so the largest print fills the 34px box
+                var scale = 34 / maxLong;
+                var shape = '<span class="size-shape" style="width:' + Math.max(6, w * scale) +
+                            'px;height:' + Math.max(6, h * scale) + 'px"></span>';
+                var dims = fmtNum(w) + ' × ' + fmtNum(h) + ' cm';
+                var inches = fmtNum(w / 2.54) + ' × ' + fmtNum(h / 2.54) + ' in';
+                return '<tr>' +
+                    '<td><div class="size-cell">' +
+                        '<span class="size-shape-box" aria-hidden="true">' + shape + '</span>' +
+                        '<span>' +
+                            (s.name ? '<span class="size-name">' + escapeHTML(s.name) + '</span> · ' : '') +
+                            '<span class="size-name">' + dims + '</span>' +
+                            '<span class="size-dims-in">' + inches + '</span>' +
+                        '</span>' +
+                    '</div></td>' +
+                    '<td>' + escapeHTML(orientedRatio(ratioLabel(s.long, s.short))) + '</td>' +
+                    '<td class="col-price">' + fmtPrice(s.price) + '</td>' +
+                '</tr>';
+            }).join('');
+        }
+
+        function setPressed(container, attr, value) {
+            container.querySelectorAll('.print-toggle-btn').forEach(function (b) {
+                b.setAttribute('aria-pressed', b.getAttribute(attr) === value ? 'true' : 'false');
+            });
+        }
+
+        // Paper buttons are built from the data, so adding a third paper just works
+        paperButtons.innerHTML = PRINT_PAPERS.map(function (p) {
+            return '<button type="button" class="print-toggle-btn" data-paper="' + escapeHTML(p.key) +
+                   '" aria-pressed="' + (p.key === state.paper) + '">' + escapeHTML(p.name) + '</button>';
+        }).join('');
+
+        paperButtons.addEventListener('click', function (e) {
+            var btn = e.target.closest('[data-paper]');
+            if (!btn) return;
+            state.paper = btn.getAttribute('data-paper');
+            setPressed(paperButtons, 'data-paper', state.paper);
+            render();
+        });
+
+        var orientGroup = document.querySelector('[aria-labelledby="orient-label"]');
+        orientGroup.addEventListener('click', function (e) {
+            var btn = e.target.closest('[data-orientation]');
+            if (!btn) return;
+            state.orientation = btn.getAttribute('data-orientation');
+            setPressed(orientGroup, 'data-orientation', state.orientation);
+            render();
+        });
+
+        render();
+    })();
+    </script>
+
+</body>
+</html>

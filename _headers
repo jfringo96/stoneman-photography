@@ -1,2 +1,8 @@
 https://stoneman-photography.pages.dev/*
   X-Robots-Tag: noindex
+
+/prints-preview
+  X-Robots-Tag: noindex, nofollow
+
+/prints-preview.html
+  X-Robots-Tag: noindex, nofollow
