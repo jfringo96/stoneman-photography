@@ -185,6 +185,17 @@
             transition: transform 0.25s ease;
         }
         .size-group[open] .group-chevron { transform: rotate(-135deg); margin-top: 4px; }
+        .group-recrop {
+            margin: 0 1.25rem;
+            padding: 0.85rem 0;
+            border-top: 1px solid rgba(200,184,154,0.3);
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: rgba(240,235,229,0.65);
+            font-style: italic;
+        }
+        .group-recrop a { color: var(--colour-accent); text-decoration: underline; text-underline-offset: 3px; }
+        .group-recrop a:hover { color: #f0ebe5; }
         .size-group .size-list {
             margin: 0 1.25rem;
             padding: 0.2rem 0 0.4rem;
@@ -230,7 +241,7 @@
             .prints-section { padding: 0.5rem 1rem 2.5rem; }
             .print-toggle-btn { padding: 0.5rem 0.8rem; }
             .group-head { padding: 0.8rem 0.9rem; gap: 0.7rem; }
-            .size-group .size-list { margin: 0 0.9rem; }
+            .size-group .size-list, .group-recrop { margin: 0 0.9rem; }
             .group-note { display: none; }
         }
     </style>
@@ -389,16 +400,21 @@
     /* Shape groups, in the order they appear on the page. 'r' is the long edge
        divided by the short edge; 'tol' is how close a size must be to count. */
     var SHAPE_GROUPS = [
-        { key: '4:3',   a: 4, b: 3, r: 4 / 3, note: 'The shape my camera shoots' },
-        { key: '3:2',   a: 3, b: 2, r: 3 / 2, note: 'Classic photo shape' },
-        { key: '5:4',   a: 5, b: 4, r: 5 / 4, note: 'A little squarer' },
         { key: 'A',     title: 'A sizes', r: Math.SQRT2, note: 'Standard paper sizes, easy to frame' },
-        { key: '1:1',   title: 'Square', r: 1, note: 'Equal sides' },
+        { key: '3:2',   a: 3, b: 2, r: 3 / 2, note: 'Classic photo shape' },
+        { key: '4:3',   a: 4, b: 3, r: 4 / 3, note: 'The shape my camera shoots' },
         { key: '7:5',   a: 7, b: 5, r: 1.4, tol: 0.035, note: 'Between 4:3 and 3:2' },
-        { key: '2:1',   a: 2, b: 1, r: 2, title: 'Panoramic', note: 'Wide views' },
-        { key: '3:1',   a: 3, b: 1, r: 3, title: 'Panoramic', note: 'Very wide views' },
-        { key: 'other', title: 'Other sizes', r: null, note: 'Shape shown for each size' }
+        { key: '5:4',   a: 5, b: 4, r: 5 / 4, note: 'A little squarer' },
+        { key: 'other', title: 'Other sizes', r: null, note: 'Shape shown for each size' },
+        { key: '1:1',   title: 'Square', r: 1, note: 'Equal sides', recrop: true },
+        { key: '2:1',   a: 2, b: 1, r: 2, title: 'Panoramic', note: 'Wide views', recrop: true },
+        { key: '3:1',   a: 3, b: 1, r: 3, title: 'Panoramic', note: 'Very wide views', recrop: true }
     ];
+
+    // Shown inside the groups marked 'recrop: true' when they are opened
+    var RECROP_NOTE = 'If there\'s a photo you\'d like in this format, let me know through the ' +
+        '<a href="#order">contact form</a> and I can send you a preview. Most of the photos on ' +
+        'this site weren\'t taken in this shape, but many can be recropped to fit it.';
 
     var A_SIZES_MM = { A0: [1189, 841], A1: [841, 594], A2: [594, 420], A3: [420, 297],
                        A4: [297, 210], A5: [210, 148], A6: [148, 105] };
@@ -544,6 +560,7 @@
                             '<span class="group-meta"><strong>from ' + fmtPrice(from) + '</strong>' + count + '</span>' +
                             '<span class="group-chevron" aria-hidden="true"></span>' +
                         '</summary>' +
+                        (g.recrop ? '<p class="group-recrop">' + RECROP_NOTE + '</p>' : '') +
                         '<ul class="size-list">' + items.map(rowHTML).join('') + '</ul>' +
                     '</details>';
                 }).join('');
