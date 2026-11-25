@@ -248,7 +248,7 @@
 </head>
 <body class="dark-page">
 
-    <div class="preview-banner">Preview only: not linked from the site or shown to search engines. Prices are placeholders.</div>
+    <div class="preview-banner">Preview only: not linked from the site or shown to search engines.</div>
 
     <!-- ======== NAVIGATION ======== -->
     <nav>
@@ -374,41 +374,87 @@
        Sizes are sorted into shape groups (4:3, 3:2, square, ...) automatically,
        each shown as a drop-down.
 
-       PLACEHOLDER PRICES: worked out from the print's area for this mock-up.
-       Replace with real prices, e.g. { size: 'A4', price: 25 }
+       PRICES: the selling ("Retail price") column of the Google Sheet
+       "Hahnemühle Photo Rag Giclee Prints prices", tabs Lustre and Photo Rag,
+       copied 25 Nov 2026. Update here if the sheet changes.
        ================================================================== */
-    var FINE_ART_SIZES = [
-        'A6', 'A5', 'A4', 'A3', 'A2', 'A1', 'A0',
-        '18x24cm', '24x30cm', '30x40cm', '40x50cm', '50x70cm', '60x80cm', '70x100cm',
-        '30x30cm', '40x40cm', '50x50cm',
-        '4x6in', '5x7in', '8x10in', '12x16in', '16x20in',
-        '8x8in', '10x10in', '12x12in', '16x16in', '20x20in', '24x24in', '30x30in',
-        '24x16in', '30x20in', '40x30in',
-        '10x20in', '10x30in', '12x36in', '16x48in', '20x40in', '20x60in',
-        '24x48in', '24x72in', '30x60in', '30x90in', '36x72in', '36x108in'
-    ];
     var STANDARD_SIZES = [
-        'A5', 'A4', 'A3', '18x24cm', '30x40cm', '24x30cm', '40x50cm', '30x30cm',
-        '4x6in', '8x10in', '24x16in', '30x20in'
-    ];
-    function placeholderPrices(list, perSqCm, base) {
-        return list.map(function (size) {
-            var d = parseSize(size);
-            return { size: size, price: Math.round((base + d.longCm * d.shortCm * perSqCm) / 5) * 5 };
-        });
-    }
+        { size: 'A4',     price: 12 },
+        { size: '12x8in', price: 12 },
+        { size: '12x9in', price: 12 },
+        { size: '10x10in', price: 12 },
+        { size: '12x10in', price: 12 },
+        { size: '14x10in', price: 12 },
+        { size: '14x11in', price: 16 },
+        { size: '15x10in', price: 15 },
+        { size: '12x12in', price: 12 },
+        { size: 'A3',     price: 16 },
+        { size: '16x12in', price: 16 },
+        { size: '18x12in', price: 16 },
+        { size: '17x6in', price: 12 },
+        { size: '18x6in', price: 12 },
+        { size: '18x8in', price: 16 },
+        { size: '20x8in', price: 16 },
+        { size: '20x10in', price: 19 },
+        { size: '24x8in', price: 19 },
+        { size: '24x10in', price: 20 },
+        { size: '24x12in', price: 20 },
+        { size: '28x11in', price: 22 },
+        { size: '30x10in', price: 21 },
+        { size: '30x12in', price: 22 },
+        { size: '32x12in', price: 22 },
+        { size: '34x12in', price: 22 },
+        { size: '36x8in', price: 22 },
+        { size: '36x12in', price: 23 }
+    ];   // Lustre tab (DS Colour Labs). PAN sizes are the panoramics.
+    var FINE_ART_SIZES = [
+        { size: 'A4',     price: 23 },
+        { size: 'A3',     price: 28 },
+        { size: 'A2',     price: 50 },
+        { size: 'A1',     price: 96 },
+        { size: '8x10in', price: 23 },
+        { size: '10x12in', price: 28 },
+        { size: '11x14in', price: 30 },
+        { size: '12x16in', price: 38 },
+        { size: '16x20in', price: 50 },
+        { size: '8x8in',  price: 23 },
+        { size: '10x10in', price: 28 },
+        { size: '12x12in', price: 34 },
+        { size: '16x16in', price: 50 },
+        { size: '20x20in', price: 61 },
+        { size: '24x16in', price: 61 },
+        { size: '24x20in', price: 69 },
+        { size: '30x20in', price: 80 },
+        { size: '24x24in', price: 111 },
+        { size: '30x30in', price: 135 },
+        { size: '40x30in', price: 142 },
+        { size: '10x20in', price: 30 },
+        { size: '10x30in', price: 48 },
+        { size: '12x36in', price: 59 },
+        { size: '16x36in', price: 74 },
+        { size: '16x48in', price: 137 },
+        { size: '20x40in', price: 110 },
+        { size: '20x60in', price: 165 }
+    ];   // Photo Rag tab (Giclees & Co)
 
     /* Shape groups, in the order they appear on the page. 'r' is the long edge
        divided by the short edge; 'tol' is how close a size must be to count. */
     var SHAPE_GROUPS = [
         { key: 'A',     title: 'A sizes', r: Math.SQRT2, note: 'Standard paper sizes, easy to frame' },
         { key: '3:2',   a: 3, b: 2, r: 3 / 2, note: 'Classic photo shape' },
-        { key: '4:3',   a: 4, b: 3, r: 4 / 3, note: 'Standard camera sensor size' },
         { key: '7:5',   a: 7, b: 5, r: 1.4, tol: 0.035, note: 'Between 4:3 and 3:2' },
-        { key: '5:4',   a: 5, b: 4, r: 5 / 4, note: 'A little squarer' },
+        { key: '4:3',   a: 4, b: 3, r: 4 / 3, note: 'Standard camera sensor size' },
+        { key: '5:4',   a: 5, b: 4, r: 5 / 4, tol: 0.03, note: 'A little squarer' },
+        { key: '6:5',   a: 6, b: 5, r: 6 / 5, note: 'Squarer still' },
         { key: '1:1',   title: 'Square', r: 1, recrop: true },
         { key: '2:1',   a: 2, b: 1, r: 2, title: 'Panoramic', note: 'Wide views', recrop: true },
-        { key: '3:1',   a: 3, b: 1, r: 3, title: 'Panoramic', note: 'Very wide views', recrop: true }
+        { key: '9:4',   a: 9, b: 4, r: 2.25, title: 'Panoramic', note: 'Wide views', recrop: true },
+        { key: '5:2',   a: 5, b: 2, r: 2.5, tol: 0.11, title: 'Panoramic', note: 'Wider views', recrop: true },
+        { key: '8:3',   a: 8, b: 3, r: 8 / 3, title: 'Panoramic', note: 'Wider views', recrop: true },
+        { key: '3:1',   a: 3, b: 1, r: 3, tol: 0.18, title: 'Panoramic', note: 'Very wide views', recrop: true },
+        { key: '9:2',   a: 9, b: 2, r: 4.5, title: 'Panoramic', note: 'Extra wide views', recrop: true },
+        // Catch-all so a new size never disappears from the page
+        { key: 'other', title: 'Other sizes', r: null, recrop: true }
     ];
 
     // Shown inside the groups marked 'recrop: true' when they are opened
@@ -441,13 +487,13 @@
             key: 'standard',
             name: 'Standard',
             description: 'Fujifilm Lustre: good-quality photographic paper with a subtle sheen, suitable for most prints.',
-            sizes: placeholderPrices(STANDARD_SIZES, 0.006, 8)
+            sizes: STANDARD_SIZES
         },
         {
             key: 'fine-art',
             name: 'Fine Art',
             description: 'Hahnemühle Photo Rag 308: a matte cotton art paper, for special prints to display as a centrepiece.',
-            sizes: placeholderPrices(FINE_ART_SIZES, 0.011, 15)
+            sizes: FINE_ART_SIZES
         }
     ];
 
@@ -487,8 +533,7 @@
                 if (g.key === 'A' || g.r === null) continue;
                 if (Math.abs(r - g.r) <= (g.tol || 0.012)) return g.key;
             }
-            // Not one of the shapes above: not shown on the page
-            console.warn('Print size fits no shape group, so it is hidden:', d);
+            // Not one of the shapes above: listed under 'Other sizes'
             return 'other';
         }
 
