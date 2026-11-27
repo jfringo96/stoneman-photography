@@ -31,7 +31,7 @@ var THUMB_QUALITY  = 0.82;
 var BLOG_MAX_EDGE  = 1600;         // blog images are resized down to this
 var BLOG_QUALITY   = 0.85;
 var MAX_FEATURED   = 3;            // home page shows 3 featured photos
-var SCRIPT_VERSION = 14;           // script.js?v=N used by generated project pages —
+var SCRIPT_VERSION = 15;           // script.js?v=N used by generated project pages —
                                    // keep in step with the HTML pages when script.js changes
 
 
@@ -397,7 +397,7 @@ function currentTab() {
 function renderActiveTab() {
     var which = currentTab();
     var wrap = document.querySelector('.wrap');
-    if (wrap) wrap.classList.remove('wide');   // only the Arrange view widens the page
+    if (wrap) wrap.classList.remove('wide', 'editing');   // only Arrange / the layout editor widen the page
     if (which === 'hero') loadHeroPanel();
     else if (which === 'blog') renderBlogPanel();
     else if (which === 'text') loadTextPanel();
@@ -1451,20 +1451,23 @@ function loadBlogPanel() {
     renderBlogPanel();
 }
 
+/* Thumbnail URL for a post's first photo (any block format), or null. */
 function firstPostImage(post) {
-    if (post.blocks) {
-        for (var i = 0; i < post.blocks.length; i++) {
-            if (post.blocks[i].type === 'image' && post.blocks[i].filename) return post.blocks[i].filename;
-        }
+    var blocks = post.blocks || [];
+    for (var i = 0; i < blocks.length; i++) {
+        var b = blocks[i];
+        if (b.type !== 'image') continue;
+        if (b.src) return rawSrc(b.src);
+        if (b.filename) return blogSrc(b.filename);
     }
-    return (post.images && post.images[0]) || null;
+    return (post.images && post.images[0]) ? blogSrc(post.images[0]) : null;
 }
 
 function renderBlogPanel() {
     var posts = state.content.blog || [];
     var rows = posts.map(function (post, i) {
         var first = firstPostImage(post);
-        var thumb = first ? '<img src="' + blogSrc(first) + '" alt="">' : '<div class="noimg">No image</div>';
+        var thumb = first ? '<img src="' + first + '" alt="">' : '<div class="noimg">No image</div>';
         return '' +
         '<div class="blog-row" data-index="' + i + '">' +
             '<span class="reorder">' +
@@ -1499,25 +1502,12 @@ function renderBlogPanel() {
     });
 }
 
-/* Build the editable block list for a post (converts old body/images posts too). */
-function postToEditBlocks(post) {
-    var src = post.blocks ? post.blocks : (function () {
-        var b = [];
-        (post.images || []).forEach(function (fn) { b.push({ type: 'image', filename: fn, size: 'full', align: 'full' }); });
-        if (post.body) b.push({ type: 'text', text: post.body });
-        return b;
-    })();
-    return src.map(function (b) {
-        if (b.type === 'image') {
-            return { type: 'image', src: b.src || (b.filename ? 'images/Blog/' + b.filename : ''), size: b.size || 'medium', align: b.align || 'center' };
-        }
-        return { type: 'text', text: b.text || '' };
-    });
-}
-
 function openPostForm(index) {
     var post = (index === null) ? { title: '', date: formatDate(new Date()), blocks: [] } : state.content.blog[index];
-    editForm = { kind: 'blog', index: index, blocks: postToEditBlocks(post) };
+    editForm = {
+        kind: 'blog', index: index, blocks: postToEditBlocks(post), layout: editLayoutFor(post),
+        sel: null, undo: [], redo: [], view: 'laptop', perRow: 1
+    };
 
     $('postFormHolder').innerHTML =
         '<div class="add-form">' +
@@ -1525,16 +1515,7 @@ function openPostForm(index) {
                 '<input type="text" id="pfTitle" value="' + escapeHtml(post.title || '') + '"></div>' +
             '<div class="af-field"><label for="pfDate">Date</label>' +
                 '<input type="text" id="pfDate" value="' + escapeHtml(post.date || '') + '"></div>' +
-            '<div class="blocks-holder" id="blocksHolder"></div>' +
-            '<div class="block-add">' +
-                '<button class="secondary" id="addTextBlock">+ Add text</button>' +
-                '<label class="btn-like" title="You can pick several photos at once">+ Upload images' +
-                    '<input type="file" id="addImageBlock" accept="image/jpeg,image/png" multiple hidden></label>' +
-                '<button class="secondary" id="addLibImage">+ From library</button>' +
-            '</div>' +
-            '<p class="help upload-note">Uploaded photos (you can pick several at once) are also added to your photo ' +
-                'library in the shared “Blog” category, kept off the Portfolio page.</p>' +
-            '<div class="library-picker hidden" id="libraryPicker"></div>' +
+            layoutEditorHTML('blog') +
             '<div class="af-actions">' +
                 '<button id="pfSave">Save post</button>' +
                 '<button class="secondary" id="pfCancel">Cancel</button>' +
@@ -1542,99 +1523,825 @@ function openPostForm(index) {
             '<div class="status hidden" id="pfStatus"></div>' +
         '</div>';
 
-    $('addTextBlock').addEventListener('click', function () {
-        syncBlockInputs(); editForm.blocks.push({ type: 'text', text: '' }); renderBlocks();
-    });
-    $('addImageBlock').addEventListener('change', onBlockImageChosen);
-    $('addLibImage').addEventListener('click', function () { openLibraryPicker(); });
     $('pfSave').addEventListener('click', savePost);
-    $('pfCancel').addEventListener('click', function () { $('postFormHolder').innerHTML = ''; editForm = null; });
-    renderBlocks();
+    $('pfCancel').addEventListener('click', function () { closeLayoutEditor('postFormHolder'); });
+    initLayoutEditor();
     $('postFormHolder').scrollIntoView({ block: 'nearest' });
 }
 
-function blkSelect(cls, options, sel) {
-    return '<select class="' + cls + '">' + options.map(function (o) {
-        return '<option value="' + o[0] + '"' + (o[0] === sel ? ' selected' : '') + '>' + o[1] + '</option>';
-    }).join('') + '</select>';
+/* ----------------------------------------------------------
+   LAYOUT EDITOR (shared by blog posts and projects)
+   A visual canvas laid out the way the live page will be:
+   blocks sit in rows, each block is 1–12 twelfths wide, and a
+   row wraps onto a new line when it fills up (so 3 photos at
+   one-third each make a grid). Drag a block to move it (drop it
+   beside another to sit side by side, or on the dashed line
+   between rows for a row of its own), drag its right edge to
+   resize it, click it for its settings on the right.
+
+   While a form is open editForm holds:
+     { kind, index, blocks, layout, sel, undo, redo, view, perRow }
+   Each block carries a temporary _id so the canvas can find it;
+   new uploads also carry file/previewUrl until they are saved.
+   Saved items get layout.v = 2, which tells script.js to use the
+   layout renderer; anything older keeps rendering the old way
+   until it is next saved from here.
+   ---------------------------------------------------------- */
+
+var LE_DEFAULT_LAYOUT = { v: 2, width: 'standard', gap: 'normal', align: 'center', corners: 'rounded', cover: true };
+var LE_PAGE_PX = { standard: 800, wide: 1100, full: 1400 };
+/* Content width the canvas shows for tablet / phone previews (a 768px tablet
+   and a 390px phone, less the page's 2rem side padding). */
+var LE_VIEW_PX = { tablet: 704, phone: 326 };
+var leSeq = 0;
+function leId() { leSeq++; return 'b' + leSeq; }
+
+function leClampW(w) { return Math.max(1, Math.min(12, parseInt(w, 10) || 12)); }
+
+/* Page settings for an item, filling in defaults. */
+function editLayoutFor(item) {
+    var L = (item && item.layout && item.layout.v === 2) ? item.layout : {};
+    var out = {};
+    Object.keys(LE_DEFAULT_LAYOUT).forEach(function (k) {
+        out[k] = L[k] !== undefined ? L[k] : LE_DEFAULT_LAYOUT[k];
+    });
+    out.v = 2;
+    out.custom = { tablet: !!(L.custom && L.custom.tablet), phone: !!(L.custom && L.custom.phone) };
+    return out;
 }
 
-function renderBlocks() {
-    var holder = $('blocksHolder');
-    if (!holder) return;
-    if (!editForm.blocks.length) {
-        holder.innerHTML = '<p class="help">Add text and image blocks below — their top-to-bottom order is the order on the page.</p>';
-        return;
-    }
-    holder.innerHTML = editForm.blocks.map(function (b, i) {
-        var ctrl = '<div class="blk-ctrl">' +
-            '<button class="blk-up" data-i="' + i + '" title="Move up"' + (i === 0 ? ' disabled' : '') + '>▲</button>' +
-            '<button class="blk-down" data-i="' + i + '" title="Move down"' + (i === editForm.blocks.length - 1 ? ' disabled' : '') + '>▼</button>' +
-            '<button class="blk-del" data-i="' + i + '" title="Remove block">✕</button>' +
-        '</div>';
-        if (b.type === 'text') {
-            return '<div class="blk" data-i="' + i + '"><div class="blk-tag">Text</div>' +
-                '<textarea class="blk-text" rows="4" placeholder="Write a paragraph… (blank line = new paragraph)">' + escapeHtml(b.text || '') + '</textarea>' +
-                ctrl + '</div>';
-        }
-        var src = b.file ? b.previewUrl : rawSrc(b.src);
-        return '<div class="blk" data-i="' + i + '"><div class="blk-tag">Image</div>' +
-            '<div class="blk-imgrow">' +
-                '<img class="blk-thumb" src="' + src + '" alt="">' +
-                '<div class="blk-opts">' +
-                    '<label>Size ' + blkSelect('blk-size', [['small','Small'],['medium','Medium'],['large','Large'],['full','Full width']], b.size) + '</label>' +
-                    '<label>Position ' + blkSelect('blk-align', [['left','Left (wrap)'],['center','Centre'],['right','Right (wrap)']], b.align) + '</label>' +
-                '</div>' +
-            '</div>' +
-            ctrl + '</div>';
-    }).join('');
+/* ---------- screen sizes ----------
+   The canvas previews Laptop, Tablet or Phone. By default tablets keep the
+   laptop widths and phones stack (small photos two to a line), exactly as
+   the live CSS does. Switching a size to "Custom" gives every block its own
+   width for that size (tw / pw), set by resizing in that preview. */
+function leAutoW(b, view) {
+    var w = leClampW(b.w);
+    if (view === 'phone') return (b.type === 'image' && w <= 4) ? 6 : 12;
+    return w;
+}
+/* Which width the current preview edits: w, tw, pw, or null when automatic. */
+function leWProp() {
+    var v = editForm.view, c = editForm.layout.custom || {};
+    if (v === 'tablet') return c.tablet ? 'tw' : null;
+    if (v === 'phone') return c.phone ? 'pw' : null;
+    return 'w';
+}
+function leEffW(b) {
+    var prop = leWProp();
+    if (prop && prop !== 'w' && b[prop]) return leClampW(b[prop]);
+    return leAutoW(b, editForm.view);
+}
+var LE_HIDE_KEY = { laptop: 'hideD', tablet: 'hideT', phone: 'hideP' };
+var LE_VIEW_NAME = { laptop: 'laptop', tablet: 'tablet', phone: 'phone' };
+/* New blocks in a custom size start at that size's automatic width. */
+function leFillCustomWidths(blocks) {
+    var c = editForm.layout.custom || {};
+    blocks.forEach(function (b) {
+        if (c.tablet && !b.tw) b.tw = leAutoW(b, 'tablet');
+        if (c.phone && !b.pw) b.pw = leAutoW(b, 'phone');
+    });
+}
 
-    holder.querySelectorAll('.blk-up').forEach(function (bt) {
-        bt.addEventListener('click', function () { syncBlockInputs(); moveBlock(parseInt(this.getAttribute('data-i'), 10), -1); });
-    });
-    holder.querySelectorAll('.blk-down').forEach(function (bt) {
-        bt.addEventListener('click', function () { syncBlockInputs(); moveBlock(parseInt(this.getAttribute('data-i'), 10), 1); });
-    });
-    holder.querySelectorAll('.blk-del').forEach(function (bt) {
-        bt.addEventListener('click', function () {
-            syncBlockInputs();
-            editForm.blocks.splice(parseInt(this.getAttribute('data-i'), 10), 1);
-            renderBlocks();
+/* Build the editable block list for a post or project. Older items (plain
+   top-to-bottom blocks, or the very first { body, images } blog format) are
+   turned into rows that look as close as possible to how they showed before. */
+var LEGACY_IMAGE_W = { small: 4, medium: 7, large: 9, full: 12 };
+function postToEditBlocks(post) {
+    var raw = post.blocks ? post.blocks : (function () {
+        var b = [];
+        (post.images || []).forEach(function (fn) { b.push({ type: 'image', filename: fn, size: 'full', align: 'full' }); });
+        if (post.body) b.push({ type: 'text', text: post.body });
+        return b;
+    })();
+
+    if (post.layout && post.layout.v === 2) {
+        return raw.map(function (b, i) {
+            var c = {};
+            Object.keys(b).forEach(function (k) { c[k] = b[k]; });
+            c._id = leId();
+            c.w = leClampW(b.w);
+            c.newRow = i === 0 || !!b.newRow;
+            if (c.type === 'image' && !c.src && c.filename) c.src = 'images/Blog/' + c.filename;
+            return c;
         });
-    });
-}
+    }
 
-/* Read the on-screen block inputs back into state before any re-render. */
-function syncBlockInputs() {
-    document.querySelectorAll('#blocksHolder .blk').forEach(function (el) {
-        var i = parseInt(el.getAttribute('data-i'), 10);
-        var b = editForm.blocks[i];
-        if (!b) return;
+    var out = [];
+    for (var i = 0; i < raw.length; i++) {
+        var b = raw[i];
         if (b.type === 'text') {
-            var ta = el.querySelector('.blk-text');
-            if (ta) b.text = ta.value;
-        } else {
-            var s = el.querySelector('.blk-size'), a = el.querySelector('.blk-align');
-            if (s) b.size = s.value;
-            if (a) b.align = a.value;
+            out.push({ _id: leId(), type: 'text', text: b.text || '', style: 'body', align: 'left', w: 12, newRow: true });
+            continue;
         }
-    });
+        if (b.type !== 'image') continue;
+        var full = b.size === 'full' || b.align === 'full';
+        var img = {
+            _id: leId(), type: 'image', src: b.src || (b.filename ? 'images/Blog/' + b.filename : ''),
+            crop: 'original', caption: '', w: full ? 12 : (LEGACY_IMAGE_W[b.size] || 7), newRow: true
+        };
+        var next = raw[i + 1];
+        // A left/right "wrap" image with text after it becomes image + text side by side.
+        if (!full && (b.align === 'left' || b.align === 'right') && next && next.type === 'text') {
+            img.w = Math.min(img.w, 6);
+            var txt = { _id: leId(), type: 'text', text: next.text || '', style: 'body', align: 'left', w: 12 - img.w, newRow: false };
+            if (b.align === 'left') out.push(img, txt);
+            else { txt.newRow = true; img.newRow = false; out.push(txt, img); }
+            i++;
+            continue;
+        }
+        out.push(img);
+    }
+    return out;
 }
 
-function moveBlock(i, dir) {
-    var j = i + dir;
-    if (j < 0 || j >= editForm.blocks.length) return;
-    var t = editForm.blocks[i]; editForm.blocks[i] = editForm.blocks[j]; editForm.blocks[j] = t;
+/* The editor's HTML, dropped into the blog/project form. */
+function layoutEditorHTML(kind) {
+    var note = kind === 'blog'
+        ? 'Uploaded photos are also added to your photo library in the shared “Blog” category, kept off the Portfolio page.'
+        : 'Uploaded photos are also added to your photo library in a category named after this project, kept off the Portfolio page.';
+    return '' +
+        '<div class="le" id="layoutEditor">' +
+            '<div class="le-bar" id="leBar"></div>' +
+            '<div class="le-add">' +
+                '<span class="le-add-label">Add</span>' +
+                '<button class="secondary" data-add="text">Text</button>' +
+                '<button class="secondary" data-add="heading">Heading</button>' +
+                '<button class="secondary" data-add="quote">Quote</button>' +
+                '<label class="btn-like" title="You can pick several photos at once">Upload photos' +
+                    '<input type="file" id="addImageBlock" accept="image/jpeg,image/png" multiple hidden></label>' +
+                '<button class="secondary" id="addLibImage">From library</button>' +
+                '<label class="le-perrow">Photos per row <select id="lePerRow">' +
+                    [1, 2, 3, 4].map(function (n) {
+                        return '<option value="' + n + '"' + (n === editForm.perRow ? ' selected' : '') + '>' + n + '</option>';
+                    }).join('') +
+                '</select></label>' +
+                '<button class="secondary" data-add="spacer">Space</button>' +
+                '<button class="secondary" data-add="divider">Line</button>' +
+            '</div>' +
+            '<p class="help upload-note">' + note + '</p>' +
+            '<div class="library-picker hidden" id="libraryPicker"></div>' +
+            '<div class="le-main">' +
+                '<div class="le-stage" id="leStage"><div class="le-viewnote hidden" id="leViewNote"></div>' +
+                    '<div class="le-canvas" id="leCanvas"></div></div>' +
+                '<aside class="le-inspector" id="leInspector"></aside>' +
+            '</div>' +
+        '</div>';
+}
+
+/* Wire up the add bar and keyboard shortcuts once the form is on screen. */
+function initLayoutEditor() {
+    var wrap = document.querySelector('.wrap');
+    if (wrap) wrap.classList.add('editing');
+    document.querySelectorAll('#layoutEditor [data-add]').forEach(function (bt) {
+        bt.addEventListener('click', function () { leAdd(this.getAttribute('data-add')); });
+    });
+    $('addImageBlock').addEventListener('change', onBlockImageChosen);
+    $('addLibImage').addEventListener('click', function () { openLibraryPicker(); });
+    $('lePerRow').addEventListener('change', function () { editForm.perRow = parseInt(this.value, 10) || 1; });
     renderBlocks();
+}
+
+/* Close the editor (Cancel). Asks first if anything was changed. */
+function closeLayoutEditor(holderId) {
+    if (editForm && editForm.undo.length && !confirm('Discard your unsaved changes?')) return;
+    $(holderId).innerHTML = '';
+    editForm = null;
+    var wrap = document.querySelector('.wrap');
+    if (wrap) wrap.classList.remove('editing');
+}
+
+document.addEventListener('keydown', function (e) {
+    if (!editForm || !$('leCanvas')) return;
+    var tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'textarea' || tag === 'input' || tag === 'select') return;
+    var key = (e.key || '').toLowerCase();
+    if ((e.ctrlKey || e.metaKey) && key === 'z') { e.preventDefault(); e.shiftKey ? leRedo() : leUndo(); }
+    else if ((e.ctrlKey || e.metaKey) && key === 'y') { e.preventDefault(); leRedo(); }
+});
+
+/* ---------- undo ---------- */
+
+function leSnapshot() {
+    editForm.undo.push(leState());
+    if (editForm.undo.length > 60) editForm.undo.shift();
+    editForm.redo = [];
+    editForm.typing = null;
+}
+function leState() {
+    return {
+        blocks: editForm.blocks.map(function (b) {
+            var c = {}; Object.keys(b).forEach(function (k) { c[k] = b[k]; }); return c;
+        }),
+        layout: JSON.parse(JSON.stringify(editForm.layout))
+    };
+}
+function leRestore(s) {
+    editForm.blocks = s.blocks;
+    editForm.layout = s.layout;
+    if (!editForm.blocks.some(function (b) { return b._id === editForm.sel; })) editForm.sel = null;
+    renderBlocks();
+}
+function leUndo() {
+    if (!editForm.undo.length) return;
+    editForm.redo.push(leState());
+    leRestore(editForm.undo.pop());
+}
+function leRedo() {
+    if (!editForm.redo.length) return;
+    editForm.undo.push(leState());
+    leRestore(editForm.redo.pop());
+}
+
+/* ---------- helpers ---------- */
+
+function leRows() {
+    var rows = [];
+    editForm.blocks.forEach(function (b, i) {
+        if (i === 0 || b.newRow) rows.push([]);
+        rows[rows.length - 1].push(b);
+    });
+    return rows;
+}
+function leIndex(id) {
+    for (var i = 0; i < editForm.blocks.length; i++) if (editForm.blocks[i]._id === id) return i;
+    return -1;
+}
+function leSelected() {
+    var i = leIndex(editForm.sel);
+    return i === -1 ? null : editForm.blocks[i];
+}
+function leWidthLabel(w) {
+    return ({ 12: 'Full', 9: '¾', 8: '⅔', 6: '½', 4: '⅓', 3: '¼' })[w] || (w + '/12');
+}
+function leImgSrc(b) {
+    return b.file ? b.previewUrl : rawSrc(b.src || '');
+}
+/* Give n blocks equal widths that fill one line. */
+function leEqualise(blocks, prop) {
+    var n = blocks.length, base = Math.floor(12 / n), rem = 12 - base * n;
+    blocks.forEach(function (b, k) { b[prop || 'w'] = Math.max(1, base + (k < rem ? 1 : 0)); });
+}
+
+/* ---------- adding ---------- */
+
+function leNewBlock(kind) {
+    var b = { _id: leId(), newRow: true, w: 12 };
+    if (kind === 'heading') { b.type = 'text'; b.style = 'heading'; b.align = 'left'; b.text = ''; }
+    else if (kind === 'quote') { b.type = 'text'; b.style = 'quote'; b.align = 'left'; b.text = ''; }
+    else if (kind === 'spacer') { b.type = 'spacer'; b.size = 'm'; }
+    else if (kind === 'divider') { b.type = 'divider'; }
+    else { b.type = 'text'; b.style = 'body'; b.align = 'left'; b.text = ''; }
+    return b;
+}
+
+/* Put new blocks after the selected block's row (or at the end). With
+   joinRow they go straight after the selected block, in its row. */
+function leInsert(newBlocks, joinRow) {
+    leSnapshot();
+    var at = editForm.blocks.length;
+    var i = leIndex(editForm.sel);
+    if (i !== -1) {
+        at = i + 1;
+        if (!joinRow) while (at < editForm.blocks.length && !editForm.blocks[at].newRow) at++;
+    }
+    if (joinRow && i !== -1) newBlocks[0].newRow = false;
+    leFillCustomWidths(newBlocks);
+    Array.prototype.splice.apply(editForm.blocks, [at, 0].concat(newBlocks));
+    editForm.sel = newBlocks[newBlocks.length - 1]._id;
+    renderBlocks();
+    var cell = document.querySelector('.le-cell[data-id="' + newBlocks[0]._id + '"]');
+    if (cell) {
+        cell.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        var ta = cell.querySelector('textarea');
+        if (ta) ta.focus();
+    }
+}
+
+function leAdd(kind) { leInsert([leNewBlock(kind)]); }
+
+function leImageBlock(fields, k) {
+    var per = editForm.perRow || 1;
+    var b = { _id: leId(), type: 'image', crop: 'original', caption: '', w: Math.round(12 / per), newRow: k === 0 };
+    Object.keys(fields).forEach(function (key) { b[key] = fields[key]; });
+    return b;
 }
 
 function onBlockImageChosen(e) {
-    syncBlockInputs();
-    Array.prototype.forEach.call(e.target.files, function (file) {
-        editForm.blocks.push({ type: 'image', file: file, previewUrl: URL.createObjectURL(file), size: 'medium', align: 'center' });
-    });
+    var files = Array.prototype.slice.call(e.target.files);
     e.target.value = '';
+    if (!files.length) return;
+    leInsert(files.map(function (file, k) {
+        return leImageBlock({ file: file, previewUrl: URL.createObjectURL(file) }, k);
+    }));
+}
+
+/* ---------- rendering ---------- */
+
+/* Kept for older callers: the canvas writes edits straight into state. */
+function syncBlockInputs() {}
+
+function leSeg(prop, options, current, scope) {
+    return '<div class="le-seg">' + options.map(function (o) {
+        return '<button type="button" class="le-seg-btn' + (String(o[0]) === String(current) ? ' active' : '') + '"' +
+               ' data-' + scope + '="' + prop + '" data-val="' + o[0] + '"' + (o[2] ? ' title="' + o[2] + '"' : '') + '>' + o[1] + '</button>';
+    }).join('') + '</div>';
+}
+
+function renderLayoutBar() {
+    var bar = $('leBar');
+    if (!bar) return;
+    var L = editForm.layout;
+    bar.innerHTML =
+        '<div class="le-set"><span>Page width</span>' +
+            leSeg('width', [['standard', 'Standard', 'Same width as the text column (800px)'], ['wide', 'Wide', 'Up to 1100px'], ['full', 'Extra wide', 'Up to 1400px']], L.width, 'lprop') + '</div>' +
+        '<div class="le-set"><span>Spacing</span>' +
+            leSeg('gap', [['none', 'None'], ['tight', 'Tight'], ['normal', 'Normal'], ['roomy', 'Roomy']], L.gap, 'lprop') + '</div>' +
+        '<div class="le-set"><span>Rows</span>' +
+            leSeg('align', [['center', 'Centred'], ['left', 'Left']], L.align, 'lprop') + '</div>' +
+        '<div class="le-set"><span>Corners</span>' +
+            leSeg('corners', [['rounded', 'Rounded'], ['square', 'Square']], L.corners, 'lprop') + '</div>' +
+        (editForm.kind === 'project'
+            ? '<div class="le-set"><span>Cover at top</span>' + leSeg('cover', [['true', 'Show'], ['false', 'Hide']], String(L.cover !== false), 'lprop') + '</div>'
+            : '') +
+        '<div class="le-set le-set-right"><span>Preview</span>' +
+            leSeg('view', [['laptop', 'Laptop'], ['tablet', 'Tablet'], ['phone', 'Phone']], editForm.view, 'view') +
+            '<button type="button" class="le-icon" id="leUndo" title="Undo (Ctrl+Z)"' + (editForm.undo.length ? '' : ' disabled') + '>↶</button>' +
+            '<button type="button" class="le-icon" id="leRedo" title="Redo (Ctrl+Shift+Z)"' + (editForm.redo.length ? '' : ' disabled') + '>↷</button>' +
+        '</div>';
+
+    bar.querySelectorAll('[data-lprop]').forEach(function (bt) {
+        bt.addEventListener('click', function () {
+            var prop = this.getAttribute('data-lprop'), val = this.getAttribute('data-val');
+            if (prop === 'cover') val = val === 'true';
+            if (editForm.layout[prop] === val) return;
+            leSnapshot();
+            editForm.layout[prop] = val;
+            renderBlocks();
+        });
+    });
+    bar.querySelectorAll('[data-view]').forEach(function (bt) {
+        bt.addEventListener('click', function () { editForm.view = this.getAttribute('data-val'); renderBlocks(); });
+    });
+    var note = $('leViewNote');
+    var v = editForm.view;
+    if (v === 'laptop') {
+        note.className = 'le-viewnote hidden';
+        note.innerHTML = '';
+    } else {
+        var on = !!(L.custom && L.custom[v]);
+        note.className = 'le-viewnote' + (on ? ' le-custom-on' : '');
+        note.innerHTML =
+            '<div class="le-seg">' +
+                '<button type="button" class="le-seg-btn' + (on ? '' : ' active') + '" data-custom="off">Automatic</button>' +
+                '<button type="button" class="le-seg-btn' + (on ? ' active' : '') + '" data-custom="on">Custom ' + v + ' layout</button>' +
+            '</div>' +
+            '<span>' + (on
+                ? 'Resizing here only changes the <b>' + v + '</b> layout. Moving blocks, text and photo changes still apply to every size.'
+                : (v === 'tablet'
+                    ? 'Tablets use your laptop layout automatically. Choose <b>Custom</b> to set different widths for tablets.'
+                    : 'Phones stack everything automatically, with small photos two to a line. Choose <b>Custom</b> to set phone widths yourself.')) +
+            '</span>';
+        note.querySelectorAll('[data-custom]').forEach(function (bt) {
+            bt.addEventListener('click', function () { leSetCustom(v, this.getAttribute('data-custom') === 'on'); });
+        });
+    }
+    $('leUndo').addEventListener('click', leUndo);
+    $('leRedo').addEventListener('click', leRedo);
+}
+
+function leCellHTML(b) {
+    var inner = '';
+    if (b.type === 'text') {
+        var ph = { heading: 'Heading', subheading: 'Subheading', quote: 'A quote…', small: 'Small print…' }[b.style] ||
+                 'Write something… (leave a blank line for a new paragraph)';
+        inner = '<textarea class="le-text le-st-' + (b.style || 'body') + ' lay-ta-' + (b.align || 'left') + '" data-id="' + b._id + '" rows="1" placeholder="' + ph + '">' +
+                escapeHtml(b.text || '') + '</textarea>';
+    } else if (b.type === 'image') {
+        inner = '<figure class="lay-figure lay-crop-' + (b.crop || 'original') + '"><img src="' + leImgSrc(b) + '" alt="" draggable="false"></figure>' +
+                '<input class="le-caption" data-id="' + b._id + '" value="' + escapeHtml(b.caption || '') + '" placeholder="Add a caption (optional)">';
+    } else if (b.type === 'spacer') {
+        inner = '<div class="le-spacer lay-sp-' + (b.size || 'm') + '"><span>Space</span></div>';
+    } else if (b.type === 'divider') {
+        inner = '<div class="le-divider"><hr class="lay-divider"></div>';
+    }
+    var w = leEffW(b);
+    var hidden = b[LE_HIDE_KEY[editForm.view]];
+    return '<div class="lay-cell le-cell le-' + b.type + ' lay-v-' + (b.valign || 'top') +
+               (hidden ? ' le-hidden' : '') +
+               (editForm.sel === b._id ? ' le-sel' : '') + '" data-id="' + b._id + '" style="--w:' + w + '">' +
+               '<div class="le-tools"><span class="le-grip" title="Drag to move">⠿</span><span class="le-wl">' + leWidthLabel(w) + '</span>' +
+                   (hidden ? '<span class="le-wl le-hid">Hidden on ' + editForm.view + '</span>' : '') + '</div>' +
+               inner +
+               '<div class="le-resize" title="Drag to change the width"></div>' +
+           '</div>';
+}
+
+/* Draw the canvas, page settings and the settings panel. */
+function renderBlocks() {
+    var canvas = $('leCanvas');
+    if (!canvas || !editForm) return;
+    renderLayoutBar();
+    var L = editForm.layout;
+    var view = editForm.view;
+    $('leStage').className = 'le-stage le-view-' + view + (leWProp() ? '' : ' le-auto');
+    canvas.className = 'le-canvas lay-gap-' + L.gap + (L.corners === 'square' ? ' lay-square' : '');
+    canvas.style.maxWidth = (view === 'laptop' ? LE_PAGE_PX[L.width] : LE_VIEW_PX[view]) + 'px';
+
+    var rows = leRows();
+    if (!rows.length) {
+        canvas.innerHTML = '<div class="le-empty">Your page is empty. Use the <b>Add</b> buttons above to start ' +
+            'with text, a heading or photos — then drag things around and resize them here.</div>';
+        renderInspector();
+        return;
+    }
+    var slot = '<div class="le-slot" title="Drop here for a row of its own"></div>';
+    canvas.innerHTML = slot + rows.map(function (row) {
+        return '<div class="lay-row le-row lay-row-' + (L.align === 'left' ? 'left' : 'center') + '">' +
+               row.map(leCellHTML).join('') + '</div>' + slot;
+    }).join('');
+
+    canvas.querySelectorAll('.le-cell').forEach(function (cell) {
+        var id = cell.getAttribute('data-id');
+        cell.addEventListener('mousedown', function () { leSelect(id); });
+        cell.addEventListener('focusin', function () { leSelect(id); });
+    });
+    canvas.querySelectorAll('textarea.le-text').forEach(function (ta) {
+        var b = editForm.blocks[leIndex(ta.getAttribute('data-id'))];
+        ta.addEventListener('input', function () {
+            // One undo step per burst of typing in a block.
+            if (editForm.typing !== b._id) { leSnapshot(); editForm.typing = b._id; leUndoButtons(); }
+            b.text = ta.value;
+            leGrow(ta);
+        });
+    });
+    canvas.querySelectorAll('input.le-caption').forEach(function (inp) {
+        var b = editForm.blocks[leIndex(inp.getAttribute('data-id'))];
+        inp.addEventListener('input', function () {
+            if (editForm.typing !== b._id + 'c') { leSnapshot(); editForm.typing = b._id + 'c'; leUndoButtons(); }
+            b.caption = inp.value;
+            var ins = $('leCaptionIns');
+            if (ins && editForm.sel === b._id) ins.value = inp.value;
+        });
+    });
+    canvas.querySelectorAll('.le-resize').forEach(function (h) { h.addEventListener('pointerdown', leResizeStart); });
+    canvas.querySelectorAll('.le-canvas img').forEach(function (img) {
+        img.addEventListener('load', function () { leGrowAll(); });
+    });
+
+    if (typeof Sortable !== 'undefined') {
+        canvas.querySelectorAll('.le-row, .le-slot').forEach(function (list) {
+            Sortable.create(list, {
+                group: 'layout',
+                draggable: '.le-cell',
+                filter: 'textarea, input, select, button, .le-resize',
+                preventOnFilter: false,
+                animation: 150,
+                delay: 150,
+                delayOnTouchOnly: true,
+                ghostClass: 'le-ghost',
+                forceFallback: true,       // same feel with mouse, pen and touch
+                fallbackTolerance: 4,
+                onStart: function () { canvas.classList.add('le-dragging'); },
+                onEnd: leDropped
+            });
+        });
+    }
+    requestAnimationFrame(leGrowAll);
+    renderInspector();
+}
+
+function leGrow(ta) { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; }
+function leGrowAll() { document.querySelectorAll('#leCanvas textarea.le-text').forEach(leGrow); }
+function leUndoButtons() {
+    if ($('leUndo')) $('leUndo').disabled = !editForm.undo.length;
+    if ($('leRedo')) $('leRedo').disabled = !editForm.redo.length;
+}
+
+function leSelect(id) {
+    if (editForm.sel === id) return;
+    editForm.sel = id;
+    document.querySelectorAll('#leCanvas .le-cell').forEach(function (c) {
+        c.classList.toggle('le-sel', c.getAttribute('data-id') === id);
+    });
+    renderInspector();
+}
+
+/* After a drag: read the new arrangement straight off the canvas. A block
+   dropped into a row that it no longer fits in shares the line equally with
+   the others there, so "drop it beside" always gives side by side. */
+function leDropped(evt) {
+    var canvas = $('leCanvas');
+    canvas.classList.remove('le-dragging');
+    if (evt.from === evt.to && evt.oldIndex === evt.newIndex) return;
+    leSnapshot();
+    var byId = {};
+    editForm.blocks.forEach(function (b) { byId[b._id] = b; });
+    var moved = byId[evt.item.getAttribute('data-id')];
+
+    var rows = [];
+    Array.prototype.forEach.call(canvas.children, function (el) {
+        var ids = Array.prototype.map.call(el.querySelectorAll('.le-cell'), function (c) { return c.getAttribute('data-id'); });
+        if (ids.length) rows.push({ el: el, blocks: ids.map(function (id) { return byId[id]; }) });
+    });
+
+    var prop = leWProp();
+    if (prop && evt.from !== evt.to && evt.to.classList.contains('le-row')) {
+        var row = rows.filter(function (r) { return r.el === evt.to; })[0];
+        if (row) {
+            var total = row.blocks.reduce(function (s, b) { return s + leEffW(b); }, 0);
+            if (total > 12 && total - leEffW(moved) <= 12 && row.blocks.length <= 6) leEqualise(row.blocks, prop);
+        }
+    }
+
+    var blocks = [];
+    rows.forEach(function (r) {
+        r.blocks.forEach(function (b, k) { b.newRow = k === 0; blocks.push(b); });
+    });
+    editForm.blocks = blocks;
+    editForm.sel = moved._id;
     renderBlocks();
+}
+
+/* Drag a block's right edge: snaps to twelfths of the row. */
+function leResizeStart(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var handle = e.currentTarget;
+    var cell = handle.parentNode;
+    var id = cell.getAttribute('data-id');
+    var b = editForm.blocks[leIndex(id)];
+    var prop = leWProp();
+    leSelect(id);
+    if (!prop) return;
+    var row = cell.parentNode;
+    var gap = parseFloat(getComputedStyle(row).columnGap) || 0;
+    var colW = (row.clientWidth + gap) / 12;
+    var left = cell.getBoundingClientRect().left;
+    var startW = leEffW(b), w = startW;
+    var label = cell.querySelector('.le-wl');
+    cell.classList.add('le-resizing');
+    handle.setPointerCapture(e.pointerId);
+
+    function move(ev) {
+        var nw = Math.max(1, Math.min(12, Math.round((ev.clientX - left + gap) / colW)));
+        if (nw === w) return;
+        w = nw;
+        cell.style.setProperty('--w', w);
+        label.textContent = leWidthLabel(w);
+    }
+    function up() {
+        handle.removeEventListener('pointermove', move);
+        handle.removeEventListener('pointerup', up);
+        handle.removeEventListener('pointercancel', up);
+        cell.classList.remove('le-resizing');
+        if (w !== startW) { leSnapshot(); b[prop] = w; }
+        renderBlocks();
+    }
+    handle.addEventListener('pointermove', move);
+    handle.addEventListener('pointerup', up);
+    handle.addEventListener('pointercancel', up);
+}
+
+/* ---------- the settings panel ---------- */
+
+function renderInspector() {
+    var box = $('leInspector');
+    if (!box) return;
+    leUndoButtons();
+    var b = leSelected();
+    if (!b) {
+        box.innerHTML =
+            '<div class="le-ins-title">How it works</div>' +
+            '<ul class="le-tips">' +
+                '<li><b>Click</b> a block to change its settings here.</li>' +
+                '<li><b>Drag</b> a block to move it. Drop it <b>beside</b> another to sit side by side, or on a ' +
+                    '<b>dashed line</b> between rows to give it a row of its own.</li>' +
+                '<li><b>Drag the right edge</b> of a block to make it wider or narrower.</li>' +
+                '<li>Blocks wrap onto the next line when a row is full, so three photos at ⅓ make a grid.</li>' +
+                '<li>In text, <code>**bold**</code>, <code>*italic*</code> and <code>[link](https://…)</code> work.</li>' +
+                '<li><b>Ctrl+Z</b> undoes.</li>' +
+            '</ul>';
+        return;
+    }
+    var i = leIndex(b._id);
+    var rows = leRows();
+    var myRow = rows.filter(function (r) { return r.indexOf(b) !== -1; })[0] || [b];
+    var w = leEffW(b);
+    var wProp = leWProp();
+    var typeName = { text: 'Text', image: 'Photo', spacer: 'Space', divider: 'Line' }[b.type];
+    var h = '<div class="le-ins-title">' + typeName + '</div>';
+
+    var sizeWord = editForm.view === 'laptop' ? '' : ' on ' + editForm.view;
+    if (wProp) {
+        h += '<div class="le-field"><label>Width' + sizeWord + ' <span class="le-muted">' + leWidthLabel(w) + (w !== 12 ? ' (' + w + '/12)' : '') + '</span></label>' +
+             leSeg('w', [[3, '¼'], [4, '⅓'], [6, '½'], [8, '⅔'], [9, '¾'], [12, 'Full']], w, 'prop') +
+             '<input type="range" min="1" max="12" step="1" value="' + w + '" id="leWRange"></div>';
+    } else {
+        h += '<div class="le-field"><label>Width' + sizeWord + ' <span class="le-muted">' + leWidthLabel(w) + ', automatic</span></label>' +
+             '<p class="help">Choose <b>Custom ' + editForm.view + ' layout</b> above the page to set it yourself.</p></div>';
+    }
+    if (myRow.length > 1 && wProp) {
+        h += '<div class="le-field"><button type="button" class="secondary le-small" id="leFitRow">Fit this row on one line' + sizeWord + '</button></div>';
+    }
+    if (myRow.length > 1) {
+        h += '<div class="le-field"><label>Line up with its row</label>' +
+             leSeg('valign', [['top', 'Top'], ['center', 'Middle'], ['bottom', 'Bottom']], b.valign || 'top', 'prop') + '</div>';
+    }
+    h += '<div class="le-field"><label>Show on</label><div class="le-shows">' +
+         ['laptop', 'tablet', 'phone'].map(function (v) {
+             return '<label class="le-check"><input type="checkbox" data-show="' + LE_HIDE_KEY[v] + '"' +
+                    (b[LE_HIDE_KEY[v]] ? '' : ' checked') + '> ' + v.charAt(0).toUpperCase() + v.slice(1) + '</label>';
+         }).join('') + '</div></div>';
+    h += '<label class="le-check"><input type="checkbox" id="leNewRow"' + (b.newRow || i === 0 ? ' checked' : '') +
+         (i === 0 ? ' disabled' : '') + '> Start a new row</label>';
+
+    if (b.type === 'text') {
+        h += '<div class="le-field"><label>Style</label>' +
+             leSeg('style', [['body', 'Paragraph'], ['heading', 'Heading'], ['subheading', 'Subheading'], ['quote', 'Quote'], ['small', 'Small']], b.style || 'body', 'prop') + '</div>';
+        h += '<div class="le-field"><label>Alignment</label>' +
+             leSeg('align', [['left', 'Left'], ['center', 'Centre'], ['right', 'Right'], ['justify', 'Justify']], b.align || 'left', 'prop') + '</div>';
+        h += '<div class="le-field"><label>Formatting</label><div class="le-seg">' +
+             '<button type="button" class="le-seg-btn" data-fmt="bold"><b>B</b></button>' +
+             '<button type="button" class="le-seg-btn" data-fmt="italic"><i>I</i></button>' +
+             '<button type="button" class="le-seg-btn" data-fmt="link">Link</button></div>' +
+             '<p class="help">Select some words in the block, then press a button.</p></div>';
+    } else if (b.type === 'image') {
+        h += '<div class="le-field"><label>Shape</label>' +
+             leSeg('crop', [['original', 'Original'], ['square', 'Square'], ['landscape', '3:2'], ['portrait', '4:5'], ['wide', '16:9'], ['panorama', 'Panorama']], b.crop || 'original', 'prop') +
+             '<p class="help">Anything but Original crops to that shape from the centre.</p></div>';
+        h += '<div class="le-field"><label for="leCaptionIns">Caption</label>' +
+             '<input type="text" id="leCaptionIns" value="' + escapeHtml(b.caption || '') + '" placeholder="Optional"></div>';
+        h += '<label class="le-check"><input type="checkbox" id="leZoom"' + (b.zoom !== false ? ' checked' : '') + '> Click to view full screen</label>';
+        h += '<div class="le-field"><button type="button" class="secondary le-small" id="leReplace">Replace photo…</button></div>';
+    } else if (b.type === 'spacer') {
+        h += '<div class="le-field"><label>Height</label>' +
+             leSeg('size', [['s', 'Small'], ['m', 'Medium'], ['l', 'Large']], b.size || 'm', 'prop') +
+             '<p class="help">Tip: a narrow space beside a block pushes it sideways.</p></div>';
+    }
+
+    h += '<div class="le-actions">' +
+            '<button type="button" class="secondary le-small" id="leEarlier"' + (i === 0 ? ' disabled' : '') + '>◀ Earlier</button>' +
+            '<button type="button" class="secondary le-small" id="leLater"' + (i === editForm.blocks.length - 1 ? ' disabled' : '') + '>Later ▶</button>' +
+            '<button type="button" class="secondary le-small" id="leDup">Duplicate</button>' +
+            '<button type="button" class="le-small le-danger" id="leDel">Remove</button>' +
+         '</div>';
+    box.innerHTML = h;
+
+    box.querySelectorAll('[data-prop]').forEach(function (bt) {
+        bt.addEventListener('click', function () {
+            var prop = this.getAttribute('data-prop'), val = this.getAttribute('data-val');
+            if (prop === 'w') val = parseInt(val, 10);
+            leSetProp(prop, val);
+        });
+    });
+    var range = $('leWRange');
+    if (range) {
+        range.addEventListener('input', function () {
+            var cell = document.querySelector('.le-cell[data-id="' + b._id + '"]');
+            if (cell) { cell.style.setProperty('--w', this.value); cell.querySelector('.le-wl').textContent = leWidthLabel(+this.value); }
+        });
+        range.addEventListener('change', function () { leSetProp('w', parseInt(this.value, 10)); });
+    }
+    if ($('leFitRow')) $('leFitRow').addEventListener('click', function () { leSnapshot(); leEqualise(myRow, wProp); renderBlocks(); });
+    box.querySelectorAll('[data-show]').forEach(function (cb) {
+        cb.addEventListener('change', function () { leSetProp(this.getAttribute('data-show'), this.checked ? undefined : true); });
+    });
+    $('leNewRow').addEventListener('change', function () { leSetProp('newRow', this.checked); });
+    box.querySelectorAll('[data-fmt]').forEach(function (bt) {
+        bt.addEventListener('mousedown', function (e) { e.preventDefault(); });   // keep the text selection
+        bt.addEventListener('click', function () { leFormat(b, this.getAttribute('data-fmt')); });
+    });
+    if ($('leCaptionIns')) $('leCaptionIns').addEventListener('input', function () {
+        if (editForm.typing !== b._id + 'c') { leSnapshot(); editForm.typing = b._id + 'c'; leUndoButtons(); }
+        b.caption = this.value;
+        var inp = document.querySelector('.le-caption[data-id="' + b._id + '"]');
+        if (inp) inp.value = this.value;
+    });
+    if ($('leZoom')) $('leZoom').addEventListener('change', function () { leSetProp('zoom', this.checked ? undefined : false); });
+    if ($('leReplace')) $('leReplace').addEventListener('click', function () {
+        openLibraryPicker(function (fn) {
+            leSnapshot();
+            delete b.file; delete b.previewUrl;
+            b.src = fn.indexOf('/') === -1 ? 'images/Thumb/' + fn : fn;
+            renderBlocks();
+        });
+    });
+    $('leEarlier').addEventListener('click', function () { leMove(b, -1); });
+    $('leLater').addEventListener('click', function () { leMove(b, 1); });
+    $('leDup').addEventListener('click', function () {
+        var c = {};
+        Object.keys(b).forEach(function (k) { c[k] = b[k]; });
+        c._id = leId();
+        leInsert([c], true);
+    });
+    $('leDel').addEventListener('click', function () { leRemove(b); });
+}
+
+function leSetProp(prop, val) {
+    var b = leSelected();
+    if (prop === 'w') { prop = leWProp(); if (!prop) return; }
+    if (!b || b[prop] === val) return;
+    leSnapshot();
+    if (val === undefined) delete b[prop]; else b[prop] = val;
+    renderBlocks();
+}
+
+/* Turn a size's own layout on (starting from what it shows now) or off. */
+function leSetCustom(view, on) {
+    if (!!editForm.layout.custom[view] === on) return;
+    leSnapshot();
+    editForm.layout.custom[view] = on;
+    if (on) {
+        var key = view === 'tablet' ? 'tw' : 'pw';
+        editForm.blocks.forEach(function (b) { if (!b[key]) b[key] = leAutoW(b, view); });
+    }
+    renderBlocks();
+}
+
+/* Swap with the neighbouring block. Row starts stay where they are, so a
+   block can step from one row into the next. */
+function leMove(b, dir) {
+    var i = leIndex(b._id), j = i + dir;
+    if (j < 0 || j >= editForm.blocks.length) return;
+    leSnapshot();
+    var list = editForm.blocks, a = list[i], c = list[j];
+    var aRow = a.newRow, cRow = c.newRow;
+    list[i] = c; list[j] = a;
+    c.newRow = aRow; a.newRow = cRow;
+    renderBlocks();
+}
+
+function leRemove(b) {
+    var i = leIndex(b._id);
+    if (i === -1) return;
+    leSnapshot();
+    var next = editForm.blocks[i + 1];
+    if (b.newRow && next && !next.newRow) next.newRow = true;
+    editForm.blocks.splice(i, 1);
+    editForm.sel = null;
+    renderBlocks();
+}
+
+/* Wrap the selected words in **, * or a [link](…). */
+function leFormat(b, kind) {
+    var ta = document.querySelector('textarea.le-text[data-id="' + b._id + '"]');
+    if (!ta) return;
+    var s = ta.selectionStart, e = ta.selectionEnd, v = ta.value;
+    var picked = v.slice(s, e) || (kind === 'link' ? 'link text' : 'text');
+    var out;
+    if (kind === 'link') {
+        var url = prompt('Link to (web address):', 'https://');
+        if (!url || url === 'https://') return;
+        out = '[' + picked + '](' + url.trim() + ')';
+    } else {
+        var mark = kind === 'bold' ? '**' : '*';
+        out = mark + picked + mark;
+    }
+    leSnapshot();
+    ta.value = v.slice(0, s) + out + v.slice(e);
+    b.text = ta.value;
+    ta.focus();
+    ta.setSelectionRange(s, s + out.length);
+    leGrow(ta);
+    leUndoButtons();
+}
+
+/* What gets saved: rows of real content only, with the editor's temporary
+   fields stripped and defaults left out to keep content.json tidy. */
+function serializeLayoutBlocks() {
+    var out = [];
+    leRows().forEach(function (row) {
+        var kept = row.map(function (b) {
+            var o = { type: b.type, w: leClampW(b.w) };
+            var custom = editForm.layout.custom || {};
+            if (custom.tablet && b.tw) o.tw = leClampW(b.tw);
+            if (custom.phone && b.pw) o.pw = leClampW(b.pw);
+            if (b.hideD) o.hideD = true;
+            if (b.hideT) o.hideT = true;
+            if (b.hideP) o.hideP = true;
+            if (b.valign && b.valign !== 'top') o.valign = b.valign;
+            if (b.type === 'text') {
+                if (!(b.text || '').trim()) return null;
+                o.text = b.text;
+                if (b.style && b.style !== 'body') o.style = b.style;
+                if (b.align && b.align !== 'left') o.align = b.align;
+            } else if (b.type === 'image') {
+                o.src = b.file ? b._finalSrc : b.src;
+                if (!o.src) return null;
+                if (b.crop && b.crop !== 'original') o.crop = b.crop;
+                if ((b.caption || '').trim()) o.caption = b.caption.trim();
+                if (b.zoom === false) o.zoom = false;
+            } else if (b.type === 'spacer') {
+                o.size = b.size || 'm';
+            } else if (b.type !== 'divider') {
+                return null;
+            }
+            return o;
+        }).filter(Boolean);
+        kept.forEach(function (o, k) { if (k === 0 && out.length) o.newRow = true; out.push(o); });
+    });
+    return out;
 }
 
 /* Which category the library picker was last filtered to ('all' or a key).
@@ -1649,7 +2356,6 @@ var libFilter = 'all';
    which projCoverSrc and the site's projectImageSrc already understand.
    Category buttons along the top narrow the grid to one category. */
 function openLibraryPicker(onPick, extras) {
-    if (!onPick) syncBlockInputs();
     var holder = $('libraryPicker');
     var photos = state.content.portfolio || [];
     // Only offer categories that actually have photos in them.
@@ -1670,7 +2376,7 @@ function openLibraryPicker(onPick, extras) {
     })).join('');
 
     holder.innerHTML =
-        '<div class="lib-head"><span>Choose an existing photo to reuse</span>' +
+        '<div class="lib-head"><span>' + (onPick ? 'Choose a photo' : 'Click photos to add them, in order — then Done') + '</span>' +
             '<button class="link" id="libClose">Close</button></div>' +
         (extraItems ? '<div class="lib-sub">From this project</div><div class="lib-grid">' + extraItems + '</div>' +
                       '<div class="lib-sub">From the library</div>' : '') +
@@ -1699,13 +2405,18 @@ function openLibraryPicker(onPick, extras) {
     applyLibFilter();
 
     $('libClose').addEventListener('click', function () { holder.classList.add('hidden'); holder.innerHTML = ''; });
+    // Adding to a post/project: the picker stays open so several photos can be
+    // picked in a row; each one joins the same row (Photos per row sets widths).
+    var picked = 0;
     holder.querySelectorAll('.lib-item').forEach(function (bt) {
         bt.addEventListener('click', function () {
             var fn = this.getAttribute('data-fn');
-            holder.classList.add('hidden'); holder.innerHTML = '';
-            if (onPick) { onPick(fn); return; }
-            editForm.blocks.push({ type: 'image', src: 'images/Thumb/' + fn, size: 'medium', align: 'center' });
-            renderBlocks();
+            if (onPick) { holder.classList.add('hidden'); holder.innerHTML = ''; onPick(fn); return; }
+            var src = fn.indexOf('/') === -1 ? 'images/Thumb/' + fn : fn;
+            leInsert([leImageBlock({ src: src }, picked)], picked > 0);
+            picked++;
+            this.classList.add('lib-picked');
+            $('libClose').textContent = 'Done';
         });
     });
 }
@@ -1763,7 +2474,12 @@ function lastPhotoNumber(title) {
    each block at its thumbnail. Resolves to the category key used (or prevKey
    when there was nothing new to upload). */
 function addUploadsToLibrary(title, prevKey, upserts, status) {
-    var uploads = editForm.blocks.filter(function (b) { return b.type === 'image' && b.file; });
+    // A duplicated photo block shares its file with the original: upload it once.
+    var withFile = editForm.blocks.filter(function (b) { return b.type === 'image' && b.file; });
+    var uploads = withFile.filter(function (b, i) {
+        for (var j = 0; j < i; j++) if (withFile[j].file === b.file) return false;
+        return true;
+    });
     if (!uploads.length) return Promise.resolve(prevKey || '');
 
     var key = libraryCategoryFor(title, prevKey, editForm.kind);
@@ -1800,7 +2516,13 @@ function addUploadsToLibrary(title, prevKey, upserts, status) {
                 });
         });
     });
-    return chain.then(function () { return key; });
+    return chain.then(function () {
+        withFile.forEach(function (b) {
+            if (b._finalSrc) return;
+            for (var j = 0; j < uploads.length; j++) if (uploads[j].file === b.file) b._finalSrc = uploads[j]._finalSrc;
+        });
+        return key;
+    });
 }
 
 /* A failed save may already have added photos/categories to the in-memory
@@ -1838,15 +2560,10 @@ function savePost() {
     addUploadsToLibrary(title, prevPost && prevPost.photo_category, upserts, status).then(function (key) {
         photoCategory = key;
         showStatus(status, 'Saving…', 'ok');
-        var blocks = editForm.blocks.map(function (b) {
-            if (b.type === 'text') return { type: 'text', text: b.text || '' };
-            return { type: 'image', src: (b.file ? b._finalSrc : b.src), size: b.size || 'medium', align: b.align || 'center' };
-        }).filter(function (b) {
-            return b.type === 'text' ? (b.text || '').trim() : b.src;
-        });
+        var blocks = serializeLayoutBlocks();
 
         if (!state.content.blog) state.content.blog = [];
-        var post = { title: title, date: date, blocks: blocks };
+        var post = { title: title, date: date, layout: editForm.layout, blocks: blocks };
         if (photoCategory) post.photo_category = photoCategory;
         if (editForm.index === null) state.content.blog.unshift(post);
         else state.content.blog[editForm.index] = post;
@@ -2067,7 +2784,8 @@ document.addEventListener('DOMContentLoaded', function () {
             document.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('active'); });
             tab.classList.add('active');
             var wrap = document.querySelector('.wrap');
-            if (wrap) wrap.classList.remove('wide');   // only the Arrange view widens the page
+            if (wrap) wrap.classList.remove('wide', 'editing');   // only Arrange / the layout editor widen the page
+            editForm = null;   // switching tabs closes any open post/project form
             var which = tab.getAttribute('data-tab');
             if (which === 'photos') {
                 if (state.content) renderPhotos();
@@ -2194,7 +2912,10 @@ function openProjectForm(index) {
     var proj = (index === null)
         ? { title: '', subtitle: '', slug: '', cover: '', status: 'draft', blocks: [] }
         : state.content.projects[index];
-    editForm = { kind: 'project', index: index, blocks: postToEditBlocks(proj), cover: proj.cover || '' };
+    editForm = {
+        kind: 'project', index: index, blocks: postToEditBlocks(proj), layout: editLayoutFor(proj),
+        cover: proj.cover || '', sel: null, undo: [], redo: [], view: 'laptop', perRow: 2
+    };
 
     $('projFormHolder').innerHTML =
         '<div class="add-form">' +
@@ -2214,16 +2935,7 @@ function openProjectForm(index) {
             '</div>' +
             '<div class="af-row"><label>Cover photo (shown on the Projects page)</label>' +
                 '<div class="proj-cover" id="prCoverBox"></div></div>' +
-            '<div class="blocks-holder" id="blocksHolder"></div>' +
-            '<div class="block-add">' +
-                '<button class="secondary" id="addTextBlock">+ Add text</button>' +
-                '<label class="btn-like" title="You can pick several photos at once">+ Upload images' +
-                    '<input type="file" id="addImageBlock" accept="image/jpeg,image/png" multiple hidden></label>' +
-                '<button class="secondary" id="addLibImage">+ From library</button>' +
-            '</div>' +
-            '<p class="help upload-note">Uploaded photos (you can pick several at once) are also added to your photo ' +
-                'library in a category named after this project, kept off the Portfolio page.</p>' +
-            '<div class="library-picker hidden" id="libraryPicker"></div>' +
+            layoutEditorHTML('project') +
             '<div class="af-actions">' +
                 '<button id="prSave">Save project</button>' +
                 '<button class="secondary" id="prPreview">Preview</button>' +
@@ -2232,16 +2944,11 @@ function openProjectForm(index) {
             '<div class="status hidden" id="prFormStatus"></div>' +
         '</div>';
 
-    $('addTextBlock').addEventListener('click', function () {
-        syncBlockInputs(); editForm.blocks.push({ type: 'text', text: '' }); renderBlocks();
-    });
-    $('addImageBlock').addEventListener('change', onBlockImageChosen);
-    $('addLibImage').addEventListener('click', function () { openLibraryPicker(); });
     $('prSave').addEventListener('click', saveProject);
     $('prPreview').addEventListener('click', previewProject);
-    $('prCancel').addEventListener('click', function () { $('projFormHolder').innerHTML = ''; editForm = null; });
+    $('prCancel').addEventListener('click', function () { closeLayoutEditor('projFormHolder'); });
     renderProjectCover();
-    renderBlocks();
+    initLayoutEditor();
     $('projFormHolder').scrollIntoView({ block: 'nearest' });
 }
 
@@ -2316,12 +3023,7 @@ function saveProject() {
     addUploadsToLibrary(title, prevProj && prevProj.photo_category, upserts, status).then(function (key) {
         photoCategory = key;
         showStatus(status, 'Saving…', 'ok');
-        var blocks = editForm.blocks.map(function (b) {
-            if (b.type === 'text') return { type: 'text', text: b.text || '' };
-            return { type: 'image', src: (b.file ? b._finalSrc : b.src), size: b.size || 'medium', align: b.align || 'center' };
-        }).filter(function (b) {
-            return b.type === 'text' ? (b.text || '').trim() : b.src;
-        });
+        var blocks = serializeLayoutBlocks();
 
         if (!state.content.projects) state.content.projects = [];
         var proj = {
@@ -2330,6 +3032,7 @@ function saveProject() {
             subtitle: $('prSubtitle').value.trim(),
             cover: editForm.cover || '',
             status: $('prVisibility').value === 'published' ? 'published' : 'draft',
+            layout: editForm.layout,
             blocks: blocks
         };
         if (photoCategory) proj.photo_category = photoCategory;
@@ -2448,6 +3151,8 @@ function projectSummary(proj) {
     (proj.blocks || []).forEach(function (b) {
         if (!text && b.type === 'text' && (b.text || '').trim()) text = b.text.trim();
     });
+    // Drop the editor's **bold** / *italic* / [link](url) marks.
+    text = text.replace(/\[([^\]]+)\]\([^)\s]+\)/g, '$1').replace(/\*\*?([^*]+)\*\*?/g, '$1');
     text = text.replace(/\s+/g, ' ');
     if (text.length > 155) text = text.slice(0, 152).replace(/\s+\S*$/, '') + '…';
     return text || (proj.title + ' — a photography project by Stoneman Photography.');
@@ -2477,7 +3182,7 @@ function buildProjectPage(proj) {
 '    <meta name="description" content="' + desc + '">\n' +
 '    <title>' + title + '</title>\n' +
 '\n' +
-'    <link rel="stylesheet" href="css/style.css">\n' +
+'    <link rel="stylesheet" href="css/style.css?v=2">\n' +
 '\n' +
 '    <link rel="icon" type="image/png" href="/favicon-512.png">\n' +
 '    <link rel="apple-touch-icon" href="/favicon-512.png">\n' +
