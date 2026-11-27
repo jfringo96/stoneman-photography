@@ -953,7 +953,9 @@ function populateProjectDetail(projects) {
     if (!isPublished(project)) {
         html += '<p class="project-draft-note">Draft preview &mdash; this project is not visible on the site yet.</p>';
     }
-    html += '<header class="project-head">' +
+    // The editor can hide the title (e.g. when a banner shows it); it stays for screen readers and search.
+    var hideTitle = isLayoutV2(project) && project.layout.title === false;
+    html += '<header class="project-head' + (hideTitle ? ' visually-hidden' : '') + '">' +
                 '<h1>' + esc(project.title) + '</h1>' +
                 (project.subtitle ? '<p class="page-header-sub">' + esc(project.subtitle) + '</p>' : '') +
             '</header>';

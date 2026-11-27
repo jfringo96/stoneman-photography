@@ -31,7 +31,7 @@ var THUMB_QUALITY  = 0.82;
 var BLOG_MAX_EDGE  = 1600;         // blog images are resized down to this
 var BLOG_QUALITY   = 0.85;
 var MAX_FEATURED   = 3;            // home page shows 3 featured photos
-var SCRIPT_VERSION = 18;           // script.js?v=N used by generated project pages —
+var SCRIPT_VERSION = 19;           // script.js?v=N used by generated project pages —
                                    // keep in step with the HTML pages when script.js changes
 
 
@@ -1560,7 +1560,7 @@ function openPostForm(index) {
    until it is next saved from here.
    ---------------------------------------------------------- */
 
-var LE_DEFAULT_LAYOUT = { v: 2, width: 'standard', gap: 'normal', align: 'center', corners: 'rounded', cover: true };
+var LE_DEFAULT_LAYOUT = { v: 2, width: 'standard', gap: 'normal', align: 'center', corners: 'rounded', cover: true, title: true };
 /* ---------- rich text (shared with js/script.js, keep the two copies the same) ----------
    Text blocks keep their words as a small, safe piece of HTML: paragraphs
    holding only bold, italic, underline, links, line breaks and coloured
@@ -2043,7 +2043,7 @@ function renderLayoutBar() {
         '<div class="le-set"><span>Corners</span>' +
             leSeg('corners', [['rounded', 'Rounded'], ['square', 'Square']], L.corners, 'lprop') + '</div>' +
         (editForm.kind === 'project'
-            ? '<div class="le-set"><span>Cover at top</span>' + leSeg('cover', [['true', 'Show'], ['false', 'Hide']], String(L.cover !== false), 'lprop') + '</div>'
+            ? '<div class="le-set"><span>Title above page</span>' + leSeg('title', [['true', 'Show', 'The project title and subtitle above everything'], ['false', 'Hide', 'Hide them, e.g. when a banner at the top already shows the title']], String(L.title !== false), 'lprop') + '</div>'
             : '') +
         '<div class="le-set le-set-right"><span>Preview</span>' +
             leSeg('view', [['laptop', 'Laptop'], ['tablet', 'Tablet'], ['phone', 'Phone']], editForm.view, 'view') +
@@ -2054,7 +2054,7 @@ function renderLayoutBar() {
     bar.querySelectorAll('[data-lprop]').forEach(function (bt) {
         bt.addEventListener('click', function () {
             var prop = this.getAttribute('data-lprop'), val = this.getAttribute('data-val');
-            if (prop === 'cover') val = val === 'true';
+            if (prop === 'cover' || prop === 'title') val = val === 'true';
             if (editForm.layout[prop] === val) return;
             leSnapshot();
             editForm.layout[prop] = val;
@@ -3311,7 +3311,8 @@ function renderInspector() {
             h += '<label class="le-check"><input type="checkbox" id="leExif"' + (b.exif ? ' checked' : '') + '> Show camera settings under it</label>';
         }
         h += (b.src || b.file)
-            ? '<div class="le-field"><button type="button" class="secondary le-small" id="leReplace">Replace photo…</button></div>'
+            ? '<div class="le-field"><button type="button" class="secondary le-small" id="leReplace">Replace photo…</button> ' +
+              '<button type="button" class="secondary le-small" id="leToBanner" title="Write a title (and a line) over this photo">Make it a banner</button></div>'
             : lePhotoSlotField('Choose the photo', '');
     } else if (b.type === 'carousel' || b.type === 'gallery') {
         h += renderCarouselInspector(b);
@@ -3356,6 +3357,16 @@ function renderInspector() {
         bt.addEventListener('click', function () { leSetProp('newRow', this.getAttribute('data-val') === 'new'); });
     });
     if (b.type === 'text') wireTextLook(box, b);
+    if ($('leToBanner')) $('leToBanner').addEventListener('click', function () {
+        leSnapshot();
+        var t = (($('prTitle') || $('pfTitle')) || {}).value || '';
+        b.type = 'banner';
+        b.title = t; b.text = (($('prSubtitle') || {}).value) || '';
+        b.place = 'bottom-left'; b.shade = 0.35;
+        b.crop = b.crop && b.crop !== 'original' ? b.crop : 'wide';
+        delete b.caption; delete b.exif; delete b.zoom;
+        renderBlocks();
+    });
     if ($('leCaptionIns')) $('leCaptionIns').addEventListener('input', function () {
         if (editForm.typing !== b._id + 'c') { leSnapshot(); editForm.typing = b._id + 'c'; leUndoButtons(); }
         b.caption = this.value;
@@ -4301,6 +4312,15 @@ function openProjectForm(index) {
         kind: 'project', index: index, blocks: postToEditBlocks(proj), layout: editLayoutFor(proj),
         cover: proj.cover || '', sel: null, undo: [], redo: [], view: 'laptop', perRow: 2
     };
+    // The cover used to sit above the page on its own, with no settings.
+    // Now it is an ordinary photo block at the top that can be resized,
+    // cropped, turned into a banner or removed; the cover itself is just
+    // the picture used on the Projects page and when the link is shared.
+    if (proj.cover && editForm.layout.cover !== false) {
+        if (editForm.blocks.length) editForm.blocks[0].newRow = true;
+        editForm.blocks.unshift(leCoverBlock(proj.cover));
+    }
+    editForm.layout.cover = false;
 
     $('projFormHolder').innerHTML =
         '<div class="add-form">' +
@@ -4318,8 +4338,10 @@ function openProjectForm(index) {
                         '<option value="published"' + (proj.status !== 'draft' ? ' selected' : '') + '>Published — visible to everyone</option>' +
                     '</select></div>' +
             '</div>' +
-            '<div class="af-row"><label>Cover photo (shown on the Projects page)</label>' +
-                '<div class="proj-cover" id="prCoverBox"></div></div>' +
+            '<div class="af-row"><label>Cover photo</label>' +
+                '<div class="proj-cover" id="prCoverBox"></div>' +
+                '<span class="help">Shown on the Projects page and when the link is shared. Choosing one also puts it at the top of the page below, ' +
+                'as a normal photo: resize it, crop it, turn it into a banner with the title over it, move it or remove it.</span></div>' +
             layoutEditorHTML('project') +
             '<div class="af-actions">' +
                 '<button id="prSave">Save project</button>' +
@@ -4350,11 +4372,39 @@ function renderProjectCover() {
             (cover ? '<button class="secondary" id="prCoverClear">Remove</button>' : '') +
         '</div>';
     $('prCoverPick').addEventListener('click', function () {
-        openLibraryPicker(function (fn) { editForm.cover = fn; renderProjectCover(); }, projectOwnImages());
+        openLibraryPicker(function (fn) { var old = editForm.cover; editForm.cover = fn; renderProjectCover(); leCoverChanged(old, fn); }, projectOwnImages());
     });
     if ($('prCoverClear')) {
         $('prCoverClear').addEventListener('click', function () { editForm.cover = ''; renderProjectCover(); });
     }
+}
+
+function leCoverPath(cover) { return cover.indexOf('/') === -1 ? 'images/Thumb/' + cover : cover; }
+
+function leCoverBlock(cover) {
+    var b = { _id: leId(), type: 'image', src: leCoverPath(cover), crop: 'original', caption: '', w: 12, newRow: true };
+    leFillCustomWidths([b]);
+    return b;
+}
+
+/* A new cover: swap it into the top photo or banner if that was the old
+   cover, otherwise add it at the top (unless it is already on the page). */
+function leCoverChanged(oldCover, newCover) {
+    if (!editForm || !newCover) return;
+    var src = leCoverPath(newCover), first = editForm.blocks[0];
+    var oldSrc = oldCover ? leCoverPath(oldCover) : null;
+    leSnapshot();
+    if (first && (first.type === 'image' || first.type === 'banner') && oldSrc && first.src === oldSrc) {
+        first.src = src;
+    } else if (!editForm.blocks.some(function (b) { return b.src === src; })) {
+        if (first) first.newRow = true;
+        editForm.blocks.unshift(leCoverBlock(newCover));
+    } else {
+        editForm.undo.pop();
+        return;
+    }
+    editForm.sel = editForm.blocks[0]._id;
+    renderBlocks();
 }
 
 /* Images uploaded into THIS project, offered as cover options alongside the
@@ -4568,7 +4618,7 @@ function buildProjectPage(proj) {
 '    <meta name="description" content="' + desc + '">\n' +
 '    <title>' + title + '</title>\n' +
 '\n' +
-'    <link rel="stylesheet" href="css/style.css?v=6">\n' +
+'    <link rel="stylesheet" href="css/style.css?v=7">\n' +
 '\n' +
 '    <link rel="icon" type="image/png" href="/favicon-512.png">\n' +
 '    <link rel="apple-touch-icon" href="/favicon-512.png">\n' +

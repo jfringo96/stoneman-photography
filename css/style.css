@@ -1657,3 +1657,9 @@ footer a:hover {
     color: #5a4300;
     font-size: 0.8rem;
 }
+
+/* Hidden on screen but kept for screen readers and search engines */
+.visually-hidden {
+    position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
