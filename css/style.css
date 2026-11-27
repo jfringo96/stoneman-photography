@@ -532,6 +532,14 @@ body.home-page .featured-item {
     gap: 1rem;
     padding: 0 2rem 2rem;
     flex-wrap: wrap;
+    /* Hidden until script.js has built the buttons from content.json,
+       then faded in, so they don't jump about while the page loads */
+    opacity: 0;
+    transition: opacity 0.6s ease;
+}
+
+.filter-buttons.ready {
+    opacity: 1;
 }
 
 .category-btn {
@@ -566,6 +574,12 @@ body.home-page .featured-item {
     margin: 0 auto;
     opacity: 0;
     transition: opacity 0.5s ease;
+    /* Hold a screen of space until photos arrive, so the text below the
+       gallery doesn't flash up before them (script.js adds .has-photos) */
+    min-height: 100vh;
+}
+.masonry-gallery.has-photos {
+    min-height: 0;
 }
 
 /* Column-width reference element used by Masonry.js */
@@ -593,6 +607,12 @@ body.home-page .featured-item {
     display: block;
     width: 100%;
     height: auto;
+    transition: opacity 1.4s ease;
+}
+
+/* A batch that has just loaded: transparent for one frame, then fades in */
+.gallery-item.arriving img {
+    opacity: 0;
 }
 
 /* Placeholder boxes for development — styled coloured blocks
@@ -616,6 +636,11 @@ body.home-page .featured-item {
 
 /* Hidden items (filtered out) */
 .gallery-item.hidden {
+    display: none;
+}
+
+/* Not loaded yet: the gallery loads photos in batches as you scroll */
+.gallery-item.pending {
     display: none;
 }
 
