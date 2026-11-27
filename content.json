@@ -1082,7 +1082,7 @@
       "status": "draft",
       "layout": {
         "v": 2,
-        "width": "standard",
+        "width": "wide",
         "gap": "normal",
         "align": "center",
         "corners": "rounded",
@@ -1098,10 +1098,17 @@
           "type": "banner",
           "w": 12,
           "src": "images/Thumb/the-brecon-beacons-1.jpg",
-          "title": "The Brecon Beacons",
+          "title": "Abergavenny & The Brecon Beacons",
           "place": "top-left",
-          "shade": 0.35,
+          "shade": 0,
           "crop": "landscape"
+        },
+        {
+          "type": "text",
+          "w": 12,
+          "text": "I've recently moved to the area around Abergavenny so I've been exploring it for things to photograph ",
+          "html": "<p>I've recently moved to the area around Abergavenny so I've been exploring it for things to photograph </p>",
+          "newRow": true
         }
       ],
       "photo_category": "the-brecon-beacons"
