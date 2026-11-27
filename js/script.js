@@ -622,7 +622,7 @@ function initInteractivity() {
                 itemSelector: '.gallery-item:not(.hidden)',
                 columnWidth: colW,
                 gutter: 14,
-                horizontalOrder: true,
+                horizontalOrder: false,   // fill the shortest column, so columns stay balanced (admin Arrange view mirrors this)
                 transitionDuration: 0
             });
 

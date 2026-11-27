@@ -31,7 +31,7 @@ var THUMB_QUALITY  = 0.82;
 var BLOG_MAX_EDGE  = 1600;         // blog images are resized down to this
 var BLOG_QUALITY   = 0.85;
 var MAX_FEATURED   = 3;            // home page shows 3 featured photos
-var SCRIPT_VERSION = 11;           // script.js?v=N used by generated project pages —
+var SCRIPT_VERSION = 13;           // script.js?v=N used by generated project pages —
                                    // keep in step with the HTML pages when script.js changes
 
 
@@ -447,7 +447,8 @@ function renderPhotos() {
             '<div class="arrange-cols" id="arrangeColsPick"></div>' +
         '</div>' +
         '<p class="help arrange-help" id="arrangeHelp">Drag the photos into the order you want. This is laid out exactly like the ' +
-            'Portfolio page: photos run left to right, row by row. Click "Save changes" when you\'re happy.</p>' +
+            'Portfolio page: each photo goes into whichever column is shortest, so they read roughly left to right, top to bottom. ' +
+            'Drop a photo onto another to take its place. Click "Save changes" when you\'re happy.</p>' +
         '<div class="photo-list" id="photoList">' + rows + '</div>' +
         '<div class="arrange-grid" id="arrangeGrid"></div>';
 
@@ -565,27 +566,62 @@ function categoryOrder(cat) {
 }
 
 /* Lay the category out the way the live Portfolio page does. The site uses
-   Masonry with horizontalOrder, which puts photo N in column N % columns and
-   stacks it under the one above — so separate column stacks give an exact match. */
+   Masonry, which places each photo in turn at the top of whichever column is
+   currently shortest (the leftmost one on a tie). We do the same sums here
+   from each photo's shape, so the preview matches the live page. */
+var arrangeRatios = {};   // filename -> height / width of its thumbnail
+
 function renderArrangeGrid() {
     var grid = $('arrangeGrid');
     var cols = photoView.cols;
     var order = categoryOrder(photoView.category);
-    var html = '';
-    for (var c = 0; c < cols; c++) {
-        html += '<div class="arrange-col">';
-        for (var i = c; i < order.length; i += cols) {
-            var p = state.byFilename[order[i]] || { title: order[i] };
-            html += '<div class="arrange-item" data-filename="' + escapeHtml(order[i]) + '">' +
-                '<img src="' + imgSrc(order[i]) + '" alt="" draggable="false">' +
+    grid.style.setProperty('--cols', cols);
+    if (!order.length) {
+        grid.innerHTML = '<p class="help">No photos in this category yet.</p>';
+        return;
+    }
+
+    // Work out each photo's shape first (only needed once per photo).
+    var missing = order.filter(function (fn) { return !arrangeRatios[fn]; });
+    if (missing.length) {
+        grid.innerHTML = '<p class="help">Loading photos…</p>';
+        var left = missing.length;
+        var cat = photoView.category;
+        missing.forEach(function (fn) {
+            var img = new Image();
+            img.onload = img.onerror = function () {
+                arrangeRatios[fn] = (img.naturalWidth && img.naturalHeight)
+                    ? img.naturalHeight / img.naturalWidth : 2 / 3;
+                if (--left === 0 && photoView.mode === 'arrange' && photoView.category === cat) {
+                    renderArrangeGrid();
+                }
+            };
+            img.src = imgSrc(fn);
+        });
+        return;
+    }
+
+    var GUTTER = 14;
+    var colW = (grid.clientWidth - GUTTER * (cols - 1)) / cols;
+    var heights = [], stacks = [];
+    for (var c = 0; c < cols; c++) { heights.push(0); stacks.push([]); }
+    order.forEach(function (fn, i) {
+        var shortest = heights.indexOf(Math.min.apply(Math, heights));
+        stacks[shortest].push(i);
+        heights[shortest] += colW * arrangeRatios[fn] + GUTTER;
+    });
+
+    grid.innerHTML = stacks.map(function (stack) {
+        return '<div class="arrange-col">' + stack.map(function (i) {
+            var fn = order[i];
+            var p = state.byFilename[fn] || { title: fn };
+            return '<div class="arrange-item" data-filename="' + escapeHtml(fn) + '">' +
+                '<img src="' + imgSrc(fn) + '" alt="" draggable="false">' +
                 '<span class="arrange-num">' + (i + 1) + '</span>' +
                 '<span class="arrange-title">' + escapeHtml(p.title) + '</span>' +
             '</div>';
-        }
-        html += '</div>';
-    }
-    grid.innerHTML = order.length ? html : '<p class="help">No photos in this category yet.</p>';
-    grid.style.setProperty('--cols', cols);
+        }).join('') + '</div>';
+    }).join('');
 
     if (typeof Sortable === 'undefined') return;
     grid.querySelectorAll('.arrange-col').forEach(function (col) {
@@ -599,26 +635,31 @@ function renderArrangeGrid() {
     });
 }
 
-/* After a drop, work out which slot the photo was dropped into (column and
-   row in the preview), move it to that position in the category's order so
-   everything else shifts along by one, and redraw so the preview matches
-   exactly what the live page will show. */
+/* After a drop, the photo takes the place of the one it was dropped in front
+   of (everything from there shifts along by one), or goes just after the one
+   above it if dropped at the bottom of a column. Then redraw so the preview
+   shows exactly what the live page will. */
 function arrangeDropped(evt) {
     var fn = evt.item.getAttribute('data-filename');
-    var cols = Array.prototype.slice.call(document.querySelectorAll('#arrangeGrid .arrange-col'));
-    var col = cols.indexOf(evt.to);
-    var target = evt.newIndex * cols.length + col;
-
     var order = categoryOrder(photoView.category);
-    var from = order.indexOf(fn);
-    if (from === -1 || col === -1) { renderArrangeGrid(); return; }
-    order.splice(from, 1);
-    order.splice(Math.min(target, order.length), 0, fn);
+    var before = order.join('|');
+    var next = evt.item.nextElementSibling;
+    var prev = evt.item.previousElementSibling;
 
-    if (order.join('|') === categoryOrder(photoView.category).join('|')) { renderArrangeGrid(); return; }
-    applyCategoryOrder(photoView.category, order);
+    order.splice(order.indexOf(fn), 1);
+    if (next) {
+        order.splice(order.indexOf(next.getAttribute('data-filename')), 0, fn);
+    } else if (prev) {
+        order.splice(order.indexOf(prev.getAttribute('data-filename')) + 1, 0, fn);
+    } else {
+        order.push(fn);
+    }
+
+    if (order.join('|') !== before) {
+        applyCategoryOrder(photoView.category, order);
+        flashSave('Order changed — click "Save changes" to publish.', 'ok');
+    }
     renderArrangeGrid();
-    flashSave('Order changed — click "Save changes" to publish.', 'ok');
 }
 
 /* Put this category's rows into the given order, keeping them in the same
