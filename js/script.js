@@ -100,6 +100,7 @@ document.addEventListener('DOMContentLoaded', function () {
             populateProjectDetail(content.projects);
             initLayoutViewer();
             initCarousels();
+            initCompares();
             initInteractivity();
         })
         .catch(function () {
@@ -297,6 +298,9 @@ function blocksToHTML(blocks, alt) {
      image   { src, crop, caption, zoom }
      spacer  { size: s|m|l }      divider {}
      carousel { slides: [{ src, caption }], crop, fit, autoplay }
+     gallery  { slides, cols }   compare { before, after, crop, labels }
+     banner   { src, title, text, place, shade, crop }   button { label, href, look, align }
+     (image may also have exif: true; body text may have dropcap: true)
    Each row is a wrapping flex line, so a row of 4-wide photos
    becomes a 3-up grid and an image beside text sits side by side.
    Tablets and phones adapt automatically, unless layout.custom
@@ -338,7 +342,7 @@ function layText(b) {
             return '<blockquote class="lay-quote ' + cls + '">' +
                    paras.map(function (p) { return '<p>' + inner(p) + '</p>'; }).join('') + '</blockquote>';
         default:
-            return '<div class="lay-text ' + cls + (b.style === 'small' ? ' lay-small' : '') + '">' +
+            return '<div class="lay-text ' + cls + (b.style === 'small' ? ' lay-small' : '') + (b.dropcap ? ' lay-dropcap' : '') + '">' +
                    paras.map(function (p) { return '<p>' + inner(p) + '</p>'; }).join('') + '</div>';
     }
 }
@@ -358,7 +362,8 @@ function layImage(b, alt, pagePx) {
     if (zoom) attrs += ' data-full="' + encodeURI(full || src) + '"';
     return '<figure class="lay-figure lay-crop-' + (b.crop || 'original') + (zoom ? ' lay-zoom' : '') + '">' +
                '<img ' + attrs + '>' +
-               (b.caption ? '<figcaption>' + inlineMarkup(b.caption) + '</figcaption>' : '') +
+               ((b.caption || b.exif) ? '<figcaption>' + (b.caption ? inlineMarkup(b.caption) : '') +
+                   (b.exif && layExifLine(src) ? '<span class="lay-exif">' + layExifLine(src) + '</span>' : '') + '</figcaption>' : '') +
            '</figure>';
 }
 
@@ -409,6 +414,79 @@ function initCarousels() {
     });
 }
 
+/* Only web, email and on-site links are allowed in buttons. */
+function laySafeHref(url) {
+    url = String(url || '').trim();
+    if (/^[a-z][a-z0-9+.-]*:/i.test(url) && !/^(https?|mailto|tel):/i.test(url)) return '';
+    return url;
+}
+
+/* "OM System OM-5 · 300mm · f/5.6 · 1/1000s · ISO 200" for a library photo. */
+function layExifLine(src) {
+    var p = photoData[(src || '').split('/').pop()];
+    if (!p) return '';
+    var shutter = p.shutter ? (String(p.shutter).slice(-1) === 's' ? p.shutter : p.shutter + 's') : '';
+    return [p.camera, p.focal, p.aperture, shutter, p.iso ? 'ISO ' + p.iso : ''].filter(Boolean).join(' &middot; ');
+}
+
+function layGallery(b, alt, pagePx) {
+    var slides = (b.slides || []).filter(function (s) { return s.src; });
+    if (!slides.length) return '';
+    var cols = Math.max(2, Math.min(4, b.cols || 3));
+    var colPx = pagePx * (b.w || 12) / 12 / cols;
+    return '<div class="lay-gal" style="--cols:' + cols + '">' + slides.map(function (s) {
+        return layImage({ src: s.src, caption: s.caption, w: Math.max(1, Math.round(12 * colPx / pagePx)) }, alt, pagePx);
+    }).join('') + '</div>';
+}
+
+function layCompare(b, alt) {
+    var before = b.before && b.before.src, after = b.after && b.after.src;
+    if (!before || !after) return '';
+    return '<div class="lay-cmp lay-crop-' + (b.crop || 'landscape') + '" style="--pos:50%">' +
+               '<img class="lay-cmp-img" src="' + encodeURI(after) + '" alt="' + esc((b.afterLabel || 'After') + ' – ' + alt) + '" loading="lazy">' +
+               '<div class="lay-cmp-before"><img class="lay-cmp-img" src="' + encodeURI(before) + '" alt="' + esc((b.beforeLabel || 'Before') + ' – ' + alt) + '" loading="lazy"></div>' +
+               '<div class="lay-cmp-line" aria-hidden="true"><span>&#8249;&#8250;</span></div>' +
+               '<span class="lay-cmp-label lay-cmp-l">' + esc(b.beforeLabel || 'Before') + '</span>' +
+               '<span class="lay-cmp-label lay-cmp-r">' + esc(b.afterLabel || 'After') + '</span>' +
+               '<input class="lay-cmp-range" type="range" min="0" max="100" value="50" aria-label="Slide to compare ' +
+                   esc(b.beforeLabel || 'before') + ' and ' + esc(b.afterLabel || 'after') + '">' +
+           '</div>';
+}
+
+function layBanner(b, alt, pagePx) {
+    if (!b.src) return '';
+    var full = b.src.indexOf('images/Thumb/') === 0 ? b.src.replace('images/Thumb/', 'images/Full res/') : '';
+    var shade = Math.max(0, Math.min(0.8, parseFloat(b.shade == null ? 0.35 : b.shade) || 0));
+    return '<div class="lay-bnr lay-crop-' + (b.crop || 'wide') + ' lay-bn-' + (b.place || 'center') + '" style="--shade:' + shade + '">' +
+               '<img src="' + encodeURI(b.src) + '"' +
+                   (full ? ' srcset="' + encodeURI(b.src) + ' 1000w, ' + encodeURI(full) + ' 2400w" sizes="(max-width: 700px) 100vw, ' + Math.round(pagePx * (b.w || 12) / 12) + 'px"' : '') +
+                   ' alt="' + esc(b.title || alt) + '" loading="lazy">' +
+               '<div class="lay-bn-text">' +
+                   (b.title ? '<h2 class="lay-bn-title">' + inlineMarkup(b.title) + '</h2>' : '') +
+                   (b.text ? '<p class="lay-bn-sub">' + inlineMarkup(b.text) + '</p>' : '') +
+               '</div>' +
+           '</div>';
+}
+
+function layButton(b) {
+    var href = laySafeHref(b.href);
+    if (!b.label || !href) return '';
+    var ext = /^https?:/i.test(href) ? ' target="_blank" rel="noopener"' : '';
+    return '<div class="lay-btnwrap lay-ta-' + (b.align || 'center') + '"><a class="lay-btn lay-btn-' + (b.look === 'outline' ? 'outline' : 'solid') +
+           '" href="' + esc(href) + '"' + ext + '>' + esc(b.label) + '</a></div>';
+}
+
+/* Before/after sliders: the range input sits over the photos, so dragging,
+   tapping and the keyboard all move the dividing line. */
+function initCompares() {
+    document.querySelectorAll('.lay-cmp').forEach(function (c) {
+        var r = c.querySelector('.lay-cmp-range');
+        var set = function () { c.style.setProperty('--pos', r.value + '%'); };
+        r.addEventListener('input', set);
+        set();
+    });
+}
+
 /* Split the block list into rows: a block with newRow starts a new one. */
 function layoutRows(blocks) {
     var rows = [];
@@ -437,13 +515,17 @@ function layoutToHTML(item, alt) {
             else if (b.type === 'spacer') inner = '<div class="lay-spacer lay-sp-' + (b.size || 'm') + '"></div>';
             else if (b.type === 'divider') inner = '<hr class="lay-divider">';
             else if (b.type === 'carousel') inner = layCarousel(b, alt, pagePx);
+            else if (b.type === 'gallery') inner = layGallery(b, alt, pagePx);
+            else if (b.type === 'compare') inner = layCompare(b, alt);
+            else if (b.type === 'banner') inner = layBanner(b, alt, pagePx);
+            else if (b.type === 'button') inner = layButton(b);
             if (!inner) return;
             // tw / pw: widths on tablets / phones, used only when that size has
             // its own layout (layout.custom); otherwise those sizes adapt by themselves.
             var style = '--w:' + w;
             if (custom.tablet && b.tw) style += ';--wt:' + b.tw;
             if (custom.phone && b.pw) style += ';--wp:' + b.pw;
-            html += '<div class="lay-cell lay-' + b.type + ' lay-v-' + (b.valign || 'top') +
+            html += '<div class="lay-cell lay-k-' + b.type + ' lay-v-' + (b.valign || 'top') +
                     (b.type === 'image' && w <= 4 ? ' lay-narrow' : '') +
                     (b.hideD ? ' lay-hide-d' : '') + (b.hideT ? ' lay-hide-t' : '') + (b.hideP ? ' lay-hide-p' : '') +
                     '" style="' + style + '">' + inner + '</div>';
@@ -518,11 +600,16 @@ function populateBlog(blog) {
     container.innerHTML = '';
     if (!blog || blog.length === 0) return;
 
+    /* Drafts stay hidden unless the Site Manager opened ?preview=1. */
+    var preview = urlParam('preview') === '1';
+    blog = blog.filter(function (post) { return preview || post.status !== 'draft'; });
+
     blog.forEach(function (post) {
         var article = document.createElement('article');
         article.className = 'blog-post';
 
         var html = '<h2>' + esc(post.title) + '</h2>';
+        if (post.status === 'draft') html += '<span class="blog-draft-note">Draft: only visible in preview</span>';
         if (post.date) html += '<span class="blog-date">' + esc(post.date) + '</span>';
         html += itemBodyHTML(post, post.title);
 
