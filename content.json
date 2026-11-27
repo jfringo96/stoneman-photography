@@ -831,23 +831,23 @@
           "type": "text",
           "w": 12,
           "pw": 12,
-          "text": "I was walking on a beach on the east of England recently looking for wildlife subjects to photograph, I wasn't having much luck though as the tide was a long way out so there was just a scattering of distant shorebirds. Looking for something to photograph, and lacking the willpower to switch lenses from my 300mm, I tried taking a couple shots of some shells on the beach. the range of shells in this part of England is incredible, and over the next few days between different types of sand, shell and different weather conditions I got some shots I found quite interesting. So I've started putting together this project which I plan to work on over 2027 to photograph shells almost as if they were wildlife subjects.",
-          "html": "<p>I was walking on a beach on the east of England recently looking for wildlife subjects to photograph, I wasn't having much luck though as the tide was a long way out so there was just a scattering of distant shorebirds. Looking for something to photograph, and lacking the willpower to switch lenses from my 300mm, I tried taking a couple shots of some shells on the beach. the range of shells in this part of England is incredible, and over the next few days between different types of sand, shell and different weather conditions I got some shots I found quite interesting. So I've started putting together this project which I plan to work on over 2027 to photograph shells almost as if they were wildlife subjects.</p>",
+          "text": "I was walking on a beach on the east of England recently looking for wildlife subjects to photograph, I wasn't having much luck though as the tide was a long way out so there was just a scattering of distant shorebirds. Looking for something to photograph, and lacking the willpower to switch lenses from my 300mm, I tried taking a couple shots of some shells on the beach. the range of shells in this part of England is incredible, and over the next few days between different types of sand, shell and different weather conditions I got some shots I found quite interesting. ",
+          "html": "<p>I was walking on a beach on the east of England recently looking for wildlife subjects to photograph, I wasn't having much luck though as the tide was a long way out so there was just a scattering of distant shorebirds. Looking for something to photograph, and lacking the willpower to switch lenses from my 300mm, I tried taking a couple shots of some shells on the beach. the range of shells in this part of England is incredible, and over the next few days between different types of sand, shell and different weather conditions I got some shots I found quite interesting. </p>",
           "newRow": true
         },
         {
           "type": "carousel",
-          "w": 12,
+          "w": 8,
           "pw": 12,
           "slides": [
             {
-              "src": "images/Thumb/shells-1.jpg"
+              "src": "images/Thumb/shells-4.jpg"
             },
             {
               "src": "images/Thumb/shells-2.jpg"
             },
             {
-              "src": "images/Thumb/shells-4.jpg"
+              "src": "images/Thumb/shells-1.jpg"
             }
           ],
           "crop": "landscape",
@@ -856,10 +856,17 @@
         },
         {
           "type": "text",
-          "w": 12,
+          "w": 3,
           "pw": 12,
           "text": "I found by getting very low to the ground, almost like getting eye level to a bird, it gave the shells a bit more life and energy. I tried to give them space in the frame, focused on reducing distractions and drawing the viewers eye to the subject, just as you would for an animal, and I quite like the results.",
-          "html": "<p>I found by getting very low to the ground, almost like getting eye level to a bird, it gave the shells a bit more life and energy. I tried to give them space in the frame, focused on reducing distractions and drawing the viewers eye to the subject, just as you would for an animal, and I quite like the results.</p>",
+          "html": "<p>I found by getting very low to the ground, almost like getting eye level to a bird, it gave the shells a bit more life and energy. I tried to give them space in the frame, focused on reducing distractions and drawing the viewers eye to the subject, just as you would for an animal, and I quite like the results.</p>"
+        },
+        {
+          "type": "text",
+          "w": 12,
+          "pw": 12,
+          "text": "It's a work in progress so I'll be looking out for more sights where I can find good shells or interesting backgrounds or locations in which to photograph them.",
+          "html": "<p>It's a work in progress so I'll be looking out for more sights where I can find good shells or interesting backgrounds or locations in which to photograph them.</p>",
           "newRow": true
         },
         {
@@ -879,14 +886,6 @@
           ],
           "crop": "landscape",
           "autoplay": true,
-          "newRow": true
-        },
-        {
-          "type": "text",
-          "w": 12,
-          "pw": 12,
-          "text": "It's a work in progress so I'll be looking out for more sights where I can find good shells or interesting backgrounds or locations in which to photograph them.",
-          "html": "<p>It's a work in progress so I'll be looking out for more sights where I can find good shells or interesting backgrounds or locations in which to photograph them.</p>",
           "newRow": true
         }
       ],
