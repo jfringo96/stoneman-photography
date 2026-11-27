@@ -1154,8 +1154,9 @@ function renderCategoriesPanel() {
         '<div class="cat-list">' + rows + '</div>' +
         '<p class="help">These are the filter buttons on the Portfolio page. Rename by typing; drag order sets ' +
         'button order (the first is shown by default). A category can only be removed once it has no photos in it.</p>' +
-        '<p class="help">Photos uploaded inside a blog post or project get a category named after it, with ' +
-        '“On Portfolio” unticked, so they stay off the Portfolio page. Tick it to show them there.</p>';
+        '<p class="help">Photos uploaded inside a project get a category named after that project, and photos ' +
+        'uploaded inside any blog post go into one shared “Blog” category. Both start with “On Portfolio” ' +
+        'unticked, so they stay off the Portfolio page. Tick it to show them there.</p>';
 
     $('addCatBtn').addEventListener('click', addCategory);
     $('saveCatBtn').addEventListener('click', saveCategories);
@@ -1532,7 +1533,7 @@ function openPostForm(index) {
                 '<button class="secondary" id="addLibImage">+ From library</button>' +
             '</div>' +
             '<p class="help upload-note">Uploaded photos (you can pick several at once) are also added to your photo ' +
-                'library, in a category named after this title that stays off the Portfolio page.</p>' +
+                'library in the shared “Blog” category, kept off the Portfolio page.</p>' +
             '<div class="library-picker hidden" id="libraryPicker"></div>' +
             '<div class="af-actions">' +
                 '<button id="pfSave">Save post</button>' +
@@ -1713,24 +1714,48 @@ function openLibraryPicker(onPick, extras) {
    UPLOADS JOIN THE LIBRARY
    A photo uploaded inside a blog post or project is added to the
    photo library (full size + thumbnail + EXIF, exactly like the
-   Photos tab's "Add photo"), in a category named after that post
-   or project. The post/project remembers its category key in
-   photo_category, so later uploads land in the same one even if
-   it has been renamed. The category starts hidden: it is listed
+   Photos tab's "Add photo"). A project's uploads get a category
+   named after the project; every blog post's uploads share one
+   "Blog" category (marked role: 'blog'). The post/project remembers
+   its category key in photo_category. Photos are titled
+   "<title> N", numbered per post/project. The category starts hidden: it is listed
    and editable in the Photos and Categories tabs like any other,
    but the Portfolio page leaves it out until it is set to show.
    ---------------------------------------------------------- */
 
-function libraryCategoryFor(title, prevKey) {
+/* Projects each get their own category, named after the project. Blog posts
+   all share one "Blog" category, found by role: 'blog' so it can be renamed. */
+function libraryCategoryFor(title, prevKey, kind) {
     ensureCategories();
     var cats = state.content.categories;
-    if (prevKey && cats.some(function (c) { return c.key === prevKey; })) return prevKey;
+    if (kind === 'blog') {
+        var shared = cats.filter(function (c) { return c.role === 'blog' && c.key; })[0];
+        if (shared) return shared.key;
+        title = 'Blog';
+    } else if (prevKey && cats.some(function (c) { return c.key === prevKey; })) {
+        return prevKey;
+    }
     var used = {};
     cats.forEach(function (c) { if (c.key) used[c.key] = true; });
     var key = uniqueKey(slugify(title), used);
-    cats.push({ key: key, label: title, hidden: true });
+    var cat = { key: key, label: title, hidden: true };
+    if (kind === 'blog') cat.role = 'blog';
+    cats.push(cat);
     if (state.catOriginalLabels) state.catOriginalLabels[key] = title;
     return key;
+}
+
+/* Highest N among library photos already titled "<title> N", so numbering
+   carries on per post/project even when they share a category. */
+function lastPhotoNumber(title) {
+    var prefix = title + ' ', max = 0;
+    (state.content.portfolio || []).forEach(function (p) {
+        var t = p.title || '';
+        if (t.indexOf(prefix) === 0 && /^\d+$/.test(t.slice(prefix.length))) {
+            max = Math.max(max, parseInt(t.slice(prefix.length), 10));
+        }
+    });
+    return max;
 }
 
 /* Turn every newly uploaded image block into a library photo. Pushes the image
@@ -1741,10 +1766,10 @@ function addUploadsToLibrary(title, prevKey, upserts, status) {
     var uploads = editForm.blocks.filter(function (b) { return b.type === 'image' && b.file; });
     if (!uploads.length) return Promise.resolve(prevKey || '');
 
-    var key = libraryCategoryFor(title, prevKey);
+    var key = libraryCategoryFor(title, prevKey, editForm.kind);
     var taken = {};
     Object.keys(state.byFilename).forEach(function (fn) { taken[fn] = true; });
-    var n = categoryUsageCount(key);
+    var n = lastPhotoNumber(title);
     var chain = Promise.resolve();
 
     uploads.forEach(function (b, i) {
@@ -2197,7 +2222,7 @@ function openProjectForm(index) {
                 '<button class="secondary" id="addLibImage">+ From library</button>' +
             '</div>' +
             '<p class="help upload-note">Uploaded photos (you can pick several at once) are also added to your photo ' +
-                'library, in a category named after this title that stays off the Portfolio page.</p>' +
+                'library in a category named after this project, kept off the Portfolio page.</p>' +
             '<div class="library-picker hidden" id="libraryPicker"></div>' +
             '<div class="af-actions">' +
                 '<button id="prSave">Save project</button>' +
