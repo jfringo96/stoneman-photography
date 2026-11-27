@@ -711,6 +711,52 @@ function initInteractivity() {
         return html;
     }
 
+    // Fine Art print shapes offered on the Prints page. 'r' is the long edge
+    // divided by the short edge. Keep in step with the Prints page groups.
+    var PRINT_RATIOS = [
+        { label: '1:1 (square)',     r: 1 },
+        { label: '4:3',              r: 4 / 3 },
+        { label: 'A size (1:1.41)',  r: Math.SQRT2 },
+        { label: '3:2',              r: 3 / 2 },
+        { label: '2:1 (panoramic)',  r: 2 },
+        { label: '3:1 (panoramic)',  r: 3 }
+    ];
+
+    // Given an image's pixel size, return the closest print ratio as text,
+    // e.g. "3:2 landscape". Worked out from the photo itself, so new photos
+    // need no extra setup.
+    function closestPrintRatio(width, height) {
+        if (!width || !height) return '';
+        var r = Math.max(width, height) / Math.min(width, height);
+        var best = PRINT_RATIOS[0];
+        for (var i = 1; i < PRINT_RATIOS.length; i++) {
+            // Compare on a log scale so 'twice as wide' and 'half as wide' weigh the same
+            if (Math.abs(Math.log(r / PRINT_RATIOS[i].r)) < Math.abs(Math.log(r / best.r))) {
+                best = PRINT_RATIOS[i];
+            }
+        }
+        if (best.r === 1) return best.label;
+        return best.label + (width > height ? ' landscape' : ' portrait');
+    }
+
+    // Add the "Print ratio" item to the metadata bar (creating the bar if the
+    // photo has no camera details)
+    function addPrintRatio(width, height) {
+        var text = closestPrintRatio(width, height);
+        if (!text) return;
+        var meta = lightboxContent.querySelector('.lightbox-meta');
+        if (!meta) {
+            meta = document.createElement('div');
+            meta.className = 'lightbox-meta';
+            lightboxContent.appendChild(meta);
+        }
+        var item = document.createElement('div');
+        item.className = 'meta-item';
+        item.innerHTML = '<span class="meta-label">Print ratio</span><span class="meta-value"></span>';
+        item.lastChild.textContent = text;
+        meta.appendChild(item);
+    }
+
     // Returns the items to cycle through in the lightbox.
     // On portfolio page: visible gallery items (respects active filter).
     // On home page: featured items (no gallery items present).
@@ -761,6 +807,7 @@ function initInteractivity() {
             imgEl.src = fullResSrc;
             imgEl.alt = img.alt || '';
             lightboxContent.insertBefore(imgEl, lightboxContent.firstChild);
+            addPrintRatio(fullImg.naturalWidth, fullImg.naturalHeight);
             lightboxContent.style.transition = 'opacity 0.4s ease';
             lightboxContent.style.opacity = '1';
         };
