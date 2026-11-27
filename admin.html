@@ -287,6 +287,7 @@
         .le-canvas.lay-square    { --radius: 0; }
         .le-canvas .lay-row { display: flex; flex-wrap: wrap; gap: var(--gap); min-height: 40px; }
         .le-canvas .lay-row-center { justify-content: center; }
+        .le-canvas .lay-row-right { justify-content: flex-end; }
         .le-canvas .lay-cell { flex: 0 0 auto; min-width: 0; width: calc((100% + var(--gap)) * var(--w) / 12 - var(--gap)); }
         .le-canvas .lay-v-center { align-self: center; }
         .le-canvas .lay-v-bottom { align-self: flex-end; }
@@ -336,6 +337,7 @@
         .le-dragsrc { opacity: 0.3; }
         body.le-grabbing, body.le-grabbing * { cursor: grabbing !important; user-select: none !important; }
         .le-drag-ghost { position: fixed; left: 0; top: 0; z-index: 1000; pointer-events: none; width: 130px; max-height: 110px; overflow: hidden; border-radius: 6px; background: var(--panel-2); color: var(--text); font-size: 0.75rem; padding: 0.4rem 0.5rem; box-shadow: 0 8px 24px rgba(0,0,0,0.5); opacity: 0.92; }
+        .le-ghost-count { position: absolute; right: 6px; bottom: 6px; background: var(--accent, #c8b89a); color: #1a1715; font-weight: 600; font-size: 0.7rem; padding: 1px 7px; border-radius: 999px; }
         .le-drag-ghost img { display: block; width: calc(100% + 1rem); margin: -0.4rem -0.5rem; }
         .le-drop-line { position: fixed; z-index: 999; pointer-events: none; background: var(--accent); border-radius: 3px; box-shadow: 0 0 0 3px rgba(200,184,154,0.25); transition: left 0.08s ease, top 0.08s ease, width 0.08s ease, height 0.08s ease; }
         .le-grip { pointer-events: auto; cursor: grab; touch-action: none; }
@@ -444,6 +446,28 @@
         .le-toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); background: #222; color: #fff; padding: 0.5rem 1rem; border-radius: 999px; font-size: 0.85rem; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 9999; }
         .le-toast.on { opacity: 1; transform: translate(-50%, 0); }
         .le-photo-empty { min-height: 160px; background: repeating-linear-gradient(45deg, rgba(255,255,255,0.03), rgba(255,255,255,0.03) 10px, rgba(255,255,255,0.07) 10px, rgba(255,255,255,0.07) 20px); }
+        /* Rich text blocks */
+        .le-rich { --fs: 1rem; cursor: text; white-space: normal; word-wrap: break-word; outline: none; }
+        .le-rich.le-st-heading { --fs: 1.7rem; } .le-rich.le-st-subheading { --fs: 0.95rem; } .le-rich.le-st-quote { --fs: 1.2rem; } .le-rich.le-st-small { --fs: 0.85rem; }
+        .le-rich p { margin: 0 0 1rem; color: inherit; }
+        .le-rich p:last-child { margin-bottom: 0; }
+        .le-rich a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+        .le-rich u { text-underline-offset: 3px; }
+        .le-rich:empty::before { content: attr(data-ph); color: rgba(224,219,213,0.35); pointer-events: none; }
+        .le-rich.le-dropcap { border-left: none !important; padding-left: 0 !important; }
+        .le-rich.le-dropcap p:first-child::first-letter { float: left; font-size: 3.6em; line-height: 0.82; font-weight: 300; padding: 0.08em 0.12em 0 0; color: var(--accent); }
+        .le-float { position: fixed; z-index: 1200; display: flex; align-items: center; gap: 2px; padding: 4px; background: #1b1917; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.45); }
+        .le-float.hidden { display: none; }
+        .le-float button { background: transparent; color: var(--text); border: none; padding: 4px 8px; border-radius: 5px; font-size: 0.85rem; cursor: pointer; min-width: 28px; }
+        .le-float button:hover { background: rgba(255,255,255,0.08); }
+        .le-float-sep { width: 1px; height: 18px; background: var(--border); margin: 0 4px; }
+        .le-dot { width: 20px; height: 20px; min-width: 20px !important; padding: 0 !important; border-radius: 50% !important; border: 2px solid rgba(255,255,255,0.15) !important; cursor: pointer; display: inline-block; position: relative; overflow: hidden; }
+        .le-dot.active { border-color: #fff !important; }
+        .le-dot-site { width: auto; padding: 0 8px !important; border-radius: 999px !important; background: transparent; color: var(--text); font-size: 0.72rem; height: 22px; }
+        .le-dot-pick { background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); }
+        .le-dot-pick input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; border: none; padding: 0; }
+        .le-dots { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+        .le-subhead { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin: 1rem 0 0.5rem; padding-top: 0.75rem; border-top: 1px solid var(--border); }
     </style>
 </head>
 <body>
@@ -497,6 +521,6 @@
     <!-- EXIF reading + drag-to-reorder (loaded from CDN) -->
     <script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-    <script src="js/admin.js?v=23"></script>
+    <script src="js/admin.js?v=24"></script>
 </body>
 </html>
