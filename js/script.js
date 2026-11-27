@@ -548,19 +548,43 @@ function layCarousel(b, alt, pagePx) {
     return html + '</div>';
 }
 
+/* Carousels slide with their own small animation rather than the browser's
+   smooth scrolling: in Chrome a smooth scroll started inside the page can
+   cut short the visitor's own scrolling of the page, so it felt stuck and
+   then jumped. Autoplay also waits while the page is being scrolled, and
+   only runs while the carousel is on screen and the tab is open. */
+var layLastPageScroll = 0;
+window.addEventListener('scroll', function () { layLastPageScroll = Date.now(); }, { passive: true });
+
+function laySlideTo(track, left) {
+    if (track._anim) cancelAnimationFrame(track._anim);
+    var from = track.scrollLeft, dist = left - from, t0 = null, dur = 450;
+    if (!dist) return;
+    track.style.scrollSnapType = 'none';   // let it glide without snapping mid-way
+    function step(t) {
+        if (t0 === null) t0 = t;
+        var k = Math.min(1, (t - t0) / dur);
+        var e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;   // ease in-out
+        track.scrollLeft = from + dist * e;
+        if (k < 1) track._anim = requestAnimationFrame(step);
+        else { track._anim = null; track.style.scrollSnapType = ''; }
+    }
+    track._anim = requestAnimationFrame(step);
+}
+
 function initCarousels() {
     document.querySelectorAll('.lay-car').forEach(function (car) {
         var track = car.querySelector('.lay-car-track');
         var slides = track.children, dots = car.querySelectorAll('.lay-car-dots button');
         if (slides.length < 2) return;
-        var at = 0, timer = null;
+        var at = 0, timer = null, onScreen = false;
         function go(i) {
             at = (i + slides.length) % slides.length;
-            track.scrollTo({ left: slides[at].offsetLeft, behavior: 'smooth' });
+            laySlideTo(track, slides[at].offsetLeft - slides[0].offsetLeft);
         }
         track.addEventListener('scroll', function () {
             var i = Math.round(track.scrollLeft / track.clientWidth);
-            if (i !== at && i >= 0 && i < slides.length) at = i;
+            if (i !== at && i >= 0 && i < slides.length && !track._anim) at = i;
             dots.forEach(function (d, k) { d.classList.toggle('on', k === i); });
         }, { passive: true });
         car.querySelector('.lay-car-prev').addEventListener('click', function () { stop(); go(at - 1); });
@@ -568,7 +592,15 @@ function initCarousels() {
         dots.forEach(function (d, k) { d.addEventListener('click', function () { stop(); go(k); }); });
         function stop() { if (timer) { clearInterval(timer); timer = null; } }
         if (car.getAttribute('data-autoplay') && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
-            timer = setInterval(function () { go(at + 1); }, 5000);
+            if ('IntersectionObserver' in window) {
+                new IntersectionObserver(function (en) { onScreen = en[0].isIntersecting; }, { threshold: 0.5 }).observe(car);
+            } else {
+                onScreen = true;
+            }
+            timer = setInterval(function () {
+                if (!onScreen || document.hidden || Date.now() - layLastPageScroll < 1500) return;
+                go(at + 1);
+            }, 5000);
             car.addEventListener('pointerenter', stop);
             track.addEventListener('touchstart', stop, { passive: true });
         }
