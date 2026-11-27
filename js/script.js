@@ -982,14 +982,11 @@ function initInteractivity() {
                 });
                 var firstBatch = msnryGallery.style.opacity !== '1';
                 imagesLoaded(batch, function () {
-                    // Later batches arrive transparent and fade in one after
-                    // another; the first batch fades in with the whole gallery.
-                    batch.forEach(function (item, i) {
+                    // Later batches arrive transparent and fade in together;
+                    // the first batch fades in with the whole gallery.
+                    batch.forEach(function (item) {
                         item.classList.remove('pending');
-                        if (!firstBatch) {
-                            item.classList.add('arriving');
-                            item.querySelector('img').style.transitionDelay = (i * 60) + 'ms';
-                        }
+                        if (!firstBatch) item.classList.add('arriving');
                     });
                     if (msnry) { msnry.reloadItems(); msnry.layout(); }
                     // Two rAFs: let the browser paint the photos (transparent) in
