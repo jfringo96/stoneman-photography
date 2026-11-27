@@ -1076,9 +1076,9 @@
     },
     {
       "slug": "brecon-beacons",
-      "title": "The Brecon Beacons",
+      "title": "Abergavenny & The Brecon Beacons",
       "subtitle": "",
-      "cover": "",
+      "cover": "the-brecon-beacons-1.jpg",
       "status": "draft",
       "layout": {
         "v": 2,
@@ -1095,74 +1095,13 @@
       },
       "blocks": [
         {
-          "type": "image",
-          "w": 6,
-          "src": "images/Thumb/the-brecon-beacons-1.jpg"
-        },
-        {
-          "type": "image",
-          "w": 6,
-          "src": "images/Thumb/the-brecon-beacons-2.jpg"
-        },
-        {
-          "type": "image",
-          "w": 6,
-          "src": "images/Thumb/the-brecon-beacons-3.jpg"
-        },
-        {
-          "type": "image",
-          "w": 6,
-          "src": "images/Thumb/the-brecon-beacons-4.jpg"
-        },
-        {
-          "type": "image",
-          "w": 6,
-          "src": "images/Thumb/the-brecon-beacons-5.jpg"
-        },
-        {
-          "type": "image",
-          "w": 6,
-          "src": "images/Thumb/the-brecon-beacons-6.jpg"
-        },
-        {
-          "type": "image",
-          "w": 6,
-          "src": "images/Thumb/the-brecon-beacons-7.jpg"
-        },
-        {
-          "type": "image",
-          "w": 6,
-          "src": "images/Thumb/the-brecon-beacons-8.jpg"
-        },
-        {
-          "type": "image",
-          "w": 6,
-          "src": "images/Thumb/the-brecon-beacons-9.jpg"
-        },
-        {
-          "type": "image",
-          "w": 6,
-          "src": "images/Thumb/the-brecon-beacons-10.jpg"
-        },
-        {
-          "type": "image",
-          "w": 6,
-          "src": "images/Thumb/the-brecon-beacons-11.jpg"
-        },
-        {
-          "type": "image",
-          "w": 6,
-          "src": "images/Thumb/the-brecon-beacons-12.jpg"
-        },
-        {
-          "type": "image",
-          "w": 6,
-          "src": "images/Thumb/the-brecon-beacons-13.jpg"
-        },
-        {
-          "type": "image",
-          "w": 6,
-          "src": "images/Thumb/the-brecon-beacons-14.jpg"
+          "type": "banner",
+          "w": 12,
+          "src": "images/Thumb/the-brecon-beacons-1.jpg",
+          "title": "The Brecon Beacons",
+          "place": "top-left",
+          "shade": 0.35,
+          "crop": "landscape"
         }
       ],
       "photo_category": "the-brecon-beacons"
