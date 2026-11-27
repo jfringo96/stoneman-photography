@@ -619,6 +619,11 @@ body.home-page .featured-item {
     display: none;
 }
 
+/* Not loaded yet: the gallery loads photos in batches as you scroll */
+.gallery-item.pending {
+    display: none;
+}
+
 /* Photographer bio blurb below the gallery */
 .portfolio-blurb {
     max-width: 600px;

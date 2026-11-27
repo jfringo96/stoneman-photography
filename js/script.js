@@ -68,6 +68,7 @@ var photoData = {
 };
 
 var msnry = null;
+var galleryLoader = null;   // batch loader for the Portfolio gallery (set up with Masonry)
 
 
 /* ----------------------------------------------------------
@@ -167,9 +168,14 @@ function populatePortfolioGallery(portfolio) {
         var item = document.createElement('div');
         item.className = 'gallery-item';
         item.setAttribute('data-category', photo.category);
+        // The thumbnail isn't requested yet: the gallery loads photos in small
+        // batches, and only for the category on show (see GALLERY BATCH LOADING).
+        // data-thumb keeps the address so the lightbox can open any photo.
+        item.classList.add('pending');
+        item.setAttribute('data-thumb', 'images/Thumb/' + photo.filename);
         var img = document.createElement('img');
-        img.src = 'images/Thumb/' + photo.filename;
         img.alt = photo.title;
+        img.decoding = 'async';
         item.appendChild(img);
         gallery.appendChild(item);
     });
@@ -893,6 +899,7 @@ function initInteractivity() {
                 msnry.reloadItems();
                 msnry.layout();
             }
+            if (galleryLoader) galleryLoader.start();
         });
     });
 
@@ -940,22 +947,60 @@ function initInteractivity() {
             applyColWidth(colW);
 
             msnry = new Masonry(msnryGallery, {
-                itemSelector: '.gallery-item:not(.hidden)',
+                itemSelector: '.gallery-item:not(.hidden):not(.pending)',
                 columnWidth: colW,
                 gutter: 14,
                 horizontalOrder: false,   // fill the shortest column, so columns stay balanced (admin Arrange view mirrors this)
                 transitionDuration: 0
             });
 
-            // Wait for all images to finish loading, do one final layout, then reveal.
-            // rAF defers the opacity reveal until after the browser has painted the
-            // Masonry positions, preventing items shuffling during the fade-in.
-            imagesLoaded(msnryGallery, function () {
-                if (msnry) msnry.layout();
-                requestAnimationFrame(function () {
-                    msnryGallery.style.opacity = '1';
+            // GALLERY BATCH LOADING
+            // Thumbnails load a batch at a time, and only for the category on
+            // show: the first batch straight away, the next ones as the visitor
+            // scrolls near the bottom of the gallery. Each batch stays hidden
+            // until its photos have loaded, then joins the layout in one go, so
+            // nothing jumps. Masonry fills the shortest column in order, so the
+            // final arrangement is the same as loading everything at once.
+            var BATCH = 12;
+            var busy = false;
+
+            function nearBottom() {
+                var r = msnryGallery.getBoundingClientRect();
+                return r.bottom < window.innerHeight * 2.5;
+            }
+
+            function loadBatch() {
+                if (busy) return;
+                var batch = Array.prototype.slice.call(
+                    msnryGallery.querySelectorAll('.gallery-item.pending:not(.hidden)'), 0, BATCH);
+                if (!batch.length) return;
+                busy = true;
+                batch.forEach(function (item) {
+                    item.querySelector('img').src = item.getAttribute('data-thumb');
                 });
-            });
+                imagesLoaded(batch, function () {
+                    batch.forEach(function (item) { item.classList.remove('pending'); });
+                    if (msnry) { msnry.reloadItems(); msnry.layout(); }
+                    // rAF defers the reveal until the browser has painted the
+                    // Masonry positions, so photos don't shuffle as they fade in.
+                    requestAnimationFrame(function () { msnryGallery.style.opacity = '1'; });
+                    busy = false;
+                    if (nearBottom()) loadBatch();
+                });
+            }
+
+            galleryLoader = { start: loadBatch };
+            loadBatch();
+
+            var scrollQueued = false;
+            window.addEventListener('scroll', function () {
+                if (scrollQueued) return;
+                scrollQueued = true;
+                requestAnimationFrame(function () {
+                    scrollQueued = false;
+                    if (nearBottom()) loadBatch();
+                });
+            }, { passive: true });
 
             // Keep column count and item widths in sync on resize.
             // Mobile browsers fire 'resize' when the address bar hides/shows
@@ -1103,8 +1148,11 @@ function initInteractivity() {
         var img = items[index].querySelector('img');
         if (!lightbox || !lightboxContent || !img) return;
 
-        var filename = getFilename(img.src);
-        var fullResSrc = getFullResUrl(img.src);
+        // Portfolio photos that haven't loaded yet carry their address in data-thumb.
+        var thumb = items[index].getAttribute('data-thumb');
+        var thumbSrc = thumb ? new URL(thumb, window.location.href).href : img.src;
+        var filename = getFilename(thumbSrc);
+        var fullResSrc = getFullResUrl(thumbSrc);
 
         // Show/hide arrows: hide if only one image is visible
         if (lightboxPrev) lightboxPrev.style.display = items.length > 1 ? '' : 'none';
