@@ -31,7 +31,7 @@ var THUMB_QUALITY  = 0.82;
 var BLOG_MAX_EDGE  = 1600;         // blog images are resized down to this
 var BLOG_QUALITY   = 0.85;
 var MAX_FEATURED   = 3;            // home page shows 3 featured photos
-var SCRIPT_VERSION = 16;           // script.js?v=N used by generated project pages —
+var SCRIPT_VERSION = 17;           // script.js?v=N used by generated project pages —
                                    // keep in step with the HTML pages when script.js changes
 
 
@@ -1456,7 +1456,8 @@ function firstPostImage(post) {
     var blocks = post.blocks || [];
     for (var i = 0; i < blocks.length; i++) {
         var b = blocks[i];
-        if (b.type === 'carousel' && b.slides && b.slides[0] && b.slides[0].src) return rawSrc(b.slides[0].src);
+        if (b.slides && b.slides[0] && b.slides[0].src) return rawSrc(b.slides[0].src);
+        if (b.type === 'banner' && b.src) return rawSrc(b.src);
         if (b.type !== 'image') continue;
         if (b.src) return rawSrc(b.src);
         if (b.filename) return blogSrc(b.filename);
@@ -1477,7 +1478,8 @@ function renderBlogPanel() {
             '</span>' +
             '<div class="blog-thumb">' + thumb + '</div>' +
             '<div class="blog-rowmeta">' +
-                '<span class="blog-rowtitle">' + escapeHtml(post.title || '(untitled)') + '</span>' +
+                '<span class="blog-rowtitle">' + escapeHtml(post.title || '(untitled)') +
+                    (post.status === 'draft' ? ' <span class="badge draft">draft</span>' : '') + '</span>' +
                 '<span class="blog-rowdate">' + escapeHtml(post.date || '') + '</span>' +
             '</div>' +
             '<button class="blog-edit">Edit</button>' +
@@ -1514,17 +1516,26 @@ function openPostForm(index) {
         '<div class="add-form">' +
             '<div class="af-field"><label for="pfTitle">Title</label>' +
                 '<input type="text" id="pfTitle" value="' + escapeHtml(post.title || '') + '"></div>' +
-            '<div class="af-field"><label for="pfDate">Date</label>' +
-                '<input type="text" id="pfDate" value="' + escapeHtml(post.date || '') + '"></div>' +
+            '<div class="af-grid">' +
+                '<div class="af-field"><label for="pfDate">Date</label>' +
+                    '<input type="text" id="pfDate" value="' + escapeHtml(post.date || '') + '"></div>' +
+                '<div class="af-field"><label for="pfVisibility">Visibility</label>' +
+                    '<select id="pfVisibility">' +
+                        '<option value="published"' + (post.status !== 'draft' ? ' selected' : '') + '>Published — on the Blog page</option>' +
+                        '<option value="draft"' + (post.status === 'draft' ? ' selected' : '') + '>Draft — hidden until you publish it</option>' +
+                    '</select></div>' +
+            '</div>' +
             layoutEditorHTML('blog') +
             '<div class="af-actions">' +
                 '<button id="pfSave">Save post</button>' +
+                '<button class="secondary" id="pfPreview" title="Opens the Blog page with drafts shown; it shows what is saved">Preview saved</button>' +
                 '<button class="secondary" id="pfCancel">Cancel</button>' +
             '</div>' +
             '<div class="status hidden" id="pfStatus"></div>' +
         '</div>';
 
     $('pfSave').addEventListener('click', savePost);
+    $('pfPreview').addEventListener('click', function () { window.open('/blog.html?preview=1', '_blank'); });
     $('pfCancel').addEventListener('click', function () { closeLayoutEditor('postFormHolder'); });
     initLayoutEditor();
     $('postFormHolder').scrollIntoView({ block: 'nearest' });
@@ -1677,9 +1688,16 @@ function layoutEditorHTML(kind) {
                         return '<option value="' + n + '"' + (n === editForm.perRow ? ' selected' : '') + '>' + n + '</option>';
                     }).join('') +
                 '</select></label>' +
-                '<button class="secondary" data-add="spacer">Space</button>' +
-                '<button class="secondary" data-add="divider">Line</button>' +
-                '<button class="secondary" data-add="carousel">Carousel</button>' +
+                '<select id="leAddMore" class="le-addmore" title="More kinds of block">' +
+                    '<option value="">More blocks…</option>' +
+                    '<option value="banner">Banner: photo with words over it</option>' +
+                    '<option value="gallery">Gallery: photos in columns</option>' +
+                    '<option value="carousel">Carousel: slideshow</option>' +
+                    '<option value="compare">Before / after slider</option>' +
+                    '<option value="button">Button / link</option>' +
+                    '<option value="spacer">Empty space</option>' +
+                    '<option value="divider">Line</option>' +
+                '</select>' +
             '</div>' +
             '<p class="help upload-note">' + note + '</p>' +
             '<div class="library-picker hidden" id="libraryPicker"></div>' +
@@ -1698,15 +1716,22 @@ function initLayoutEditor() {
     document.querySelectorAll('#layoutEditor [data-add]').forEach(function (bt) {
         bt.addEventListener('click', function () { leAdd(this.getAttribute('data-add')); });
     });
+    $('leAddMore').addEventListener('change', function () {
+        var kind = this.value;
+        this.value = '';
+        if (kind) leAdd(kind);
+    });
     $('addImageBlock').addEventListener('change', onBlockImageChosen);
     $('addLibImage').addEventListener('click', function () { openLibraryPicker(); });
     $('lePerRow').addEventListener('change', function () { editForm.perRow = parseInt(this.value, 10) || 1; });
     renderBlocks();
+    leOfferBackup();
 }
 
 /* Close the editor (Cancel). Asks first if anything was changed. */
 function closeLayoutEditor(holderId) {
     if (editForm && editForm.undo.length && !confirm('Discard your unsaved changes?')) return;
+    leClearBackup();
     $(holderId).innerHTML = '';
     editForm = null;
     var wrap = document.querySelector('.wrap');
@@ -1719,6 +1744,7 @@ document.addEventListener('keydown', function (e) {
     if (tag === 'textarea' || tag === 'input' || tag === 'select') return;
     var key = (e.key || '').toLowerCase();
     if (key === 'escape' && (editForm.multi || []).length) { leSelect(null); return; }
+    if (leKeys(e)) return;
     if ((e.ctrlKey || e.metaKey) && key === 'z') { e.preventDefault(); e.shiftKey ? leRedo() : leUndo(); }
     else if ((e.ctrlKey || e.metaKey) && key === 'y') { e.preventDefault(); leRedo(); }
 });
@@ -1736,6 +1762,7 @@ function leState() {
         blocks: editForm.blocks.map(function (b) {
             var c = {}; Object.keys(b).forEach(function (k) { c[k] = b[k]; });
             if (b.slides) c.slides = b.slides.map(function (sl) { var o = {}; Object.keys(sl).forEach(function (k) { o[k] = sl[k]; }); return o; });
+            ['before', 'after'].forEach(function (k) { if (b[k]) { var o = {}; Object.keys(b[k]).forEach(function (q) { o[q] = b[k][q]; }); c[k] = o; } });
             return c;
         }),
         layout: JSON.parse(JSON.stringify(editForm.layout))
@@ -1797,6 +1824,10 @@ function leNewBlock(kind) {
     else if (kind === 'spacer') { b.type = 'spacer'; b.size = 'm'; }
     else if (kind === 'divider') { b.type = 'divider'; }
     else if (kind === 'carousel') { b.type = 'carousel'; b.crop = 'landscape'; b.slides = []; }
+    else if (kind === 'gallery') { b.type = 'gallery'; b.cols = 3; b.slides = []; }
+    else if (kind === 'compare') { b.type = 'compare'; b.crop = 'landscape'; b.before = {}; b.after = {}; }
+    else if (kind === 'banner') { b.type = 'banner'; b.crop = 'wide'; b.place = 'center'; b.shade = 0.35; b.title = ''; b.text = ''; }
+    else if (kind === 'button') { b.type = 'button'; b.label = 'Get in touch'; b.href = '/contact.html'; b.look = 'solid'; b.align = 'center'; }
     else { b.type = 'text'; b.style = 'body'; b.align = 'left'; b.text = ''; }
     return b;
 }
@@ -1916,26 +1947,42 @@ function renderLayoutBar() {
     $('leRedo').addEventListener('click', leRedo);
 }
 
-function leCellHTML(b) {
+function leBlockInner(b) {
     var inner = '';
     if (b.type === 'text') {
         var ph = { heading: 'Heading', subheading: 'Subheading', quote: 'A quote…', small: 'Small print…' }[b.style] ||
                  'Write something… (leave a blank line for a new paragraph)';
-        inner = '<textarea class="le-text le-st-' + (b.style || 'body') + ' lay-ta-' + (b.align || 'left') + '" data-id="' + b._id + '" rows="1" placeholder="' + ph + '">' +
+        inner = '<textarea class="le-text le-st-' + (b.style || 'body') + ' lay-ta-' + (b.align || 'left') + (b.dropcap ? ' le-dropcap' : '') + '" data-id="' + b._id + '" rows="1" placeholder="' + ph + '">' +
                 escapeHtml(b.text || '') + '</textarea>';
     } else if (b.type === 'image') {
-        inner = '<figure class="lay-figure lay-crop-' + (b.crop || 'original') + '"><img src="' + leImgSrc(b) + '" alt="" draggable="false"></figure>' +
-                '<input class="le-caption" data-id="' + b._id + '" value="' + escapeHtml(b.caption || '') + '" placeholder="Add a caption (optional)">';
+        inner = '<figure class="lay-figure lay-crop-' + (b.crop || 'original') + '">' +
+                    ((b.src || b.file) ? '<img src="' + leImgSrc(b) + '" alt="" draggable="false">' : '<div class="le-slot-empty le-photo-empty">Photo: click, then choose one in the panel →</div>') +
+                '</figure>' +
+                '<input class="le-caption" data-id="' + b._id + '" value="' + escapeHtml(b.caption || '') + '" placeholder="Add a caption (optional)">' +
+                (b.exif && leExifLine(b.src) ? '<div class="le-exif">' + escapeHtml(leExifLine(b.src)) + '</div>' : '');
     } else if (b.type === 'spacer') {
         inner = '<div class="le-spacer lay-sp-' + (b.size || 'm') + '"><span>Space</span></div>';
     } else if (b.type === 'divider') {
         inner = '<div class="le-divider"><hr class="lay-divider"></div>';
     } else if (b.type === 'carousel') {
         inner = leCarouselHTML(b);
+    } else if (b.type === 'gallery') {
+        inner = leGalleryHTML(b);
+    } else if (b.type === 'compare') {
+        inner = leCompareHTML(b);
+    } else if (b.type === 'banner') {
+        inner = leBannerHTML(b);
+    } else if (b.type === 'button') {
+        inner = leButtonHTML(b);
     }
+    return inner;
+}
+
+function leCellHTML(b) {
+    var inner = leBlockInner(b);
     var w = leEffW(b);
     var hidden = b[LE_HIDE_KEY[editForm.view]];
-    return '<div class="lay-cell le-cell le-' + b.type + ' lay-v-' + (b.valign || 'top') +
+    return '<div class="lay-cell le-cell le-k-' + b.type + ' lay-v-' + (b.valign || 'top') +
                (hidden ? ' le-hidden' : '') +
                (((editForm.multi || []).length ? editForm.multi.indexOf(b._id) !== -1 : editForm.sel === b._id) ? ' le-sel' : '') +
                '" data-id="' + b._id + '" style="--w:' + w + '">' +
@@ -1960,8 +2007,12 @@ function renderBlocks() {
     var rows = leRows();
     if (!rows.length) {
         canvas.innerHTML = '<div class="le-empty">Your page is empty. Use the <b>Add</b> buttons above to start ' +
-            'with text, a heading or photos — then drag things around and resize them here.</div>';
+            'with text, a heading or photos — then drag things around and resize them here.' + leTemplatePicker() + '</div>';
+        canvas.querySelectorAll('[data-tpl]').forEach(function (bt) {
+            bt.addEventListener('click', function () { leApplyTemplate(this.getAttribute('data-tpl')); });
+        });
         renderInspector();
+        leScheduleBackup();
         return;
     }
     canvas.innerHTML = rows.map(function (row) {
@@ -1981,6 +2032,7 @@ function renderBlocks() {
             if (editForm.typing !== b._id) { leSnapshot(); editForm.typing = b._id; leUndoButtons(); }
             b.text = ta.value;
             leGrow(ta);
+            leScheduleBackup();
         });
     });
     canvas.querySelectorAll('input.le-caption').forEach(function (inp) {
@@ -2002,11 +2054,13 @@ function renderBlocks() {
 
     requestAnimationFrame(leGrowAll);
     renderInspector();
+    leScheduleBackup();
 }
 
 function leGrow(ta) { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; }
 function leGrowAll() { document.querySelectorAll('#leCanvas textarea.le-text').forEach(leGrow); }
 function leUndoButtons() {
+    leScheduleBackup();
     if ($('leUndo')) $('leUndo').disabled = !editForm.undo.length;
     if ($('leRedo')) $('leRedo').disabled = !editForm.redo.length;
 }
@@ -2088,17 +2142,17 @@ function leGroupAction(kind, n) {
         group.forEach(function (b) { if (b.type === 'image' || b.type === 'carousel') b.crop = n; });
     } else if (kind === 'valign') {
         group.forEach(function (b) { b.valign = n; });
-    } else if (kind === 'carousel') {
+    } else if (kind === 'carousel' || kind === 'gallery' || kind === 'compare') {
         var photos = group.filter(function (b) { return b.type === 'image'; });
         if (!leGatherRow(photos)) { leRestore(editForm.undo.pop()); return; }
-        var car = {
-            _id: leId(), type: 'carousel', newRow: true, w: 12, crop: 'landscape',
-            slides: photos.map(function (p) {
-                var s = { src: p.src, caption: p.caption || '' };
-                if (p.file) { s.file = p.file; s.previewUrl = p.previewUrl; }
-                return s;
-            })
+        var asSlide = function (p) {
+            var s = { src: p.src, caption: p.caption || '' };
+            if (p.file) { s.file = p.file; s.previewUrl = p.previewUrl; }
+            return s;
         };
+        var car = { _id: leId(), type: kind, newRow: true, w: 12 };
+        if (kind === 'compare') { car.crop = 'landscape'; car.before = asSlide(photos[0]); car.after = asSlide(photos[1]); }
+        else { car.slides = photos.map(asSlide); if (kind === 'carousel') car.crop = 'landscape'; else car.cols = Math.min(4, Math.max(2, photos.length > 4 ? 3 : photos.length)); }
         leFillCustomWidths([car]);
         var at = editForm.blocks.indexOf(photos[0]);
         editForm.blocks = editForm.blocks.filter(function (b) { return photos.indexOf(b) === -1; });
@@ -2146,8 +2200,11 @@ function renderMultiInspector(box) {
              return '<button type="button" class="le-seg-btn" data-group="valign" data-n="' + o[0] + '">' + o[1] + '</button>';
          }).join('') + '</div></div>';
     if (photos >= 2) {
-        h += '<div class="le-field"><button type="button" class="le-small" data-group="carousel">Make a carousel from ' + photos + ' photos</button>' +
-             '<p class="help">A slideshow visitors swipe or click through. Only the photos are used.</p></div>';
+        h += '<div class="le-field"><label>Combine the ' + photos + ' photos into</label><div class="le-btnrow">' +
+             '<button type="button" class="le-small" data-group="carousel">A carousel</button>' +
+             '<button type="button" class="le-small" data-group="gallery">A gallery</button>' +
+             (photos === 2 ? '<button type="button" class="le-small" data-group="compare">Before / after</button>' : '') +
+             '</div><p class="help">Only the photos are used; other selected blocks stay as they are.</p></div>';
     }
     h += '<div class="le-actions"><button type="button" class="le-small le-danger" data-group="remove">Remove ' + group.length + ' blocks</button></div>';
     box.innerHTML = h;
@@ -2188,10 +2245,17 @@ function leCarouselStep(id, step) {
 
 function renderCarouselInspector(b) {
     var slides = b.slides || [];
-    var h = '<div class="le-field"><label>Shape</label>' +
-        leSeg('crop', [['landscape', '3:2'], ['wide', '16:9'], ['panorama', 'Panorama'], ['square', 'Square'], ['portrait', '4:5']], b.crop || 'landscape', 'prop') + '</div>';
-    h += '<label class="le-check"><input type="checkbox" id="leCarFit"' + (b.fit === 'contain' ? ' checked' : '') + '> Show whole photos (no cropping)</label>';
-    h += '<label class="le-check"><input type="checkbox" id="leCarAuto"' + (b.autoplay ? ' checked' : '') + '> Play automatically</label>';
+    var h = '<div class="le-field"><label>Show as</label>' +
+        leSeg('type', [['carousel', 'Carousel'], ['gallery', 'Gallery']], b.type, 'prop') + '</div>';
+    if (b.type === 'gallery') {
+        h += '<div class="le-field"><label>Columns</label>' + leSeg('cols', [[2, '2'], [3, '3'], [4, '4']], b.cols || 3, 'prop') +
+             '<p class="help">Photos keep their own shapes and stack like the Portfolio page. Phones show 2 columns.</p></div>';
+    } else {
+        h += '<div class="le-field"><label>Shape</label>' +
+            leSeg('crop', [['landscape', '3:2'], ['wide', '16:9'], ['panorama', 'Panorama'], ['square', 'Square'], ['portrait', '4:5']], b.crop || 'landscape', 'prop') + '</div>';
+        h += '<label class="le-check"><input type="checkbox" id="leCarFit"' + (b.fit === 'contain' ? ' checked' : '') + '> Show whole photos (no cropping)</label>';
+        h += '<label class="le-check"><input type="checkbox" id="leCarAuto"' + (b.autoplay ? ' checked' : '') + '> Play automatically</label>';
+    }
     h += '<div class="le-field"><label>Photos (' + slides.length + ')</label><div class="le-slides">' +
         slides.map(function (s, k) {
             return '<div class="le-slide' + (k === (b._at || 0) ? ' le-slide-on' : '') + '">' +
@@ -2200,7 +2264,7 @@ function renderCarouselInspector(b) {
                 '<span class="le-slide-btns">' +
                     '<button type="button" data-slide-move="' + k + '" data-step="-1" title="Earlier"' + (k === 0 ? ' disabled' : '') + '>◀</button>' +
                     '<button type="button" data-slide-move="' + k + '" data-step="1" title="Later"' + (k === slides.length - 1 ? ' disabled' : '') + '>▶</button>' +
-                    '<button type="button" data-slide-del="' + k + '" title="Remove from carousel">✕</button>' +
+                    '<button type="button" data-slide-del="' + k + '" title="Remove">✕</button>' +
                 '</span></div>';
         }).join('') + '</div>' +
         '<div class="le-btnrow">' +
@@ -2213,8 +2277,8 @@ function renderCarouselInspector(b) {
 
 function wireCarouselInspector(box, b) {
     var edit = function (fn) { leSnapshot(); fn(); renderBlocks(); };
-    $('leCarFit').addEventListener('change', function () { var on = this.checked; edit(function () { if (on) b.fit = 'contain'; else delete b.fit; }); });
-    $('leCarAuto').addEventListener('change', function () { var on = this.checked; edit(function () { if (on) b.autoplay = true; else delete b.autoplay; }); });
+    if ($('leCarFit')) $('leCarFit').addEventListener('change', function () { var on = this.checked; edit(function () { if (on) b.fit = 'contain'; else delete b.fit; }); });
+    if ($('leCarAuto')) $('leCarAuto').addEventListener('change', function () { var on = this.checked; edit(function () { if (on) b.autoplay = true; else delete b.autoplay; }); });
     box.querySelectorAll('[data-slide-show]').forEach(function (img) {
         img.addEventListener('click', function () { b._at = +this.getAttribute('data-slide-show'); renderBlocks(); });
     });
@@ -2270,6 +2334,357 @@ function wireCarouselInspector(box, b) {
         editForm.sel = photos[0]._id;
         renderBlocks();
     });
+}
+
+/* ---------- more block types ----------
+   gallery  { slides: [{ src, caption }], cols }      masonry columns of photos
+   compare  { before: { src }, after: { src }, crop, beforeLabel, afterLabel }
+   banner   { src, title, text, place, shade, crop }   a photo with words over it
+   button   { label, href, look: solid|outline, align }
+   Photos on these can be library photos or new uploads, just like photo blocks. */
+
+/* Camera line for a library photo, e.g. "OM System OM-5 · 300mm · f/5.6 · 1/1000s · ISO 200". */
+function leExifLine(src) {
+    var fn = (src || '').split('/').pop();
+    var p = state.byFilename[fn];
+    if (!p) return '';
+    var shutter = p.shutter ? (String(p.shutter).slice(-1) === 's' ? p.shutter : p.shutter + 's') : '';
+    return [p.camera, p.focal, p.aperture, shutter, p.iso ? 'ISO ' + p.iso : ''].filter(Boolean).join(' · ');
+}
+
+function leGalleryHTML(b) {
+    var slides = b.slides || [];
+    if (!slides.length) return '<div class="le-car-empty">Gallery: add photos in the panel on the right →</div>';
+    return '<div class="le-gal" style="--cols:' + (b.cols || 3) + '">' + slides.map(function (s) {
+        return '<figure class="lay-figure"><img src="' + leImgSrc(s) + '" alt="" draggable="false"></figure>';
+    }).join('') + '</div>';
+}
+
+function leSlotImg(slot, label) {
+    return slot && (slot.src || slot.file)
+        ? '<img src="' + leImgSrc(slot) + '" alt="" draggable="false">'
+        : '<div class="le-slot-empty">' + label + '</div>';
+}
+
+function leCompareHTML(b) {
+    var crop = b.crop || 'landscape';
+    return '<div class="le-cmp lay-crop-' + crop + '">' +
+               '<div class="le-cmp-half le-cmp-before">' + leSlotImg(b.before, 'Before photo') + '<span>' + escapeHtml(b.beforeLabel || 'Before') + '</span></div>' +
+               '<div class="le-cmp-half le-cmp-after">' + leSlotImg(b.after, 'After photo') + '<span>' + escapeHtml(b.afterLabel || 'After') + '</span></div>' +
+               '<div class="le-cmp-line"></div>' +
+           '</div>';
+}
+
+function leBannerHTML(b) {
+    return '<div class="le-bnr lay-crop-' + (b.crop || 'wide') + ' lay-bn-' + (b.place || 'center') + '" style="--shade:' + (b.shade == null ? 0.35 : b.shade) + '">' +
+               leSlotImg(b, 'Choose a photo in the panel →') +
+               '<div class="lay-bn-text">' +
+                   '<div class="lay-bn-title">' + escapeHtml(b.title || 'Banner title') + '</div>' +
+                   (b.text ? '<div class="lay-bn-sub">' + escapeHtml(b.text) + '</div>' : '') +
+               '</div>' +
+           '</div>';
+}
+
+function leButtonHTML(b) {
+    return '<div class="le-btnwrap lay-ta-' + (b.align || 'center') + '"><span class="le-btnprev le-btn-' + (b.look || 'solid') + '">' +
+           escapeHtml(b.label || 'Button') + '</span></div>';
+}
+
+/* A small photo picker row used by the compare and banner panels. */
+function lePhotoSlotField(label, key) {
+    return '<div class="le-field"><label>' + label + '</label><div class="le-btnrow">' +
+        '<button type="button" class="secondary le-small" data-slot-lib="' + key + '">From library</button>' +
+        '<label class="btn-like le-small">Upload<input type="file" data-slot-up="' + key + '" accept="image/jpeg,image/png" hidden></label>' +
+        '</div></div>';
+}
+
+/* key '' means the block itself holds the photo (banner); otherwise b[key]. */
+function wirePhotoSlots(box, b) {
+    function target(key) {
+        if (!key) return b;
+        if (!b[key]) b[key] = {};
+        return b[key];
+    }
+    box.querySelectorAll('[data-slot-lib]').forEach(function (bt) {
+        bt.addEventListener('click', function () {
+            var key = this.getAttribute('data-slot-lib');
+            openLibraryPicker(function (fn) {
+                leSnapshot();
+                var t = target(key);
+                delete t.file; delete t.previewUrl;
+                t.src = fn.indexOf('/') === -1 ? 'images/Thumb/' + fn : fn;
+                renderBlocks();
+            });
+        });
+    });
+    box.querySelectorAll('[data-slot-up]').forEach(function (inp) {
+        inp.addEventListener('change', function (e) {
+            var f = e.target.files[0];
+            e.target.value = '';
+            if (!f) return;
+            leSnapshot();
+            var t = target(this.getAttribute('data-slot-up'));
+            delete t.src;
+            t.file = f; t.previewUrl = URL.createObjectURL(f);
+            renderBlocks();
+        });
+    });
+}
+
+/* Live text fields in the panel (title, label, link…): one undo step per burst. */
+function wireTextProps(box, b) {
+    box.querySelectorAll('[data-tprop]').forEach(function (inp) {
+        var prop = inp.getAttribute('data-tprop');
+        inp.addEventListener('input', function () {
+            if (editForm.typing !== b._id + prop) { leSnapshot(); editForm.typing = b._id + prop; leUndoButtons(); }
+            b[prop] = inp.value;
+            var cell = document.querySelector('#leCanvas .le-cell[data-id="' + b._id + '"]');
+            if (cell) {
+                var tools = cell.querySelector('.le-tools').outerHTML, resize = '<div class="le-resize" title="Drag to change the width"></div>';
+                cell.innerHTML = tools + leBlockInner(b) + resize;
+                cell.querySelector('.le-resize').addEventListener('pointerdown', leResizeStart);
+            }
+        });
+    });
+}
+
+function leTextField(label, prop, value, placeholder) {
+    return '<div class="le-field"><label>' + label + '</label><input type="text" data-tprop="' + prop + '" value="' +
+           escapeHtml(value || '') + '" placeholder="' + escapeHtml(placeholder || '') + '"></div>';
+}
+
+function renderExtraInspector(b) {
+    var h = '';
+    if (b.type === 'compare') {
+        h += lePhotoSlotField('Before photo', 'before') + lePhotoSlotField('After photo', 'after');
+        h += '<div class="le-field"><label>Shape</label>' +
+             leSeg('crop', [['landscape', '3:2'], ['wide', '16:9'], ['square', 'Square'], ['portrait', '4:5'], ['panorama', 'Panorama']], b.crop || 'landscape', 'prop') + '</div>';
+        h += leTextField('Left label', 'beforeLabel', b.beforeLabel, 'Before') + leTextField('Right label', 'afterLabel', b.afterLabel, 'After');
+        h += '<p class="help">Visitors drag the line across to compare. Great for edits, seasons or then-and-now.</p>';
+    } else if (b.type === 'banner') {
+        h += lePhotoSlotField('Photo', '');
+        h += leTextField('Title', 'title', b.title, 'Banner title') + leTextField('Smaller line', 'text', b.text, 'Optional');
+        h += '<div class="le-field"><label>Words sit</label>' +
+             leSeg('place', [['center', 'Middle'], ['bottom-left', 'Bottom left'], ['bottom', 'Bottom'], ['top-left', 'Top left']], b.place || 'center', 'prop') + '</div>';
+        h += '<div class="le-field"><label>Shape</label>' +
+             leSeg('crop', [['panorama', 'Panorama'], ['wide', '16:9'], ['landscape', '3:2'], ['square', 'Square']], b.crop || 'wide', 'prop') + '</div>';
+        h += '<div class="le-field"><label>Darken the photo</label>' +
+             leSeg('shade', [['0', 'None'], ['0.2', 'Light'], ['0.35', 'Medium'], ['0.55', 'Strong']], String(b.shade == null ? 0.35 : b.shade), 'prop') + '</div>';
+    } else if (b.type === 'button') {
+        h += leTextField('Button text', 'label', b.label, 'e.g. Buy a print') + leTextField('Links to', 'href', b.href, 'https://… or /contact.html');
+        h += '<div class="le-field"><label>Look</label>' + leSeg('look', [['solid', 'Solid'], ['outline', 'Outline']], b.look || 'solid', 'prop') + '</div>';
+        h += '<div class="le-field"><label>Position</label>' + leSeg('align', [['left', 'Left'], ['center', 'Centre'], ['right', 'Right']], b.align || 'center', 'prop') + '</div>';
+    }
+    return h;
+}
+
+/* ---------- safety backup of unsaved edits ----------
+   While a post or project is open, its blocks and page settings are copied to
+   this browser every few seconds. If the tab closes or crashes before saving,
+   opening the same post/project again offers to bring the changes back.
+   Photos uploaded but not yet saved can't be kept this way (the browser
+   only holds them in memory), so those come back as empty photo slots. */
+
+var LE_BACKUP_KEY = 'sp_layout_backup';
+var leBackupTimer = null;
+
+function leBackupId() {
+    return editForm.kind + ':' + (editForm.index === null ? 'new' : editForm.index);
+}
+
+function leScheduleBackup() {
+    if (!editForm || !editForm.undo.length) return;
+    clearTimeout(leBackupTimer);
+    leBackupTimer = setTimeout(leWriteBackup, 1500);
+}
+
+function leWriteBackup() {
+    if (!editForm) return;
+    var strip = function (o) {
+        var c = {};
+        Object.keys(o).forEach(function (k) {
+            if (k === 'file' || k === 'previewUrl' || k === '_finalSrc' || k === '_at') return;
+            var v = o[k];
+            if (v && typeof v === 'object' && !Array.isArray(v)) v = strip(v);
+            else if (Array.isArray(v)) v = v.map(function (x) { return x && typeof x === 'object' ? strip(x) : x; });
+            c[k] = v;
+        });
+        return c;
+    };
+    var titleEl = $('pfTitle') || $('prTitle');
+    try {
+        localStorage.setItem(LE_BACKUP_KEY, JSON.stringify({
+            id: leBackupId(), title: titleEl ? titleEl.value : '', at: Date.now(),
+            layout: editForm.layout, blocks: editForm.blocks.map(strip)
+        }));
+    } catch (e) { /* storage full or blocked: nothing to do */ }
+}
+
+function leClearBackup() {
+    clearTimeout(leBackupTimer);
+    try { localStorage.removeItem(LE_BACKUP_KEY); } catch (e) {}
+}
+
+/* Offer to restore a backup for the post/project that has just been opened. */
+function leOfferBackup() {
+    var raw = null;
+    try { raw = JSON.parse(localStorage.getItem(LE_BACKUP_KEY) || 'null'); } catch (e) {}
+    if (!raw || raw.id !== leBackupId() || !raw.blocks) return;
+    var when = new Date(raw.at);
+    var note = document.createElement('div');
+    note.className = 'le-restore';
+    note.innerHTML = '<span>You have unsaved changes to <b>' + escapeHtml(raw.title || 'this page') + '</b> from ' +
+        when.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) + ', ' +
+        when.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) + '. Bring them back?</span>' +
+        '<button type="button" class="le-small" id="leRestoreYes">Restore</button>' +
+        '<button type="button" class="secondary le-small" id="leRestoreNo">Discard</button>';
+    var ed = $('layoutEditor');
+    ed.parentNode.insertBefore(note, ed);
+    $('leRestoreYes').addEventListener('click', function () {
+        leSnapshot();
+        editForm.layout = editLayoutFor({ layout: raw.layout });
+        editForm.blocks = raw.blocks.map(function (b) { b._id = leId(); return b; });
+        if (raw.title && (($('pfTitle') || $('prTitle')) || {}).value === '') (($('pfTitle') || $('prTitle'))).value = raw.title;
+        note.remove();
+        renderBlocks();
+    });
+    $('leRestoreNo').addEventListener('click', function () { leClearBackup(); note.remove(); });
+}
+
+/* ---------- templates ----------
+   A starting layout for an empty page. Photo slots start empty: click one,
+   then "Choose photo" or "Upload" in the panel. Text starts with a hint. */
+
+var LE_TEMPLATES = {
+    essay: {
+        name: 'Photo essay', desc: 'Big banner, an introduction, then photos and words taking turns.',
+        layout: { width: 'wide', gap: 'normal' },
+        blocks: [
+            { type: 'banner', w: 12, crop: 'panorama', place: 'bottom-left', shade: 0.35, title: 'Your title', text: 'A short line about the place' },
+            { type: 'text', w: 8, style: 'body', dropcap: true, text: 'Start with what drew you there, and what you hoped to find.' },
+            { type: 'image', w: 7, crop: 'original' },
+            { type: 'text', w: 5, valign: 'center', join: true, text: 'A few words about this photo: the moment, the light, the wait.' },
+            { type: 'text', w: 5, valign: 'center', text: 'And the next one.' },
+            { type: 'image', w: 7, crop: 'original', join: true },
+            { type: 'text', w: 8, style: 'quote', align: 'center', text: 'A line worth pulling out.' },
+            { type: 'gallery', w: 12, cols: 3, slides: [] }
+        ]
+    },
+    diary: {
+        name: 'Trip diary', desc: 'Day-by-day headings with text and a pair of photos for each day.',
+        layout: { width: 'standard', gap: 'normal' },
+        blocks: [
+            { type: 'text', w: 12, text: 'Where you went and why, in a sentence or two.' },
+            { type: 'text', w: 12, style: 'subheading', text: 'Day one' },
+            { type: 'text', w: 12, text: 'What happened on day one.' },
+            { type: 'image', w: 6, crop: 'landscape' }, { type: 'image', w: 6, crop: 'landscape', join: true },
+            { type: 'text', w: 12, style: 'subheading', text: 'Day two' },
+            { type: 'text', w: 12, text: 'What happened on day two.' },
+            { type: 'image', w: 6, crop: 'landscape' }, { type: 'image', w: 6, crop: 'landscape', join: true },
+            { type: 'divider', w: 12 },
+            { type: 'button', w: 12, label: 'Get in touch', href: '/contact.html', look: 'outline', align: 'center' }
+        ]
+    },
+    showcase: {
+        name: 'Photo showcase', desc: 'Lead photo, a short intro, a 3-across grid and a carousel. Mostly pictures.',
+        layout: { width: 'full', gap: 'tight' },
+        blocks: [
+            { type: 'image', w: 12, crop: 'wide' },
+            { type: 'text', w: 8, align: 'center', text: 'A short introduction to the set.' },
+            { type: 'image', w: 4, crop: 'square' }, { type: 'image', w: 4, crop: 'square', join: true }, { type: 'image', w: 4, crop: 'square', join: true },
+            { type: 'carousel', w: 12, crop: 'wide', slides: [] }
+        ]
+    },
+    review: {
+        name: 'Edit / gear story', desc: 'Before/after slider, camera settings and notes. Good for "how I made this".',
+        layout: { width: 'standard', gap: 'normal' },
+        blocks: [
+            { type: 'text', w: 12, style: 'heading', text: 'How I made this photo' },
+            { type: 'image', w: 12, crop: 'original', exif: true },
+            { type: 'text', w: 12, style: 'subheading', text: 'The edit' },
+            { type: 'compare', w: 12, crop: 'landscape', beforeLabel: 'Raw', afterLabel: 'Edited', before: {}, after: {} },
+            { type: 'text', w: 12, text: 'What you changed and why.' }
+        ]
+    }
+};
+
+function leTemplatePicker() {
+    return '<div class="le-templates"><div class="le-tpl-head">Or start from a layout</div>' +
+        Object.keys(LE_TEMPLATES).map(function (k) {
+            var t = LE_TEMPLATES[k];
+            return '<button type="button" class="le-tpl" data-tpl="' + k + '"><b>' + t.name + '</b><span>' + t.desc + '</span></button>';
+        }).join('') + '</div>';
+}
+
+function leApplyTemplate(key) {
+    var t = LE_TEMPLATES[key];
+    if (!t) return;
+    leSnapshot();
+    Object.keys(t.layout).forEach(function (k) { editForm.layout[k] = t.layout[k]; });
+    editForm.blocks = JSON.parse(JSON.stringify(t.blocks)).map(function (b, i) {
+        b._id = leId();
+        b.newRow = i === 0 || !b.join;
+        delete b.join;
+        if (b.type === 'text') { b.style = b.style || 'body'; b.align = b.align || 'left'; }
+        if (b.type === 'image') b.caption = '';
+        return b;
+    });
+    leFillCustomWidths(editForm.blocks);
+    editForm.sel = null;
+    renderBlocks();
+}
+
+/* ---------- copy, paste and keyboard shortcuts ---------- */
+
+var LE_CLIP_KEY = 'sp_layout_clipboard';
+
+function leCopy() {
+    var group = (editForm.multi || []).length ? leMultiBlocks() : (leSelected() ? [leSelected()] : []);
+    if (!group.length) return;
+    var data = group.map(function (b) { var c = JSON.parse(JSON.stringify(b, function (k, v) { return (k === 'file' || k === 'previewUrl') ? undefined : v; })); return c; });
+    try { localStorage.setItem(LE_CLIP_KEY, JSON.stringify(data)); } catch (e) {}
+    leToast(group.length === 1 ? 'Copied. Ctrl+V pastes it, even into another post or project.' : 'Copied ' + group.length + ' blocks.');
+}
+
+function lePaste() {
+    var data = null;
+    try { data = JSON.parse(localStorage.getItem(LE_CLIP_KEY) || 'null'); } catch (e) {}
+    if (!data || !data.length) return;
+    var blocks = data.map(function (b, k) { b._id = leId(); b.newRow = k === 0 ? true : !!b.newRow; return b; });
+    leInsert(blocks);
+}
+
+function leToast(msg) {
+    var t = $('leToast');
+    if (!t) { t = document.createElement('div'); t.id = 'leToast'; t.className = 'le-toast'; document.body.appendChild(t); }
+    t.textContent = msg;
+    t.classList.add('on');
+    clearTimeout(t._h);
+    t._h = setTimeout(function () { t.classList.remove('on'); }, 2200);
+}
+
+function leKeys(e) {
+    var mod = e.ctrlKey || e.metaKey, key = (e.key || '').toLowerCase();
+    var b = leSelected(), many = (editForm.multi || []).length > 1;
+    if ((key === 'delete' || key === 'backspace') && (b || many)) {
+        e.preventDefault();
+        if (many) leGroupAction('remove'); else leRemove(b);
+    } else if (mod && key === 'd' && b) {
+        e.preventDefault(); $('leDup') && $('leDup').click();
+    } else if (mod && key === 'c' && (b || many)) {
+        e.preventDefault(); leCopy();
+    } else if (mod && key === 'v') {
+        e.preventDefault(); lePaste();
+    } else if (e.altKey && (key === 'arrowup' || key === 'arrowleft') && b) {
+        e.preventDefault(); leMove(b, -1);
+    } else if (e.altKey && (key === 'arrowdown' || key === 'arrowright') && b) {
+        e.preventDefault(); leMove(b, 1);
+    } else if (key === 'escape' && b) {
+        leSelect(null);
+    } else {
+        return false;
+    }
+    return true;
 }
 
 /* ---------- dragging blocks ----------
@@ -2596,11 +3011,13 @@ function renderInspector() {
                 '<li><b>Click</b> a block to change its settings here.</li>' +
                 '<li><b>Drag</b> any block to move it (click text once more to type in it). A <b>bright line</b> shows where it will land: ' +
                     'an upright line puts it <b>beside</b> that block, a flat line gives it a <b>row of its own</b>. Esc cancels.</li>' +
-                '<li><b>Shift- or Ctrl-click</b> several blocks to arrange them together, give them one size, or turn photos into a <b>carousel</b>.</li>' +
+                '<li><b>Shift- or Ctrl-click</b> several blocks to arrange them together, give them one size, or turn photos into a <b>carousel, gallery or before/after</b>.</li>' +
+                '<li><b>More blocks…</b> in the Add bar has banners, galleries, carousels, before/after sliders and buttons.</li>' +
                 '<li><b>Drag the right edge</b> of a block to make it wider or narrower.</li>' +
                 '<li>Blocks wrap onto the next line when a row is full, so three photos at ⅓ make a grid.</li>' +
                 '<li>In text, <code>**bold**</code>, <code>*italic*</code> and <code>[link](https://…)</code> work.</li>' +
-                '<li><b>Ctrl+Z</b> undoes.</li>' +
+                '<li><b>Shortcuts:</b> Ctrl+Z undo · Delete removes · Ctrl+D duplicates · Ctrl+C / Ctrl+V copy and paste (even between posts) · Alt+arrows move · Esc deselects.</li>' +
+                '<li>Unsaved changes are backed up in this browser, so a closed tab can be recovered.</li>' +
             '</ul>';
         return;
     }
@@ -2609,7 +3026,8 @@ function renderInspector() {
     var myRow = rows.filter(function (r) { return r.indexOf(b) !== -1; })[0] || [b];
     var w = leEffW(b);
     var wProp = leWProp();
-    var typeName = { text: 'Text', image: 'Photo', spacer: 'Space', divider: 'Line', carousel: 'Carousel' }[b.type];
+    var typeName = { text: 'Text', image: 'Photo', spacer: 'Space', divider: 'Line', carousel: 'Carousel', gallery: 'Gallery',
+                     compare: 'Before / after', banner: 'Banner', button: 'Button' }[b.type];
     var h = '<div class="le-ins-title">' + typeName + '</div>';
 
     var sizeWord = editForm.view === 'laptop' ? '' : ' on ' + editForm.view;
@@ -2646,6 +3064,9 @@ function renderInspector() {
              '<button type="button" class="le-seg-btn" data-fmt="italic"><i>I</i></button>' +
              '<button type="button" class="le-seg-btn" data-fmt="link">Link</button></div>' +
              '<p class="help">Select some words in the block, then press a button.</p></div>';
+        if ((b.style || 'body') === 'body') {
+            h += '<label class="le-check"><input type="checkbox" id="leDropcap"' + (b.dropcap ? ' checked' : '') + '> Large first letter (drop cap)</label>';
+        }
     } else if (b.type === 'image') {
         h += '<div class="le-field"><label>Shape</label>' +
              leSeg('crop', [['original', 'Original'], ['square', 'Square'], ['landscape', '3:2'], ['portrait', '4:5'], ['wide', '16:9'], ['panorama', 'Panorama']], b.crop || 'original', 'prop') +
@@ -2653,9 +3074,16 @@ function renderInspector() {
         h += '<div class="le-field"><label for="leCaptionIns">Caption</label>' +
              '<input type="text" id="leCaptionIns" value="' + escapeHtml(b.caption || '') + '" placeholder="Optional"></div>';
         h += '<label class="le-check"><input type="checkbox" id="leZoom"' + (b.zoom !== false ? ' checked' : '') + '> Click to view full screen</label>';
-        h += '<div class="le-field"><button type="button" class="secondary le-small" id="leReplace">Replace photo…</button></div>';
-    } else if (b.type === 'carousel') {
+        if (leExifLine(b.src)) {
+            h += '<label class="le-check"><input type="checkbox" id="leExif"' + (b.exif ? ' checked' : '') + '> Show camera settings under it</label>';
+        }
+        h += (b.src || b.file)
+            ? '<div class="le-field"><button type="button" class="secondary le-small" id="leReplace">Replace photo…</button></div>'
+            : lePhotoSlotField('Choose the photo', '');
+    } else if (b.type === 'carousel' || b.type === 'gallery') {
         h += renderCarouselInspector(b);
+    } else if (b.type === 'compare' || b.type === 'banner' || b.type === 'button') {
+        h += renderExtraInspector(b);
     } else if (b.type === 'spacer') {
         h += '<div class="le-field"><label>Height</label>' +
              leSeg('size', [['s', 'Small'], ['m', 'Medium'], ['l', 'Large']], b.size || 'm', 'prop') +
@@ -2673,7 +3101,8 @@ function renderInspector() {
     box.querySelectorAll('[data-prop]').forEach(function (bt) {
         bt.addEventListener('click', function () {
             var prop = this.getAttribute('data-prop'), val = this.getAttribute('data-val');
-            if (prop === 'w') val = parseInt(val, 10);
+            if (prop === 'w' || prop === 'cols') val = parseInt(val, 10);
+            if (prop === 'shade') val = parseFloat(val);
             leSetProp(prop, val);
         });
     });
@@ -2701,7 +3130,11 @@ function renderInspector() {
         if (inp) inp.value = this.value;
     });
     if ($('leZoom')) $('leZoom').addEventListener('change', function () { leSetProp('zoom', this.checked ? undefined : false); });
-    if (b.type === 'carousel') wireCarouselInspector(box, b);
+    if (b.type === 'carousel' || b.type === 'gallery') wireCarouselInspector(box, b);
+    wirePhotoSlots(box, b);
+    wireTextProps(box, b);
+    if ($('leExif')) $('leExif').addEventListener('change', function () { leSetProp('exif', this.checked ? true : undefined); });
+    if ($('leDropcap')) $('leDropcap').addEventListener('change', function () { leSetProp('dropcap', this.checked ? true : undefined); });
     if ($('leReplace')) $('leReplace').addEventListener('click', function () {
         openLibraryPicker(function (fn) {
             leSnapshot();
@@ -2716,6 +3149,7 @@ function renderInspector() {
         var c = {};
         Object.keys(b).forEach(function (k) { c[k] = b[k]; });
         if (b.slides) c.slides = b.slides.map(function (sl) { var o = {}; Object.keys(sl).forEach(function (k) { o[k] = sl[k]; }); return o; });
+        ['before', 'after'].forEach(function (k) { if (b[k]) { var o = {}; Object.keys(b[k]).forEach(function (q) { o[q] = b[k][q]; }); c[k] = o; } });
         c._id = leId();
         leInsert([c], true);
     });
@@ -2810,12 +3244,44 @@ function serializeLayoutBlocks() {
                 o.text = b.text;
                 if (b.style && b.style !== 'body') o.style = b.style;
                 if (b.align && b.align !== 'left') o.align = b.align;
+                if (b.dropcap && (b.style || 'body') === 'body') o.dropcap = true;
             } else if (b.type === 'image') {
                 o.src = b.file ? b._finalSrc : b.src;
                 if (!o.src) return null;
                 if (b.crop && b.crop !== 'original') o.crop = b.crop;
                 if ((b.caption || '').trim()) o.caption = b.caption.trim();
                 if (b.zoom === false) o.zoom = false;
+                if (b.exif) o.exif = true;
+            } else if (b.type === 'gallery') {
+                o.slides = (b.slides || []).map(function (sl) {
+                    var so = { src: sl.file ? sl._finalSrc : sl.src };
+                    if ((sl.caption || '').trim()) so.caption = sl.caption.trim();
+                    return so;
+                }).filter(function (sl) { return sl.src; });
+                if (!o.slides.length) return null;
+                o.cols = b.cols || 3;
+            } else if (b.type === 'compare') {
+                var pic = function (sl) { return sl ? (sl.file ? sl._finalSrc : sl.src) : ''; };
+                if (!pic(b.before) || !pic(b.after)) return null;
+                o.before = { src: pic(b.before) };
+                o.after = { src: pic(b.after) };
+                o.crop = b.crop || 'landscape';
+                if ((b.beforeLabel || '').trim()) o.beforeLabel = b.beforeLabel.trim();
+                if ((b.afterLabel || '').trim()) o.afterLabel = b.afterLabel.trim();
+            } else if (b.type === 'banner') {
+                o.src = b.file ? b._finalSrc : b.src;
+                if (!o.src) return null;
+                if ((b.title || '').trim()) o.title = b.title.trim();
+                if ((b.text || '').trim()) o.text = b.text.trim();
+                o.place = b.place || 'center';
+                o.shade = b.shade == null ? 0.35 : b.shade;
+                o.crop = b.crop || 'wide';
+            } else if (b.type === 'button') {
+                if (!(b.label || '').trim() || !(b.href || '').trim()) return null;
+                o.label = b.label.trim();
+                o.href = b.href.trim();
+                o.look = b.look || 'solid';
+                o.align = b.align || 'center';
             } else if (b.type === 'carousel') {
                 o.slides = (b.slides || []).map(function (sl) {
                     var so = { src: sl.file ? sl._finalSrc : sl.src };
@@ -3029,8 +3495,9 @@ function addUploadsToLibrary(title, prevKey, upserts, status) {
 function leFileItems() {
     var out = [];
     editForm.blocks.forEach(function (b) {
-        if (b.type === 'image' && b.file) out.push(b);
-        if (b.type === 'carousel') (b.slides || []).forEach(function (sl) { if (sl.file) out.push(sl); });
+        if ((b.type === 'image' || b.type === 'banner') && b.file) out.push(b);
+        (b.slides || []).forEach(function (sl) { if (sl.file) out.push(sl); });
+        ['before', 'after'].forEach(function (k) { if (b[k] && b[k].file) out.push(b[k]); });
     });
     return out;
 }
@@ -3074,6 +3541,7 @@ function savePost() {
 
         if (!state.content.blog) state.content.blog = [];
         var post = { title: title, date: date, layout: editForm.layout, blocks: blocks };
+        if ($('pfVisibility').value === 'draft') post.status = 'draft';
         if (photoCategory) post.photo_category = photoCategory;
         if (editForm.index === null) state.content.blog.unshift(post);
         else state.content.blog[editForm.index] = post;
@@ -3083,6 +3551,7 @@ function savePost() {
             upserts: upserts
         });
     }).then(function () {
+        leClearBackup();
         editForm = null;
         return loadContent();
     }).then(function () {
@@ -3573,6 +4042,7 @@ function saveProject() {
             });
         });
     }).then(function () {
+        leClearBackup();
         editForm = null;
         return loadContent();
     }).then(function () {
@@ -3692,7 +4162,7 @@ function buildProjectPage(proj) {
 '    <meta name="description" content="' + desc + '">\n' +
 '    <title>' + title + '</title>\n' +
 '\n' +
-'    <link rel="stylesheet" href="css/style.css?v=3">\n' +
+'    <link rel="stylesheet" href="css/style.css?v=4">\n' +
 '\n' +
 '    <link rel="icon" type="image/png" href="/favicon-512.png">\n' +
 '    <link rel="apple-touch-icon" href="/favicon-512.png">\n' +

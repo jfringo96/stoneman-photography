@@ -361,6 +361,39 @@
         .le-btncol { display: flex; flex-direction: column; align-items: flex-start; gap: 0.45rem; }
         .le-seg-lbl { font-size: 0.72rem; color: var(--muted); padding: 0.28rem 0.4rem; }
 
+        /* Newer blocks in the editor */
+        .le-addmore { width: auto; padding: 0.45rem 0.6rem; font-size: 0.85rem; background: var(--panel-2); color: var(--text); border: none; cursor: pointer; }
+        .le-slot-empty { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 120px; border: 1px dashed var(--border); color: var(--muted); font-size: 0.8rem; text-align: center; padding: 1rem; }
+        .le-gal { column-count: var(--cols, 3); column-gap: var(--gap); }
+        .le-gal .lay-figure { break-inside: avoid; margin-bottom: var(--gap); }
+        .le-cmp { position: relative; display: flex; border-radius: var(--radius); overflow: hidden; }
+        .le-cmp-half { position: relative; flex: 1; overflow: hidden; }
+        .le-cmp img { display: block; width: 200%; height: 100%; object-fit: cover; pointer-events: none; }
+        .le-cmp.lay-crop-landscape { aspect-ratio: 3/2; } .le-cmp.lay-crop-wide { aspect-ratio: 16/9; } .le-cmp.lay-crop-square { aspect-ratio: 1; }
+        .le-cmp.lay-crop-portrait { aspect-ratio: 4/5; } .le-cmp.lay-crop-panorama { aspect-ratio: 21/9; }
+        .le-cmp .lay-crop-x img { aspect-ratio: auto; }
+        .le-cmp-after img { margin-left: -100%; }
+        .le-cmp-half span { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.55); color: #fff; font-size: 0.7rem; padding: 0.1rem 0.45rem; border-radius: 10px; }
+        .le-cmp-after span { left: auto; right: 8px; }
+        .le-cmp-line { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: #fff; box-shadow: 0 0 6px rgba(0,0,0,0.5); }
+        .le-bnr, .lay-bn-preview { position: relative; overflow: hidden; border-radius: var(--radius); }
+        .le-bnr > img, .le-bnr > .le-slot-empty { display: block; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+        .le-bnr.lay-crop-wide { aspect-ratio: 16/9; } .le-bnr.lay-crop-panorama { aspect-ratio: 21/9; } .le-bnr.lay-crop-landscape { aspect-ratio: 3/2; } .le-bnr.lay-crop-square { aspect-ratio: 1; }
+        .le-bnr::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,var(--shade, 0.35)); pointer-events: none; }
+        .le-bnr .lay-bn-text { position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 1.5rem; color: #fff; pointer-events: none; }
+        .le-bnr.lay-bn-bottom-left .lay-bn-text { justify-content: flex-end; align-items: flex-start; text-align: left; }
+        .le-bnr.lay-bn-bottom .lay-bn-text { justify-content: flex-end; }
+        .le-bnr.lay-bn-top-left .lay-bn-text { justify-content: flex-start; align-items: flex-start; text-align: left; }
+        .lay-bn-title { font-size: 2rem; font-weight: 300; letter-spacing: 0.02em; line-height: 1.2; }
+        .lay-bn-sub { font-size: 0.9rem; letter-spacing: 0.12em; text-transform: uppercase; margin-top: 0.5rem; opacity: 0.9; }
+        .le-btnwrap { padding: 0.5rem 0; }
+        .le-btnprev { display: inline-block; padding: 0.7rem 1.6rem; border-radius: 4px; font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase; }
+        .le-btn-solid { background: var(--accent); color: #2c2926; }
+        .le-btn-outline { border: 1px solid var(--accent); color: var(--accent); }
+        .le-btnwrap.lay-ta-center { text-align: center; } .le-btnwrap.lay-ta-right { text-align: right; }
+        .le-exif { font-size: 0.72rem; color: rgba(240,235,229,0.45); padding-top: 0.2rem; letter-spacing: 0.02em; }
+        .le-dropcap { border-left: 3px solid rgba(200,184,154,0.4) !important; padding-left: 0.6rem !important; }
+
         /* Settings panel */
         .le-inspector { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 0.9rem; position: sticky; top: 1rem; font-size: 0.85rem; }
         .le-ins-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--accent); margin-bottom: 0.75rem; font-weight: 600; }
@@ -400,6 +433,17 @@
         .cat-show input { width: auto; margin: 0; }
         .cat-count { font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
         .cat-remove { background: none; color: var(--danger); font-size: 0.85rem; padding: 0.3rem 0.5rem; text-decoration: underline; }
+        .le-restore { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; padding: 0.6rem 0.8rem; margin: 0 0 0.6rem; border: 1px solid #d9b44a; background: #fdf6e0; border-radius: 6px; font-size: 0.85rem; }
+        .le-restore span { flex: 1 1 260px; }
+        .le-templates { padding: 1rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.6rem; }
+        .le-tpl-head { grid-column: 1 / -1; font-size: 0.8rem; color: var(--muted); margin: 0 0 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .le-tpl { display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem; text-align: left; padding: 0.7rem 0.8rem; border: 1px solid var(--border); border-radius: 6px; background: #fff; color: inherit; cursor: pointer; font: inherit; }
+        .le-tpl:hover { border-color: var(--accent, #333); }
+        .le-tpl b { font-size: 0.9rem; }
+        .le-tpl span { font-size: 0.78rem; color: var(--muted); line-height: 1.35; }
+        .le-toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); background: #222; color: #fff; padding: 0.5rem 1rem; border-radius: 999px; font-size: 0.85rem; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 9999; }
+        .le-toast.on { opacity: 1; transform: translate(-50%, 0); }
+        .le-photo-empty { min-height: 160px; background: repeating-linear-gradient(45deg, rgba(255,255,255,0.03), rgba(255,255,255,0.03) 10px, rgba(255,255,255,0.07) 10px, rgba(255,255,255,0.07) 20px); }
     </style>
 </head>
 <body>
@@ -453,6 +497,6 @@
     <!-- EXIF reading + drag-to-reorder (loaded from CDN) -->
     <script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-    <script src="js/admin.js?v=21"></script>
+    <script src="js/admin.js?v=23"></script>
 </body>
 </html>
