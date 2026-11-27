@@ -716,7 +716,7 @@ function initInteractivity() {
     var PRINT_RATIOS = [
         { label: '1:1 (square)',     r: 1 },
         { label: '4:3',              r: 4 / 3 },
-        { label: 'A size (1:1.41)',  r: Math.SQRT2 },
+        { label: 'A size',           r: Math.SQRT2 },
         { label: '3:2',              r: 3 / 2 },
         { label: '2:1 (panoramic)',  r: 2 },
         { label: '3:1 (panoramic)',  r: 3 }
