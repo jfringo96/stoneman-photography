@@ -805,7 +805,7 @@
       "status": "draft",
       "layout": {
         "v": 2,
-        "width": "standard",
+        "width": "wide",
         "gap": "normal",
         "align": "center",
         "corners": "rounded",
