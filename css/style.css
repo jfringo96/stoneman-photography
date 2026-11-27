@@ -593,7 +593,7 @@ body.home-page .featured-item {
     display: block;
     width: 100%;
     height: auto;
-    transition: opacity 0.7s ease;
+    transition: opacity 1.4s ease;
 }
 
 /* A batch that has just loaded: transparent for one frame, then fades in */
