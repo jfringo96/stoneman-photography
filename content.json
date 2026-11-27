@@ -793,6 +793,188 @@
       "aperture": "f/7.1",
       "iso": "400",
       "date": "21 Nov 2026"
+    },
+    {
+      "filename": "the-brecon-beacons-1.jpg",
+      "title": "The Brecon Beacons 1",
+      "category": "the-brecon-beacons",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "Olympus 300mm F4.0",
+      "focal": "300mm",
+      "shutter": "1/2000",
+      "aperture": "f/4",
+      "iso": "800",
+      "date": "5 Sep 2026"
+    },
+    {
+      "filename": "the-brecon-beacons-2.jpg",
+      "title": "The Brecon Beacons 2",
+      "category": "the-brecon-beacons",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "Olympus 300mm F4.0",
+      "focal": "300mm",
+      "shutter": "1/2000",
+      "aperture": "f/4",
+      "iso": "80",
+      "date": "5 Sep 2026"
+    },
+    {
+      "filename": "the-brecon-beacons-3.jpg",
+      "title": "The Brecon Beacons 3",
+      "category": "the-brecon-beacons",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "Olympus 300mm F4.0",
+      "focal": "300mm",
+      "shutter": "1/2000",
+      "aperture": "f/4",
+      "iso": "1250",
+      "date": "6 Sep 2026"
+    },
+    {
+      "filename": "the-brecon-beacons-4.jpg",
+      "title": "The Brecon Beacons 4",
+      "category": "the-brecon-beacons",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "OM 60mm F2.8 Macro",
+      "focal": "60mm",
+      "shutter": "1/400",
+      "aperture": "f/4.5",
+      "iso": "250",
+      "date": "6 Oct 2026"
+    },
+    {
+      "filename": "the-brecon-beacons-5.jpg",
+      "title": "The Brecon Beacons 5",
+      "category": "the-brecon-beacons",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "OM 60mm F2.8 Macro",
+      "focal": "60mm",
+      "shutter": "1/400",
+      "aperture": "f/4.5",
+      "iso": "400",
+      "date": "7 Oct 2026"
+    },
+    {
+      "filename": "the-brecon-beacons-6.jpg",
+      "title": "The Brecon Beacons 6",
+      "category": "the-brecon-beacons",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "OM 12-40mm F2.8 II",
+      "focal": "12mm",
+      "shutter": "1/800",
+      "aperture": "f/6.3",
+      "iso": "200",
+      "date": "13 Oct 2026"
+    },
+    {
+      "filename": "the-brecon-beacons-7.jpg",
+      "title": "The Brecon Beacons 7",
+      "category": "the-brecon-beacons",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "OM 12-40mm F2.8 II",
+      "focal": "12mm",
+      "shutter": "1/800",
+      "aperture": "f/6.3",
+      "iso": "200",
+      "date": "13 Oct 2026"
+    },
+    {
+      "filename": "the-brecon-beacons-8.jpg",
+      "title": "The Brecon Beacons 8",
+      "category": "the-brecon-beacons",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "OM 12-40mm F2.8 II",
+      "focal": "40mm",
+      "shutter": "1/40",
+      "aperture": "f/4.5",
+      "iso": "2500",
+      "date": "27 Oct 2026"
+    },
+    {
+      "filename": "the-brecon-beacons-9.jpg",
+      "title": "The Brecon Beacons 9",
+      "category": "the-brecon-beacons",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "OM 12-40mm F2.8 II",
+      "focal": "31mm",
+      "shutter": "1/80",
+      "aperture": "f/2.8",
+      "iso": "200",
+      "date": "30 Oct 2026"
+    },
+    {
+      "filename": "the-brecon-beacons-10.jpg",
+      "title": "The Brecon Beacons 10",
+      "category": "the-brecon-beacons",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "OM 300mm F4.0 + MC-20",
+      "focal": "600mm",
+      "shutter": "1/400",
+      "aperture": "f/8",
+      "iso": "2500",
+      "date": "31 Oct 2026"
+    },
+    {
+      "filename": "the-brecon-beacons-11.jpg",
+      "title": "The Brecon Beacons 11",
+      "category": "the-brecon-beacons",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "OM 300mm F4.0 + MC-20",
+      "focal": "600mm",
+      "shutter": "1/400",
+      "aperture": "f/8",
+      "iso": "4000",
+      "date": "31 Oct 2026"
+    },
+    {
+      "filename": "the-brecon-beacons-12.jpg",
+      "title": "The Brecon Beacons 12",
+      "category": "the-brecon-beacons",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "Olympus 300mm F4.0",
+      "focal": "300mm",
+      "shutter": "1/800",
+      "aperture": "f/9",
+      "iso": "400",
+      "date": "31 Oct 2026"
+    },
+    {
+      "filename": "the-brecon-beacons-13.jpg",
+      "title": "The Brecon Beacons 13",
+      "category": "the-brecon-beacons",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "OM 60mm F2.8 Macro",
+      "focal": "60mm",
+      "shutter": "1/160",
+      "aperture": "f/4.5",
+      "iso": "1250",
+      "date": "1 Nov 2026"
+    },
+    {
+      "filename": "the-brecon-beacons-14.jpg",
+      "title": "The Brecon Beacons 14",
+      "category": "the-brecon-beacons",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "Olympus 300mm F4.0",
+      "focal": "300mm",
+      "shutter": "1/1600",
+      "aperture": "f/4",
+      "iso": "2000",
+      "date": "14 Nov 2026"
     }
   ],
   "blog": [],
@@ -898,7 +1080,92 @@
       "subtitle": "",
       "cover": "",
       "status": "draft",
-      "blocks": []
+      "layout": {
+        "v": 2,
+        "width": "standard",
+        "gap": "normal",
+        "align": "center",
+        "corners": "rounded",
+        "cover": false,
+        "title": true,
+        "custom": {
+          "tablet": false,
+          "phone": false
+        }
+      },
+      "blocks": [
+        {
+          "type": "image",
+          "w": 6,
+          "src": "images/Thumb/the-brecon-beacons-1.jpg"
+        },
+        {
+          "type": "image",
+          "w": 6,
+          "src": "images/Thumb/the-brecon-beacons-2.jpg"
+        },
+        {
+          "type": "image",
+          "w": 6,
+          "src": "images/Thumb/the-brecon-beacons-3.jpg"
+        },
+        {
+          "type": "image",
+          "w": 6,
+          "src": "images/Thumb/the-brecon-beacons-4.jpg"
+        },
+        {
+          "type": "image",
+          "w": 6,
+          "src": "images/Thumb/the-brecon-beacons-5.jpg"
+        },
+        {
+          "type": "image",
+          "w": 6,
+          "src": "images/Thumb/the-brecon-beacons-6.jpg"
+        },
+        {
+          "type": "image",
+          "w": 6,
+          "src": "images/Thumb/the-brecon-beacons-7.jpg"
+        },
+        {
+          "type": "image",
+          "w": 6,
+          "src": "images/Thumb/the-brecon-beacons-8.jpg"
+        },
+        {
+          "type": "image",
+          "w": 6,
+          "src": "images/Thumb/the-brecon-beacons-9.jpg"
+        },
+        {
+          "type": "image",
+          "w": 6,
+          "src": "images/Thumb/the-brecon-beacons-10.jpg"
+        },
+        {
+          "type": "image",
+          "w": 6,
+          "src": "images/Thumb/the-brecon-beacons-11.jpg"
+        },
+        {
+          "type": "image",
+          "w": 6,
+          "src": "images/Thumb/the-brecon-beacons-12.jpg"
+        },
+        {
+          "type": "image",
+          "w": 6,
+          "src": "images/Thumb/the-brecon-beacons-13.jpg"
+        },
+        {
+          "type": "image",
+          "w": 6,
+          "src": "images/Thumb/the-brecon-beacons-14.jpg"
+        }
+      ],
+      "photo_category": "the-brecon-beacons"
     }
   ],
   "categories": [
@@ -917,6 +1184,11 @@
     {
       "key": "shells",
       "label": "Shells",
+      "hidden": true
+    },
+    {
+      "key": "the-brecon-beacons",
+      "label": "The Brecon Beacons",
       "hidden": true
     }
   ]
