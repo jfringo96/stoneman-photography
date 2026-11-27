@@ -964,9 +964,11 @@ function initInteractivity() {
             var BATCH = 12;
             var busy = false;
 
+            // Start the next batch while the visitor is still several screens
+            // away, so it is usually ready before they scroll to it.
             function nearBottom() {
                 var r = msnryGallery.getBoundingClientRect();
-                return r.bottom < window.innerHeight * 2.5;
+                return r.bottom < window.innerHeight * 4;
             }
 
             function loadBatch() {
@@ -978,12 +980,26 @@ function initInteractivity() {
                 batch.forEach(function (item) {
                     item.querySelector('img').src = item.getAttribute('data-thumb');
                 });
+                var firstBatch = msnryGallery.style.opacity !== '1';
                 imagesLoaded(batch, function () {
-                    batch.forEach(function (item) { item.classList.remove('pending'); });
+                    // Later batches arrive transparent and fade in one after
+                    // another; the first batch fades in with the whole gallery.
+                    batch.forEach(function (item, i) {
+                        item.classList.remove('pending');
+                        if (!firstBatch) {
+                            item.classList.add('arriving');
+                            item.querySelector('img').style.transitionDelay = (i * 60) + 'ms';
+                        }
+                    });
                     if (msnry) { msnry.reloadItems(); msnry.layout(); }
-                    // rAF defers the reveal until the browser has painted the
-                    // Masonry positions, so photos don't shuffle as they fade in.
-                    requestAnimationFrame(function () { msnryGallery.style.opacity = '1'; });
+                    // Two rAFs: let the browser paint the photos (transparent) in
+                    // their Masonry positions first, then start the fade.
+                    requestAnimationFrame(function () {
+                        requestAnimationFrame(function () {
+                            msnryGallery.style.opacity = '1';
+                            batch.forEach(function (item) { item.classList.remove('arriving'); });
+                        });
+                    });
                     busy = false;
                     if (nearBottom()) loadBatch();
                 });

@@ -593,6 +593,12 @@ body.home-page .featured-item {
     display: block;
     width: 100%;
     height: auto;
+    transition: opacity 0.7s ease;
+}
+
+/* A batch that has just loaded: transparent for one frame, then fades in */
+.gallery-item.arriving img {
+    opacity: 0;
 }
 
 /* Placeholder boxes for development — styled coloured blocks
