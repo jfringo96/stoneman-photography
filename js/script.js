@@ -903,6 +903,10 @@ function initInteractivity() {
         });
     });
 
+    // The filter buttons are final now: fade them in (style.css hides them until then)
+    var filterBar = document.querySelector('.filter-buttons');
+    if (filterBar) requestAnimationFrame(function () { filterBar.classList.add('ready'); });
+
     // Apply the default active filter on page load (e.g. Wildlife first)
     var activeFilter = document.querySelector('.category-btn.active');
     if (activeFilter && galleryItems.length > 0) {

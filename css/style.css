@@ -532,6 +532,14 @@ body.home-page .featured-item {
     gap: 1rem;
     padding: 0 2rem 2rem;
     flex-wrap: wrap;
+    /* Hidden until script.js has built the buttons from content.json,
+       then faded in, so they don't jump about while the page loads */
+    opacity: 0;
+    transition: opacity 0.6s ease;
+}
+
+.filter-buttons.ready {
+    opacity: 1;
 }
 
 .category-btn {
