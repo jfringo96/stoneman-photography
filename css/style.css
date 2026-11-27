@@ -566,6 +566,12 @@ body.home-page .featured-item {
     margin: 0 auto;
     opacity: 0;
     transition: opacity 0.5s ease;
+    /* Hold a screen of space until photos arrive, so the text below the
+       gallery doesn't flash up before them (script.js adds .has-photos) */
+    min-height: 100vh;
+}
+.masonry-gallery.has-photos {
+    min-height: 0;
 }
 
 /* Column-width reference element used by Masonry.js */
