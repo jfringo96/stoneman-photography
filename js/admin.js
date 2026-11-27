@@ -390,6 +390,8 @@ function currentTab() {
 /* Re-render whichever tab is currently open (used after a save/reload). */
 function renderActiveTab() {
     var which = currentTab();
+    var wrap = document.querySelector('.wrap');
+    if (wrap) wrap.classList.remove('wide');   // only the Arrange view widens the page
     if (which === 'hero') loadHeroPanel();
     else if (which === 'blog') renderBlogPanel();
     else if (which === 'text') loadTextPanel();
@@ -405,7 +407,7 @@ function renderPhotos() {
     var rows = photos.map(function (p) {
         var isFeatured = state.featured.indexOf(p.filename) !== -1;
         return '' +
-        '<div class="photo-row" data-filename="' + escapeHtml(p.filename) + '">' +
+        '<div class="photo-row" data-filename="' + escapeHtml(p.filename) + '" data-category="' + escapeHtml(p.category) + '">' +
             '<span class="reorder">' +
                 '<button class="up" title="Move up" aria-label="Move up">▲</button>' +
                 '<button class="down" title="Move down" aria-label="Move down">▼</button>' +
@@ -436,7 +438,18 @@ function renderPhotos() {
             '<div class="featured-strip" id="featuredStrip"></div>' +
         '</div>' +
         '<div class="add-form-holder" id="addFormHolder"></div>' +
-        '<div class="photo-list" id="photoList">' + rows + '</div>';
+        '<div class="order-bar">' +
+            '<div class="view-toggle">' +
+                '<button class="view-btn" data-view="list">List</button>' +
+                '<button class="view-btn" data-view="arrange">Arrange like the Portfolio page</button>' +
+            '</div>' +
+            '<div class="cat-filter" id="catFilter"></div>' +
+            '<div class="arrange-cols" id="arrangeColsPick"></div>' +
+        '</div>' +
+        '<p class="help arrange-help" id="arrangeHelp">Drag the photos into the order you want. This is laid out exactly like the ' +
+            'Portfolio page: photos run left to right, row by row. Click "Save changes" when you\'re happy.</p>' +
+        '<div class="photo-list" id="photoList">' + rows + '</div>' +
+        '<div class="arrange-grid" id="arrangeGrid"></div>';
 
     // Drag-to-reorder
     if (typeof Sortable !== 'undefined') {
@@ -446,6 +459,179 @@ function renderPhotos() {
     updateFeaturedCount();
     renderFeaturedStrip();
     wirePhotoEvents();
+    renderOrderBar();
+    applyPhotoView();
+}
+
+
+/* ----------------------------------------------------------
+   CATEGORY FILTER + "ARRANGE" VIEW
+   The Portfolio page only ever shows one category at a time, so
+   only the order of photos *within* a category matters. The list
+   can be filtered to one category, and the Arrange view shows a
+   category laid out exactly like the live page for drag and drop.
+   The list (#photoList) always stays the source of truth: the
+   Arrange view writes its order back into it, so "Save changes"
+   works the same either way.
+   ---------------------------------------------------------- */
+
+var photoView = {
+    mode: 'list',      // 'list' | 'arrange'
+    category: null,    // category key, or 'all' (list view only)
+    cols: 3            // columns to preview in Arrange (3 desktop, 2 tablet, 1 phone)
+};
+
+function photoCategories() {
+    return (state.content.categories || []).filter(function (c) { return c.key; });
+}
+
+function renderOrderBar() {
+    var cats = photoCategories();
+    if (photoView.category !== 'all' &&
+        !cats.some(function (c) { return c.key === photoView.category; })) {
+        photoView.category = cats.length ? cats[0].key : 'all';
+    }
+
+    var btns = cats.map(function (c) {
+        return '<button class="cat-btn" data-cat="' + escapeHtml(c.key) + '">' + escapeHtml(c.label || c.key) + '</button>';
+    });
+    btns.push('<button class="cat-btn cat-all" data-cat="all">All</button>');
+    $('catFilter').innerHTML = btns.join('');
+
+    $('arrangeColsPick').innerHTML =
+        [[3, 'Desktop'], [2, 'Tablet'], [1, 'Phone']].map(function (o) {
+            return '<button class="cols-btn" data-cols="' + o[0] + '">' + o[1] + '</button>';
+        }).join('');
+
+    document.querySelectorAll('.view-btn').forEach(function (b) {
+        b.addEventListener('click', function () {
+            photoView.mode = this.getAttribute('data-view');
+            applyPhotoView();
+        });
+    });
+    document.querySelectorAll('.cat-btn').forEach(function (b) {
+        b.addEventListener('click', function () {
+            photoView.category = this.getAttribute('data-cat');
+            applyPhotoView();
+        });
+    });
+    document.querySelectorAll('.cols-btn').forEach(function (b) {
+        b.addEventListener('click', function () {
+            photoView.cols = parseInt(this.getAttribute('data-cols'), 10);
+            applyPhotoView();
+        });
+    });
+}
+
+function applyPhotoView() {
+    var arrange = photoView.mode === 'arrange';
+    var cats = photoCategories();
+    // "All" isn't a view the live site has, so Arrange always shows one category.
+    if (arrange && photoView.category === 'all' && cats.length) photoView.category = cats[0].key;
+
+    document.querySelectorAll('.view-btn').forEach(function (b) {
+        b.classList.toggle('active', b.getAttribute('data-view') === photoView.mode);
+    });
+    document.querySelectorAll('.cat-btn').forEach(function (b) {
+        b.classList.toggle('active', b.getAttribute('data-cat') === photoView.category);
+        if (b.classList.contains('cat-all')) b.classList.toggle('hidden', arrange);
+    });
+    document.querySelectorAll('.cols-btn').forEach(function (b) {
+        b.classList.toggle('active', parseInt(b.getAttribute('data-cols'), 10) === photoView.cols);
+    });
+    $('arrangeColsPick').classList.toggle('hidden', !arrange);
+    $('arrangeHelp').classList.toggle('hidden', !arrange);
+    $('photoList').classList.toggle('hidden', arrange);
+    $('arrangeGrid').classList.toggle('hidden', !arrange);
+    var wrap = document.querySelector('.wrap');
+    if (wrap) wrap.classList.toggle('wide', arrange);
+
+    // Filter the list rows to the chosen category.
+    document.querySelectorAll('#photoList .photo-row').forEach(function (row) {
+        var show = photoView.category === 'all' || row.getAttribute('data-category') === photoView.category;
+        row.classList.toggle('hidden', !show);
+    });
+
+    if (arrange) renderArrangeGrid();
+}
+
+/* Filenames of the chosen category, in the list's current order. */
+function categoryOrder(cat) {
+    var out = [];
+    document.querySelectorAll('#photoList .photo-row').forEach(function (row) {
+        if (row.getAttribute('data-category') === cat) out.push(row.getAttribute('data-filename'));
+    });
+    return out;
+}
+
+/* Lay the category out the way the live Portfolio page does. The site uses
+   Masonry with horizontalOrder, which puts photo N in column N % columns and
+   stacks it under the one above — so separate column stacks give an exact match. */
+function renderArrangeGrid() {
+    var grid = $('arrangeGrid');
+    var cols = photoView.cols;
+    var order = categoryOrder(photoView.category);
+    var html = '';
+    for (var c = 0; c < cols; c++) {
+        html += '<div class="arrange-col">';
+        for (var i = c; i < order.length; i += cols) {
+            var p = state.byFilename[order[i]] || { title: order[i] };
+            html += '<div class="arrange-item" data-filename="' + escapeHtml(order[i]) + '">' +
+                '<img src="' + imgSrc(order[i]) + '" alt="" draggable="false">' +
+                '<span class="arrange-num">' + (i + 1) + '</span>' +
+                '<span class="arrange-title">' + escapeHtml(p.title) + '</span>' +
+            '</div>';
+        }
+        html += '</div>';
+    }
+    grid.innerHTML = order.length ? html : '<p class="help">No photos in this category yet.</p>';
+    grid.style.setProperty('--cols', cols);
+
+    if (typeof Sortable === 'undefined') return;
+    grid.querySelectorAll('.arrange-col').forEach(function (col) {
+        Sortable.create(col, {
+            group: 'arrange',
+            animation: 150,
+            delay: 150,
+            delayOnTouchOnly: true,
+            onEnd: arrangeDropped
+        });
+    });
+}
+
+/* After a drop, work out which slot the photo was dropped into (column and
+   row in the preview), move it to that position in the category's order so
+   everything else shifts along by one, and redraw so the preview matches
+   exactly what the live page will show. */
+function arrangeDropped(evt) {
+    var fn = evt.item.getAttribute('data-filename');
+    var cols = Array.prototype.slice.call(document.querySelectorAll('#arrangeGrid .arrange-col'));
+    var col = cols.indexOf(evt.to);
+    var target = evt.newIndex * cols.length + col;
+
+    var order = categoryOrder(photoView.category);
+    var from = order.indexOf(fn);
+    if (from === -1 || col === -1) { renderArrangeGrid(); return; }
+    order.splice(from, 1);
+    order.splice(Math.min(target, order.length), 0, fn);
+
+    if (order.join('|') === categoryOrder(photoView.category).join('|')) { renderArrangeGrid(); return; }
+    applyCategoryOrder(photoView.category, order);
+    renderArrangeGrid();
+    flashSave('Order changed — click "Save changes" to publish.', 'ok');
+}
+
+/* Put this category's rows into the given order, keeping them in the same
+   slots of the full list so other categories are untouched. */
+function applyCategoryOrder(cat, order) {
+    var list = $('photoList');
+    var rows = Array.prototype.slice.call(list.querySelectorAll('.photo-row'));
+    var byFn = {};
+    rows.forEach(function (row) { byFn[row.getAttribute('data-filename')] = row; });
+    var next = 0;
+    rows.map(function (row) {
+        return row.getAttribute('data-category') === cat ? byFn[order[next++]] : row;
+    }).forEach(function (row) { list.appendChild(row); });
 }
 
 function imgSrc(filename) {
@@ -512,12 +698,15 @@ function wirePhotoEvents() {
 
 /* Move a row up (-1) or down (+1) in the list. */
 function moveRow(row, dir) {
+    // Step over rows hidden by the category filter, so ▲▼ move past the
+    // neighbouring photo you can actually see.
     var list = row.parentNode;
-    if (dir === -1 && row.previousElementSibling) {
-        list.insertBefore(row, row.previousElementSibling);
-    } else if (dir === 1 && row.nextElementSibling) {
-        list.insertBefore(row.nextElementSibling, row);
-    }
+    var sib = dir === -1 ? 'previousElementSibling' : 'nextElementSibling';
+    var target = row[sib];
+    while (target && target.classList.contains('hidden')) target = target[sib];
+    if (!target) return;
+    if (dir === -1) list.insertBefore(row, target);
+    else list.insertBefore(row, target.nextElementSibling);
     row.scrollIntoView({ block: 'nearest' });
 }
 
@@ -1699,6 +1888,8 @@ document.addEventListener('DOMContentLoaded', function () {
         tab.addEventListener('click', function () {
             document.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('active'); });
             tab.classList.add('active');
+            var wrap = document.querySelector('.wrap');
+            if (wrap) wrap.classList.remove('wide');   // only the Arrange view widens the page
             var which = tab.getAttribute('data-tab');
             if (which === 'photos') {
                 if (state.content) renderPhotos();
