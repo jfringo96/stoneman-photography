@@ -801,14 +801,18 @@
       "slug": "shells",
       "title": "Shells",
       "subtitle": "",
-      "cover": "",
+      "cover": "shells-3.jpg",
       "status": "draft",
       "blocks": [
+        {
+          "type": "text",
+          "text": "I was walking on a beach on the east of England recently looking for wildlife subjects to photograph, I wasn't having much luck though as the tide was a long way out so there was just a scattering of distant shorebirds. Looking for something to photograph, and lacking the willpower to switch lenses from my 300mm, I tried taking a couple shots of some shells on the beach. the range of shells in this part of England is incredible, and over the next few days between different types of sand, shell and different weather conditions I got some shots I found quite interesting. So I've started putting together this project which I plan to work on over 2027 to photograph shells almost as if they were wildlife subjects. "
+        },
         {
           "type": "image",
           "src": "images/Thumb/shells-1.jpg",
           "size": "medium",
-          "align": "center"
+          "align": "left"
         },
         {
           "type": "image",
@@ -820,7 +824,7 @@
           "type": "image",
           "src": "images/Thumb/shells-3.jpg",
           "size": "medium",
-          "align": "center"
+          "align": "right"
         },
         {
           "type": "image",
