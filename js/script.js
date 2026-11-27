@@ -84,11 +84,16 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(function (response) { return response.json(); })
         .then(function (content) {
             applySettings(content.settings);
-            populateCategories(content.categories);
+            // Categories marked hidden (e.g. ones made for a blog post's or
+            // project's own photos) never appear on the Portfolio page.
+            var hiddenCats = {};
+            (content.categories || []).forEach(function (c) { if (c.hidden) hiddenCats[c.key] = true; });
+            populateCategories((content.categories || []).filter(function (c) { return !c.hidden; }));
             if (content.portfolio && content.portfolio.length) {
+                var onPortfolio = content.portfolio.filter(function (p) { return !hiddenCats[p.category]; });
                 populatePhotoData(content.portfolio);
-                populatePortfolioGallery(content.portfolio);
-                populateFeaturedImages(content.portfolio, content.featured_images);
+                populatePortfolioGallery(onPortfolio);
+                populateFeaturedImages(content.portfolio, content.featured_images, onPortfolio);
             }
             populateBlog(content.blog);
             populateProjectsList(content.projects);
@@ -171,8 +176,10 @@ function populatePortfolioGallery(portfolio) {
 
 /* Populate the three featured-item slots on index.html.
    Uses featured_images array from content.json for explicit ordering;
-   falls back to featured: true flag if the array is absent. */
-function populateFeaturedImages(portfolio, featuredImages) {
+   falls back to featured: true flag if the array is absent. Empty slots are
+   filled from `pool` (photos shown on the Portfolio page), never from hidden ones. */
+function populateFeaturedImages(portfolio, featuredImages, pool) {
+    pool = pool || portfolio;
     var grid = document.querySelector('.featured-grid');
     if (!grid) return;
 
@@ -183,14 +190,14 @@ function populateFeaturedImages(portfolio, featuredImages) {
     if (featuredImages && featuredImages.length) {
         featured = featuredImages.map(function (fn) { return byFilename[fn]; }).filter(Boolean);
         if (featured.length < 3) {
-            portfolio.forEach(function (p) {
+            pool.forEach(function (p) {
                 if (featured.length < 3 && featuredImages.indexOf(p.filename) === -1) featured.push(p);
             });
         }
     } else {
         featured = portfolio.filter(function (p) { return p.featured; });
         if (featured.length < 3) {
-            var extras = portfolio.filter(function (p) { return !p.featured; });
+            var extras = pool.filter(function (p) { return !p.featured; });
             var i = 0;
             while (featured.length < 3 && i < extras.length) featured.push(extras[i++]);
         }

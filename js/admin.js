@@ -31,7 +31,7 @@ var THUMB_QUALITY  = 0.82;
 var BLOG_MAX_EDGE  = 1600;         // blog images are resized down to this
 var BLOG_QUALITY   = 0.85;
 var MAX_FEATURED   = 3;            // home page shows 3 featured photos
-var SCRIPT_VERSION = 13;           // script.js?v=N used by generated project pages —
+var SCRIPT_VERSION = 14;           // script.js?v=N used by generated project pages —
                                    // keep in step with the HTML pages when script.js changes
 
 
@@ -140,10 +140,16 @@ function uniqueKey(base, used) {
     return k;
 }
 
-/* Re-point every photo in oldKey to newKey. */
+/* Re-point every photo in oldKey to newKey (and any blog post or project
+   that files its uploads there). */
 function migratePhotoCategory(oldKey, newKey) {
     (state.content.portfolio || []).forEach(function (p) {
         if (p.category === oldKey) p.category = newKey;
+    });
+    ['blog', 'projects'].forEach(function (k) {
+        (state.content[k] || []).forEach(function (item) {
+            if (item.photo_category === oldKey) item.photo_category = newKey;
+        });
     });
 }
 
@@ -494,7 +500,8 @@ function renderOrderBar() {
     }
 
     var btns = cats.map(function (c) {
-        return '<button class="cat-btn" data-cat="' + escapeHtml(c.key) + '">' + escapeHtml(c.label || c.key) + '</button>';
+        return '<button class="cat-btn' + (c.hidden ? ' cat-offsite' : '') + '" data-cat="' + escapeHtml(c.key) + '"' +
+               (c.hidden ? ' title="Not shown on the Portfolio page"' : '') + '>' + escapeHtml(c.label || c.key) + '</button>';
     });
     btns.push('<button class="cat-btn cat-all" data-cat="all">All</button>');
     $('catFilter').innerHTML = btns.join('');
@@ -1131,6 +1138,8 @@ function renderCategoriesPanel() {
                 '<button class="down" title="Move down">▼</button>' +
             '</span>' +
             '<input type="text" class="cat-label" value="' + escapeHtml(c.label) + '" placeholder="Category name">' +
+            '<label class="cat-show" title="Untick to keep this category (and its photos) off the Portfolio page">' +
+                '<input type="checkbox" class="cat-visible"' + (c.hidden ? '' : ' checked') + '> On Portfolio</label>' +
             '<span class="cat-count">' + count + ' photo' + (count === 1 ? '' : 's') + '</span>' +
             '<button class="cat-remove remove">Remove</button>' +
         '</div>';
@@ -1144,7 +1153,9 @@ function renderCategoriesPanel() {
         '</div>' +
         '<div class="cat-list">' + rows + '</div>' +
         '<p class="help">These are the filter buttons on the Portfolio page. Rename by typing; drag order sets ' +
-        'button order (the first is shown by default). A category can only be removed once it has no photos in it.</p>';
+        'button order (the first is shown by default). A category can only be removed once it has no photos in it.</p>' +
+        '<p class="help">Photos uploaded inside a blog post or project get a category named after it, with ' +
+        '“On Portfolio” unticked, so they stay off the Portfolio page. Tick it to show them there.</p>';
 
     $('addCatBtn').addEventListener('click', addCategory);
     $('saveCatBtn').addEventListener('click', saveCategories);
@@ -1161,7 +1172,11 @@ function syncCategoryInputs() {
     document.querySelectorAll('.cat-row').forEach(function (row) {
         var i = parseInt(row.getAttribute('data-index'), 10);
         var input = row.querySelector('.cat-label');
-        if (state.content.categories[i] && input) state.content.categories[i].label = input.value;
+        var vis = row.querySelector('.cat-visible');
+        var cat = state.content.categories[i];
+        if (!cat) return;
+        if (input) cat.label = input.value;
+        if (vis) { if (vis.checked) delete cat.hidden; else cat.hidden = true; }
     });
 }
 
@@ -1199,6 +1214,10 @@ function saveCategories() {
 
     for (var v = 0; v < cats.length; v++) {
         if (!cats[v].label.trim()) { catFlash('Every category needs a name.', 'error'); return; }
+    }
+    if (!cats.some(function (c) { return !c.hidden; })) {
+        catFlash('At least one category needs “On Portfolio” ticked, or the Portfolio page would be empty.', 'error');
+        return;
     }
 
     var used = {};
@@ -1426,24 +1445,6 @@ function rawSrc(path) {
 }
 function blogFlash(msg, type) { var el = $('blogStatus'); if (el) showStatus(el, msg, type); }
 
-function getBlockImageNames() {
-    var taken = {};
-    function addSrc(src) {
-        if (!src) return;
-        var dirs = Object.keys(BLOCK_IMAGE_DIRS).map(function (k) { return BLOCK_IMAGE_DIRS[k]; });
-        for (var i = 0; i < dirs.length; i++) {
-            if (src.indexOf(dirs[i]) === 0) { taken[src.slice(dirs[i].length)] = true; return; }
-        }
-    }
-    ['blog', 'projects'].forEach(function (key) {
-        (state.content[key] || []).forEach(function (item) {
-            (item.images || []).forEach(function (n) { taken[n] = true; });   // legacy blog posts
-            (item.blocks || []).forEach(function (b) { addSrc(b.src); });
-        });
-    });
-    return taken;
-}
-
 function loadBlogPanel() {
     if (!state.content.blog) state.content.blog = [];
     renderBlogPanel();
@@ -1526,10 +1527,12 @@ function openPostForm(index) {
             '<div class="blocks-holder" id="blocksHolder"></div>' +
             '<div class="block-add">' +
                 '<button class="secondary" id="addTextBlock">+ Add text</button>' +
-                '<label class="btn-like">+ Upload image' +
+                '<label class="btn-like" title="You can pick several photos at once">+ Upload images' +
                     '<input type="file" id="addImageBlock" accept="image/jpeg,image/png" multiple hidden></label>' +
                 '<button class="secondary" id="addLibImage">+ From library</button>' +
             '</div>' +
+            '<p class="help upload-note">Uploaded photos (you can pick several at once) are also added to your photo ' +
+                'library, in a category named after this title that stays off the Portfolio page.</p>' +
             '<div class="library-picker hidden" id="libraryPicker"></div>' +
             '<div class="af-actions">' +
                 '<button id="pfSave">Save post</button>' +
@@ -1633,33 +1636,67 @@ function onBlockImageChosen(e) {
     renderBlocks();
 }
 
+/* Which category the library picker was last filtered to ('all' or a key).
+   Remembered while the Site Manager is open so reopening the picker keeps it. */
+var libFilter = 'all';
+
 /* Picker to reuse an existing photo (no new copy is stored).
    With no argument it appends an image block; given onPick it calls that with
    the chosen photo instead (used to set a project cover). `extras` adds images
    that aren't in the portfolio - a project's own uploads, for its cover. Each
    item hands back either a bare portfolio filename or a full repo path, both of
-   which projCoverSrc and the site's projectImageSrc already understand. */
+   which projCoverSrc and the site's projectImageSrc already understand.
+   Category buttons along the top narrow the grid to one category. */
 function openLibraryPicker(onPick, extras) {
     if (!onPick) syncBlockInputs();
     var holder = $('libraryPicker');
+    var photos = state.content.portfolio || [];
+    // Only offer categories that actually have photos in them.
+    var cats = (state.content.categories || []).filter(function (c) {
+        return c.key && photos.some(function (p) { return p.category === c.key; });
+    });
+    if (libFilter !== 'all' && !cats.some(function (c) { return c.key === libFilter; })) libFilter = 'all';
+
     var extraItems = (extras || []).map(function (e) {
         return '<button class="lib-item" data-fn="' + escapeHtml(e.value) + '">' +
                '<img src="' + rawSrc(e.value) + '" alt="" loading="lazy">' +
                '<span>' + escapeHtml(e.label) + '</span></button>';
     }).join('');
+    var filterBtns = ['<button class="cat-btn lib-cat" data-cat="all">All</button>'].concat(cats.map(function (c) {
+        return '<button class="cat-btn lib-cat" data-cat="' + escapeHtml(c.key) + '"' +
+               (c.hidden ? ' title="Not shown on the Portfolio page"' : '') + '>' +
+               escapeHtml(c.label || c.key) + '</button>';
+    })).join('');
+
     holder.innerHTML =
         '<div class="lib-head"><span>Choose an existing photo to reuse</span>' +
             '<button class="link" id="libClose">Close</button></div>' +
         (extraItems ? '<div class="lib-sub">From this project</div><div class="lib-grid">' + extraItems + '</div>' +
-                      '<div class="lib-sub">From the portfolio</div>' : '') +
-        '<div class="lib-grid">' +
-            (state.content.portfolio || []).map(function (p) {
-                return '<button class="lib-item" data-fn="' + escapeHtml(p.filename) + '">' +
+                      '<div class="lib-sub">From the library</div>' : '') +
+        '<div class="cat-filter lib-filter">' + filterBtns + '</div>' +
+        '<div class="lib-grid" id="libGrid">' +
+            photos.map(function (p) {
+                return '<button class="lib-item" data-fn="' + escapeHtml(p.filename) + '" data-category="' + escapeHtml(p.category || '') + '">' +
                        '<img src="' + imgSrc(p.filename) + '" alt="" loading="lazy">' +
                        '<span>' + escapeHtml(p.title) + '</span></button>';
             }).join('') +
         '</div>';
     holder.classList.remove('hidden');
+
+    function applyLibFilter() {
+        holder.querySelectorAll('.lib-cat').forEach(function (b) {
+            b.classList.toggle('active', b.getAttribute('data-cat') === libFilter);
+        });
+        $('libGrid').querySelectorAll('.lib-item').forEach(function (it) {
+            it.classList.toggle('hidden', libFilter !== 'all' && it.getAttribute('data-category') !== libFilter);
+        });
+        $('libGrid').scrollTop = 0;
+    }
+    holder.querySelectorAll('.lib-cat').forEach(function (b) {
+        b.addEventListener('click', function () { libFilter = this.getAttribute('data-cat'); applyLibFilter(); });
+    });
+    applyLibFilter();
+
     $('libClose').addEventListener('click', function () { holder.classList.add('hidden'); holder.innerHTML = ''; });
     holder.querySelectorAll('.lib-item').forEach(function (bt) {
         bt.addEventListener('click', function () {
@@ -1669,6 +1706,93 @@ function openLibraryPicker(onPick, extras) {
             editForm.blocks.push({ type: 'image', src: 'images/Thumb/' + fn, size: 'medium', align: 'center' });
             renderBlocks();
         });
+    });
+}
+
+/* ----------------------------------------------------------
+   UPLOADS JOIN THE LIBRARY
+   A photo uploaded inside a blog post or project is added to the
+   photo library (full size + thumbnail + EXIF, exactly like the
+   Photos tab's "Add photo"), in a category named after that post
+   or project. The post/project remembers its category key in
+   photo_category, so later uploads land in the same one even if
+   it has been renamed. The category starts hidden: it is listed
+   and editable in the Photos and Categories tabs like any other,
+   but the Portfolio page leaves it out until it is set to show.
+   ---------------------------------------------------------- */
+
+function libraryCategoryFor(title, prevKey) {
+    ensureCategories();
+    var cats = state.content.categories;
+    if (prevKey && cats.some(function (c) { return c.key === prevKey; })) return prevKey;
+    var used = {};
+    cats.forEach(function (c) { if (c.key) used[c.key] = true; });
+    var key = uniqueKey(slugify(title), used);
+    cats.push({ key: key, label: title, hidden: true });
+    if (state.catOriginalLabels) state.catOriginalLabels[key] = title;
+    return key;
+}
+
+/* Turn every newly uploaded image block into a library photo. Pushes the image
+   files onto `upserts`, adds the photos to state.content.portfolio and points
+   each block at its thumbnail. Resolves to the category key used (or prevKey
+   when there was nothing new to upload). */
+function addUploadsToLibrary(title, prevKey, upserts, status) {
+    var uploads = editForm.blocks.filter(function (b) { return b.type === 'image' && b.file; });
+    if (!uploads.length) return Promise.resolve(prevKey || '');
+
+    var key = libraryCategoryFor(title, prevKey);
+    var taken = {};
+    Object.keys(state.byFilename).forEach(function (fn) { taken[fn] = true; });
+    var n = categoryUsageCount(key);
+    var chain = Promise.resolve();
+
+    uploads.forEach(function (b, i) {
+        chain = chain.then(function () {
+            showStatus(status, 'Preparing photo ' + (i + 1) + ' of ' + uploads.length + '…', 'ok');
+            n++;
+            var photoTitle = title + ' ' + n;
+            var filename = uniqueFilename(slugify(photoTitle), '.jpg', taken);
+            taken[filename] = true;
+            var meta, fullB64;
+            return readExif(b.file)
+                .then(function (m) { meta = m || {}; return fileToBase64(b.file); })
+                .then(function (b64) { fullB64 = b64; return makeThumb(b.file, THUMB_MAX_EDGE); })
+                .then(fileToBase64)
+                .then(function (thumbB64) {
+                    upserts.push({ path: 'images/Full res/' + filename, base64: fullB64 });
+                    upserts.push({ path: 'images/Thumb/' + filename, base64: thumbB64 });
+                    var photo = {
+                        filename: filename, title: photoTitle, category: key, featured: false,
+                        camera: meta.camera || '', lens: meta.lens || '', focal: meta.focal || '',
+                        shutter: meta.shutter || '', aperture: meta.aperture || '',
+                        iso: meta.iso || '', date: meta.date || ''
+                    };
+                    if (!state.content.portfolio) state.content.portfolio = [];
+                    state.content.portfolio.push(photo);
+                    state.byFilename[filename] = photo;
+                    b._finalSrc = 'images/Thumb/' + filename;
+                });
+        });
+    });
+    return chain.then(function () { return key; });
+}
+
+/* A failed save may already have added photos/categories to the in-memory
+   content. Re-read what is really saved so a retry starts clean; the open
+   form (and its not-yet-uploaded images) is left as it is. */
+function restoreAfterFailedSave() {
+    var holder = editForm;
+    editForm = null;   // keep loadContent's re-render from touching the form
+    return ghGetFile('content.json').then(function (file) {
+        state.content = JSON.parse(file.text);
+        state.byFilename = {};
+        (state.content.portfolio || []).forEach(function (p) { state.byFilename[p.filename] = p; });
+        state.featured = (state.content.featured_images || []).slice();
+        ensureCategories();
+    }).catch(function () {}).then(function () {
+        editForm = holder;
+        if (editForm) editForm.blocks.forEach(function (b) { delete b._finalSrc; });
     });
 }
 
@@ -1682,26 +1806,12 @@ function savePost() {
     $('pfSave').disabled = true;
     showStatus(status, 'Preparing…', 'ok');
 
-    var taken = getBlockImageNames();
     var upserts = [];
-    var chain = Promise.resolve();
+    var prevPost = editForm.index === null ? null : state.content.blog[editForm.index];
+    var photoCategory = '';
 
-    editForm.blocks.forEach(function (b, idx) {
-        if (b.type === 'image' && b.file) {
-            chain = chain.then(function () {
-                var name = uniqueFilename(slugify(title) + '-' + (idx + 1), '.jpg', taken);
-                taken[name] = true;
-                return resizeToBlob(b.file, BLOG_MAX_EDGE, BLOG_QUALITY)
-                    .then(fileToBase64)
-                    .then(function (b64) {
-                        upserts.push({ path: blockImageDir() + name, base64: b64 });
-                        b._finalSrc = blockImageDir() + name;
-                    });
-            });
-        }
-    });
-
-    chain.then(function () {
+    addUploadsToLibrary(title, prevPost && prevPost.photo_category, upserts, status).then(function (key) {
+        photoCategory = key;
         showStatus(status, 'Saving…', 'ok');
         var blocks = editForm.blocks.map(function (b) {
             if (b.type === 'text') return { type: 'text', text: b.text || '' };
@@ -1712,6 +1822,7 @@ function savePost() {
 
         if (!state.content.blog) state.content.blog = [];
         var post = { title: title, date: date, blocks: blocks };
+        if (photoCategory) post.photo_category = photoCategory;
         if (editForm.index === null) state.content.blog.unshift(post);
         else state.content.blog[editForm.index] = post;
         upserts.push({ path: 'content.json', base64: contentToBase64(state.content) });
@@ -1727,6 +1838,7 @@ function savePost() {
     }).catch(function (err) {
         showStatus(status, 'Could not save: ' + err.message, 'error');
         if ($('pfSave')) $('pfSave').disabled = false;
+        restoreAfterFailedSave();
     });
 }
 
@@ -2080,10 +2192,12 @@ function openProjectForm(index) {
             '<div class="blocks-holder" id="blocksHolder"></div>' +
             '<div class="block-add">' +
                 '<button class="secondary" id="addTextBlock">+ Add text</button>' +
-                '<label class="btn-like">+ Upload image' +
+                '<label class="btn-like" title="You can pick several photos at once">+ Upload images' +
                     '<input type="file" id="addImageBlock" accept="image/jpeg,image/png" multiple hidden></label>' +
                 '<button class="secondary" id="addLibImage">+ From library</button>' +
             '</div>' +
+            '<p class="help upload-note">Uploaded photos (you can pick several at once) are also added to your photo ' +
+                'library, in a category named after this title that stays off the Portfolio page.</p>' +
             '<div class="library-picker hidden" id="libraryPicker"></div>' +
             '<div class="af-actions">' +
                 '<button id="prSave">Save project</button>' +
@@ -2170,26 +2284,12 @@ function saveProject() {
     $('prSave').disabled = true;
     showStatus(status, 'Preparing…', 'ok');
 
-    var taken = getBlockImageNames();
     var upserts = [];
-    var chain = Promise.resolve();
+    var prevProj = index === null ? null : state.content.projects[index];
+    var photoCategory = '';
 
-    editForm.blocks.forEach(function (b, idx) {
-        if (b.type === 'image' && b.file) {
-            chain = chain.then(function () {
-                var name = uniqueFilename(slug + '-' + (idx + 1), '.jpg', taken);
-                taken[name] = true;
-                return resizeToBlob(b.file, BLOG_MAX_EDGE, BLOG_QUALITY)
-                    .then(fileToBase64)
-                    .then(function (b64) {
-                        upserts.push({ path: blockImageDir() + name, base64: b64 });
-                        b._finalSrc = blockImageDir() + name;
-                    });
-            });
-        }
-    });
-
-    chain.then(function () {
+    addUploadsToLibrary(title, prevProj && prevProj.photo_category, upserts, status).then(function (key) {
+        photoCategory = key;
         showStatus(status, 'Saving…', 'ok');
         var blocks = editForm.blocks.map(function (b) {
             if (b.type === 'text') return { type: 'text', text: b.text || '' };
@@ -2207,6 +2307,7 @@ function saveProject() {
             status: $('prVisibility').value === 'published' ? 'published' : 'draft',
             blocks: blocks
         };
+        if (photoCategory) proj.photo_category = photoCategory;
         // What this project looked like before this save, so we know which page
         // file (if any) is now stale.
         var prev = index === null ? null : state.content.projects[index];
@@ -2241,6 +2342,7 @@ function saveProject() {
     }).catch(function (err) {
         showStatus(status, 'Could not save: ' + err.message, 'error');
         if ($('prSave')) $('prSave').disabled = false;
+        restoreAfterFailedSave();
     });
 }
 
