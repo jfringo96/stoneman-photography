@@ -315,7 +315,7 @@ function blocksToHTML(blocks, alt) {
    Anything without layout.v === 2 renders the old way above.
    ---------------------------------------------------------- */
 
-var LAYOUT_PAGE_PX = { standard: 800, wide: 1100, full: 1400 };
+var LAYOUT_PAGE_PX = { standard: 800, wide: 1100, full: 1600 };
 
 function isLayoutV2(item) {
     return !!(item && item.layout && item.layout.v === 2);
@@ -336,7 +336,162 @@ function inlineMarkup(s) {
     return h;
 }
 
+/* ---------- rich text (shared with js/script.js, keep the two copies the same) ----------
+   Text blocks keep their words as a small, safe piece of HTML: paragraphs
+   holding only bold, italic, underline, links, line breaks and coloured
+   words. Anything else (pasted styling, scripts, other tags) is dropped.
+   richClean() returns the paragraphs as an array of inline HTML strings. */
+
+var RICH_FONTS = {
+    serif:   { name: 'Serif',       css: "Georgia, 'Times New Roman', serif" },
+    display: { name: 'Display',     css: "'Playfair Display', Georgia, serif", google: 'Playfair+Display:ital,wght@0,400;0,700;1,400' },
+    type:    { name: 'Typewriter',  css: "'Courier Prime', 'Courier New', monospace", google: 'Courier+Prime:ital,wght@0,400;0,700;1,400' },
+    hand:    { name: 'Handwritten', css: "'Caveat', 'Segoe Script', cursive", google: 'Caveat:wght@400;700' }
+};
+
+function richHex(c) {
+    c = String(c || '').trim().toLowerCase();
+    if (/^#[0-9a-f]{6}$/.test(c)) return c;
+    if (/^#[0-9a-f]{3}$/.test(c)) return '#' + c[1] + c[1] + c[2] + c[2] + c[3] + c[3];
+    var m = c.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+    if (m) return '#' + [m[1], m[2], m[3]].map(function (n) { return ('0' + Math.min(255, +n).toString(16)).slice(-2); }).join('');
+    return '';
+}
+
+function richSafeHref(url) {
+    url = String(url || '').trim();
+    if (!url) return '';
+    if (/^[a-z][a-z0-9+.-]*:/i.test(url) && !/^(https?|mailto|tel):/i.test(url)) return '';
+    return url;
+}
+
+function richEsc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function richClean(html) {
+    var box = document.createElement('template');
+    box.innerHTML = String(html || '');
+    var paras = [], cur = '', open = [];   // open: inline tags around the current position
+    var BLOCK = /^(P|DIV|H[1-6]|LI|UL|OL|BLOCKQUOTE|PRE|SECTION|ARTICLE|HEADER|FOOTER|TABLE|TR)$/;
+    function openStr() { return open.map(function (t) { return t.o; }).join(''); }
+    function closeStr() { return open.slice().reverse().map(function (t) { return t.c; }).join(''); }
+    function flush() {
+        var body = cur.replace(/(<br>)+$/, '');
+        var plain = body.replace(/<[^>]+>/g, '').replace(/&nbsp;|\s/g, '');
+        if (plain) paras.push(body + closeStr());
+        cur = openStr();
+    }
+    function walk(node) {
+        for (var n = node.firstChild; n; n = n.nextSibling) {
+            if (n.nodeType === 3) { cur += richEsc(n.nodeValue.replace(/ /g, ' ')); continue; }
+            if (n.nodeType !== 1) continue;
+            var tag = n.tagName;
+            if (/^(SCRIPT|STYLE|TEMPLATE|IFRAME|OBJECT|NOSCRIPT)$/.test(tag)) continue;
+            if (tag === 'BR') { cur += '<br>'; continue; }
+            if (BLOCK.test(tag)) { flush(); walk(n); flush(); continue; }
+            var wraps = [];
+            var st = n.style || {};
+            var weight = st.fontWeight;
+            if (tag === 'B' || tag === 'STRONG' || weight === 'bold' || parseInt(weight, 10) >= 600) wraps.push({ o: '<b>', c: '</b>' });
+            if (tag === 'I' || tag === 'EM' || st.fontStyle === 'italic') wraps.push({ o: '<i>', c: '</i>' });
+            if (tag === 'U' || /underline/.test(st.textDecoration || st.textDecorationLine || '')) wraps.push({ o: '<u>', c: '</u>' });
+            if (tag === 'A') {
+                var href = richSafeHref(n.getAttribute('href'));
+                if (href) wraps.push({ o: '<a href="' + richEsc(href) + '">', c: '</a>' });
+            }
+            var col = richHex(st.color || (tag === 'FONT' ? n.getAttribute('color') : ''));
+            if (col) wraps.push({ o: '<span style="color:' + col + '">', c: '</span>' });
+            wraps.forEach(function (w) { cur += w.o; open.push(w); });
+            walk(n);
+            for (var k = wraps.length - 1; k >= 0; k--) { cur += wraps[k].c; open.pop(); }
+        }
+    }
+    walk(box.content);
+    flush();
+    // Tidy empty tags left behind by editing (e.g. <b></b>).
+    return paras.map(function (p) {
+        var prev;
+        do { prev = p; p = p.replace(/<(b|i|u)><\/\1>|<span style="color:#[0-9a-f]{6}"><\/span>|<a href="[^"]*"><\/a>/g, ''); } while (p !== prev);
+        return p;
+    }).filter(function (p) { return p.replace(/<[^>]+>/g, '').replace(/&nbsp;|\s/g, ''); });
+}
+
+/* Old text blocks used **bold**, *italic* and [link](url) in plain text. */
+function richFromText(text) {
+    return String(text || '').split(/\n\s*\n/).filter(function (p) { return p.trim(); }).map(function (p) {
+        var h = richEsc(p.trim());
+        h = h.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function (m, label, url) {
+            var href = richSafeHref(url.replace(/&amp;/g, '&'));
+            return href ? '<a href="' + richEsc(href) + '">' + label + '</a>' : label;
+        });
+        h = h.replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>');
+        h = h.replace(/(^|[^*])\*([^*\s][^*\n]*)\*/g, '$1<i>$2</i>');
+        return h.replace(/\n/g, '<br>');
+    });
+}
+
+/* The text's own look (font, size, colour…) as a style attribute. */
+function richBlockStyle(b) {
+    var s = [];
+    if (b.font && RICH_FONTS[b.font]) s.push('font-family:' + RICH_FONTS[b.font].css.replace(/"/g, "'"));
+    var ts = parseFloat(b.ts);
+    if (ts && ts !== 1) s.push('font-size:calc(var(--fs, 1rem) * ' + Math.max(0.5, Math.min(4, ts)) + ')');
+    var col = richHex(b.color);
+    if (col) s.push('color:' + col);
+    if (b.weight === 'light') s.push('font-weight:300');
+    if (b.weight === 'bold') s.push('font-weight:700');
+    if (b.caps) s.push('text-transform:uppercase', 'letter-spacing:0.12em');
+    if (b.lh === 'tight') s.push('line-height:1.25');
+    if (b.lh === 'airy') s.push('line-height:2.1');
+    return s.length ? ' style="' + s.join(';') + '"' : '';
+}
+
+/* Load any web fonts the given blocks use (once each). */
+function richLoadFonts(blocks) {
+    var fams = [];
+    (blocks || []).forEach(function (b) {
+        var f = b && b.type === 'text' && RICH_FONTS[b.font];
+        if (f && f.google && fams.indexOf(f.google) === -1) fams.push(f.google);
+    });
+    fams.forEach(function (g) {
+        var id = 'rich-font-' + g.split(':')[0].replace(/\W/g, '');
+        if (document.getElementById(id)) return;
+        var l = document.createElement('link');
+        l.id = id; l.rel = 'stylesheet';
+        l.href = 'https://fonts.googleapis.com/css2?family=' + g + '&display=swap';
+        document.head.appendChild(l);
+    });
+}
+
+/* Rich text from the editor (b.html) when there is some, else the older
+   plain text with **bold** / *italic* / [link](url). */
 function layText(b) {
+    if (b.html != null) return layRichText(b);
+    return layPlainText(b);
+}
+
+function layRichText(b) {
+    var paras = richClean(b.html).map(function (p) {
+        return p.replace(/<a href="([^"]*)">/g, function (m, href) {
+            return /^https?:/i.test(href.replace(/&amp;/g, '&')) ? '<a href="' + href + '" target="_blank" rel="noopener">' : m;
+        });
+    });
+    var cls = 'lay-ta-' + (b.align || 'left') + (richHex(b.color) ? ' lay-tc' : '');
+    var st = richBlockStyle(b);
+    switch (b.style) {
+        case 'heading':    return '<h2 class="lay-h2 ' + cls + '"' + st + '>' + paras.join('<br>') + '</h2>';
+        case 'subheading': return '<h3 class="lay-h3 ' + cls + '"' + st + '>' + paras.join('<br>') + '</h3>';
+        case 'quote':
+            return '<blockquote class="lay-quote ' + cls + '"' + st + '>' +
+                   paras.map(function (p) { return '<p>' + p + '</p>'; }).join('') + '</blockquote>';
+        default:
+            return '<div class="lay-text ' + cls + (b.style === 'small' ? ' lay-small' : '') + (b.dropcap ? ' lay-dropcap' : '') + '"' + st + '>' +
+                   paras.map(function (p) { return '<p>' + p + '</p>'; }).join('') + '</div>';
+    }
+}
+
+function layPlainText(b) {
     var text = b.text || '';
     var paras = text.split(/\n\s*\n/).filter(function (p) { return p.trim(); });
     var cls = 'lay-ta-' + (b.align || 'left');
@@ -381,7 +536,7 @@ function layCarousel(b, alt, pagePx) {
                (b.autoplay ? ' data-autoplay="1"' : '') + '>' +
                '<div class="lay-car-track">' +
                slides.map(function (s) {
-                   return '<div class="lay-car-slide">' + layImage({ src: s.src, caption: s.caption, w: b.w, crop: b.crop || 'landscape' }, alt, pagePx) + '</div>';
+                   return '<div class="lay-car-slide">' + layImage({ src: s.src, caption: s.caption, w: b.w, crop: b.crop || 'landscape' }, alt, pagePx).replace(' loading="lazy"', '') + '</div>';
                }).join('') + '</div>';
     if (slides.length > 1) {
         html += '<button class="lay-car-btn lay-car-prev" aria-label="Previous photo">&#8249;</button>' +
@@ -508,11 +663,12 @@ function layoutToHTML(item, alt) {
     var width = LAYOUT_PAGE_PX[L.width] ? L.width : 'standard';
     var pagePx = LAYOUT_PAGE_PX[width];
     var custom = L.custom || {};
+    richLoadFonts(item.blocks);
     var html = '<div class="lay-page lay-w-' + width + ' lay-gap-' + (L.gap || 'normal') +
                (L.corners === 'square' ? ' lay-square' : '') +
                (custom.tablet ? ' lay-custom-t' : '') + (custom.phone ? ' lay-custom-p' : '') + '">';
     layoutRows(item.blocks).forEach(function (row) {
-        html += '<div class="lay-row lay-row-' + (L.align === 'left' ? 'left' : 'center') + '">';
+        html += '<div class="lay-row lay-row-' + (L.align === 'left' || L.align === 'right' ? L.align : 'center') + '">';
         row.forEach(function (b) {
             var w = Math.max(1, Math.min(12, parseInt(b.w, 10) || 12));
             var inner = '';
@@ -546,55 +702,137 @@ function itemBodyHTML(item, alt) {
     return isLayoutV2(item) ? layoutToHTML(item, alt) : blocksToHTML(asBlocks(item), alt);
 }
 
-/* Click a photo in a post or project to see it large; arrows/keys step
-   through that page's photos. Built on demand so pages without one pay nothing. */
+/* Click a photo in a post or project to see it large; arrows, keys and
+   swipes step through that page's photos. It looks and behaves like the
+   Portfolio lightbox: the full-size photo loads out of sight and fades in,
+   with its title, camera settings and print ratio underneath. The photos
+   either side are fetched in advance so stepping through is smooth. */
 function initLayoutViewer() {
-    var figs = document.querySelectorAll('.lay-zoom img');
-    if (!figs.length) return;
-    var viewer = null, list = [], at = 0;
+    if (!document.querySelector('.lay-zoom img')) return;
+    var box = null, content = null, list = [], at = 0, token = 0;
 
+    function fileOf(url) { return decodeURIComponent(String(url || '').split('/').pop().split('?')[0]); }
+    function captionOf(img) {
+        var cap = img.parentNode.querySelector('figcaption');
+        if (!cap) return '';
+        cap = cap.cloneNode(true);
+        var ex = cap.querySelector('.lay-exif');
+        if (ex) ex.remove();
+        return cap.textContent.trim();
+    }
+    function metaHTML(img) {
+        var data = photoData[fileOf(img.getAttribute('src'))];
+        var caption = captionOf(img), html = '';
+        var title = caption || (data && data.title) || '';
+        if (title) html += '<div class="lightbox-title">' + esc(title) + '</div>';
+        if (data) {
+            var items = [['Camera', data.camera], ['Lens', data.lens], ['Focal', data.focal], ['Shutter', data.shutter],
+                         ['Aperture', data.aperture], ['ISO', data.iso], ['Date', data.date]].filter(function (m) { return m[1]; });
+            if (items.length) {
+                html += '<div class="lightbox-meta">' + items.map(function (m) {
+                    return '<div class="meta-item"><span class="meta-label">' + m[0] + '</span><span class="meta-value">' + esc(m[1]) + '</span></div>';
+                }).join('') + '</div>';
+            }
+        }
+        return html;
+    }
+    function printRatio(w, h) {
+        if (!w || !h) return '';
+        var shapes = [['1:1 (square)', 1], ['4:3', 4 / 3], ['A size', Math.SQRT2], ['3:2', 1.5], ['2:1 (panoramic)', 2], ['3:1 (panoramic)', 3]];
+        var r = Math.max(w, h) / Math.min(w, h), best = shapes[0];
+        shapes.forEach(function (s) { if (Math.abs(Math.log(r / s[1])) < Math.abs(Math.log(r / best[1]))) best = s; });
+        return best[1] === 1 ? best[0] : best[0] + (w > h ? ' landscape' : ' portrait');
+    }
+    function preload(i) {
+        if (list.length < 2) return;
+        var img = list[(i + list.length) % list.length];
+        var pre = new Image();
+        pre.src = img.getAttribute('data-full');
+    }
     function show(i) {
         at = (i + list.length) % list.length;
-        var img = list[at];
-        viewer.querySelector('img').src = img.getAttribute('data-full');
-        var cap = img.parentNode.querySelector('figcaption');
-        viewer.querySelector('.lay-viewer-cap').innerHTML = cap ? cap.innerHTML : '';
+        var img = list[at], my = ++token;
+        var src = img.getAttribute('data-full');
+        content.style.transition = 'none';
+        content.style.opacity = '0';
+        content.innerHTML = metaHTML(img);
+        var full = new Image();
+        full.onload = function () {
+            if (my !== token) return;   // moved on before this one arrived
+            var el = document.createElement('img');
+            el.src = src;
+            el.alt = img.alt || '';
+            content.insertBefore(el, content.firstChild);
+            var ratio = printRatio(full.naturalWidth, full.naturalHeight);
+            if (ratio && photoData[fileOf(img.getAttribute('src'))]) {
+                var meta = content.querySelector('.lightbox-meta');
+                if (meta) meta.insertAdjacentHTML('beforeend', '<div class="meta-item"><span class="meta-label">Print ratio</span><span class="meta-value">' + ratio + '</span></div>');
+            }
+            content.style.transition = 'opacity 0.4s ease';
+            content.style.opacity = '1';
+            preload(at + 1);
+            preload(at - 1);
+        };
+        full.onerror = function () {
+            if (my !== token) return;
+            content.style.transition = 'opacity 0.4s ease';
+            content.style.opacity = '1';
+        };
+        full.src = src;
     }
-    function close() { viewer.classList.remove('active'); document.body.style.overflow = ''; }
+    function close() { box.classList.remove('active'); document.body.style.overflow = ''; token++; }
     function build() {
-        viewer = document.createElement('div');
-        viewer.className = 'lay-viewer';
-        viewer.innerHTML = '<button class="lay-viewer-close" aria-label="Close">&times;</button>' +
-            '<button class="lay-viewer-prev" aria-label="Previous">&#8249;</button>' +
-            '<figure><img alt=""><figcaption class="lay-viewer-cap"></figcaption></figure>' +
-            '<button class="lay-viewer-next" aria-label="Next">&#8250;</button>';
-        document.body.appendChild(viewer);
-        viewer.addEventListener('click', function (e) { if (e.target === viewer) close(); });
-        viewer.querySelector('.lay-viewer-close').addEventListener('click', close);
-        viewer.querySelector('.lay-viewer-prev').addEventListener('click', function () { show(at - 1); });
-        viewer.querySelector('.lay-viewer-next').addEventListener('click', function () { show(at + 1); });
+        box = document.createElement('div');
+        box.className = 'lightbox lay-lightbox';
+        box.setAttribute('role', 'dialog');
+        box.setAttribute('aria-label', 'Image viewer');
+        box.innerHTML = '<button class="lightbox-close" aria-label="Close image viewer">&times;</button>' +
+            '<button class="lightbox-prev" aria-label="Previous image">&#8249;</button>' +
+            '<button class="lightbox-next" aria-label="Next image">&#8250;</button>' +
+            '<div class="lightbox-content"></div>';
+        document.body.appendChild(box);
+        content = box.querySelector('.lightbox-content');
+        box.addEventListener('click', function (e) { if (e.target === box) close(); });
+        box.querySelector('.lightbox-close').addEventListener('click', close);
+        box.querySelector('.lightbox-prev').addEventListener('click', function (e) { e.stopPropagation(); show(at - 1); });
+        box.querySelector('.lightbox-next').addEventListener('click', function (e) { e.stopPropagation(); show(at + 1); });
         document.addEventListener('keydown', function (e) {
-            if (!viewer.classList.contains('active')) return;
+            if (!box.classList.contains('active')) return;
             if (e.key === 'Escape') close();
             else if (e.key === 'ArrowLeft') show(at - 1);
             else if (e.key === 'ArrowRight') show(at + 1);
         });
+        // Swipe left/right on phones and tablets.
+        var sx = null, sy = null;
+        box.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+        box.addEventListener('touchend', function (e) {
+            if (sx === null || list.length < 2) return;
+            var dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+            sx = null;
+            if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) show(at + (dx < 0 ? 1 : -1));
+        }, { passive: true });
     }
-    Array.prototype.forEach.call(figs, function (img) {
-        img.addEventListener('click', function () {
-            if (!viewer) build();
-            // Step through the photos of this one post/project only.
-            var page = img.closest('.lay-page');
-            list = Array.prototype.slice.call(page.querySelectorAll('.lay-zoom img')).filter(function (el) {
-                return el.offsetParent !== null;   // skip photos hidden at this screen size
-            });
-            var multi = list.length > 1;
-            viewer.querySelector('.lay-viewer-prev').style.display = multi ? '' : 'none';
-            viewer.querySelector('.lay-viewer-next').style.display = multi ? '' : 'none';
-            show(list.indexOf(img));
-            viewer.classList.add('active');
-            document.body.style.overflow = 'hidden';
+    document.addEventListener('click', function (e) {
+        var img = e.target.closest && e.target.closest('.lay-zoom img');
+        if (!img) return;
+        if (!box) build();
+        // Step through the photos of this one post/project only, skipping any
+        // hidden at this screen size and repeats (a carousel's own copies).
+        var page = img.closest('.lay-page');
+        var seen = {};
+        list = Array.prototype.slice.call(page.querySelectorAll('.lay-zoom img')).filter(function (el) {
+            if (el.offsetParent === null && el !== img) return false;
+            var key = el.getAttribute('data-full');
+            if (seen[key] && el !== img) return false;
+            seen[key] = true;
+            return true;
         });
+        var multi = list.length > 1;
+        box.querySelector('.lightbox-prev').style.display = multi ? '' : 'none';
+        box.querySelector('.lightbox-next').style.display = multi ? '' : 'none';
+        box.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        show(Math.max(0, list.indexOf(img)));
     });
 }
 
@@ -721,7 +959,9 @@ function populateProjectDetail(projects) {
     if (!isPublished(project)) {
         html += '<p class="project-draft-note">Draft preview &mdash; this project is not visible on the site yet.</p>';
     }
-    html += '<header class="project-head">' +
+    // The editor can hide the title (e.g. when a banner shows it); it stays for screen readers and search.
+    var hideTitle = isLayoutV2(project) && project.layout.title === false;
+    html += '<header class="project-head' + (hideTitle ? ' visually-hidden' : '') + '">' +
                 '<h1>' + esc(project.title) + '</h1>' +
                 (project.subtitle ? '<p class="page-header-sub">' + esc(project.subtitle) + '</p>' : '') +
             '</header>';

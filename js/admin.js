@@ -31,7 +31,7 @@ var THUMB_QUALITY  = 0.82;
 var BLOG_MAX_EDGE  = 1600;         // blog images are resized down to this
 var BLOG_QUALITY   = 0.85;
 var MAX_FEATURED   = 3;            // home page shows 3 featured photos
-var SCRIPT_VERSION = 22;           // script.js?v=N used by generated project pages —
+var SCRIPT_VERSION = 19;           // script.js?v=N used by generated project pages —
                                    // keep in step with the HTML pages when script.js changes
 
 
@@ -1560,8 +1560,152 @@ function openPostForm(index) {
    until it is next saved from here.
    ---------------------------------------------------------- */
 
-var LE_DEFAULT_LAYOUT = { v: 2, width: 'standard', gap: 'normal', align: 'center', corners: 'rounded', cover: true };
-var LE_PAGE_PX = { standard: 800, wide: 1100, full: 1400 };
+var LE_DEFAULT_LAYOUT = { v: 2, width: 'standard', gap: 'normal', align: 'center', corners: 'rounded', cover: true, title: true };
+/* ---------- rich text (shared with js/script.js, keep the two copies the same) ----------
+   Text blocks keep their words as a small, safe piece of HTML: paragraphs
+   holding only bold, italic, underline, links, line breaks and coloured
+   words. Anything else (pasted styling, scripts, other tags) is dropped.
+   richClean() returns the paragraphs as an array of inline HTML strings. */
+
+var RICH_FONTS = {
+    serif:   { name: 'Serif',       css: "Georgia, 'Times New Roman', serif" },
+    display: { name: 'Display',     css: "'Playfair Display', Georgia, serif", google: 'Playfair+Display:ital,wght@0,400;0,700;1,400' },
+    type:    { name: 'Typewriter',  css: "'Courier Prime', 'Courier New', monospace", google: 'Courier+Prime:ital,wght@0,400;0,700;1,400' },
+    hand:    { name: 'Handwritten', css: "'Caveat', 'Segoe Script', cursive", google: 'Caveat:wght@400;700' }
+};
+
+function richHex(c) {
+    c = String(c || '').trim().toLowerCase();
+    if (/^#[0-9a-f]{6}$/.test(c)) return c;
+    if (/^#[0-9a-f]{3}$/.test(c)) return '#' + c[1] + c[1] + c[2] + c[2] + c[3] + c[3];
+    var m = c.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+    if (m) return '#' + [m[1], m[2], m[3]].map(function (n) { return ('0' + Math.min(255, +n).toString(16)).slice(-2); }).join('');
+    return '';
+}
+
+function richSafeHref(url) {
+    url = String(url || '').trim();
+    if (!url) return '';
+    if (/^[a-z][a-z0-9+.-]*:/i.test(url) && !/^(https?|mailto|tel):/i.test(url)) return '';
+    return url;
+}
+
+function richEsc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function richClean(html) {
+    var box = document.createElement('template');
+    box.innerHTML = String(html || '');
+    var paras = [], cur = '', open = [];   // open: inline tags around the current position
+    var BLOCK = /^(P|DIV|H[1-6]|LI|UL|OL|BLOCKQUOTE|PRE|SECTION|ARTICLE|HEADER|FOOTER|TABLE|TR)$/;
+    function openStr() { return open.map(function (t) { return t.o; }).join(''); }
+    function closeStr() { return open.slice().reverse().map(function (t) { return t.c; }).join(''); }
+    function flush() {
+        var body = cur.replace(/(<br>)+$/, '');
+        var plain = body.replace(/<[^>]+>/g, '').replace(/&nbsp;|\s/g, '');
+        if (plain) paras.push(body + closeStr());
+        cur = openStr();
+    }
+    function walk(node) {
+        for (var n = node.firstChild; n; n = n.nextSibling) {
+            if (n.nodeType === 3) { cur += richEsc(n.nodeValue.replace(/ /g, ' ')); continue; }
+            if (n.nodeType !== 1) continue;
+            var tag = n.tagName;
+            if (/^(SCRIPT|STYLE|TEMPLATE|IFRAME|OBJECT|NOSCRIPT)$/.test(tag)) continue;
+            if (tag === 'BR') { cur += '<br>'; continue; }
+            if (BLOCK.test(tag)) { flush(); walk(n); flush(); continue; }
+            var wraps = [];
+            var st = n.style || {};
+            var weight = st.fontWeight;
+            if (tag === 'B' || tag === 'STRONG' || weight === 'bold' || parseInt(weight, 10) >= 600) wraps.push({ o: '<b>', c: '</b>' });
+            if (tag === 'I' || tag === 'EM' || st.fontStyle === 'italic') wraps.push({ o: '<i>', c: '</i>' });
+            if (tag === 'U' || /underline/.test(st.textDecoration || st.textDecorationLine || '')) wraps.push({ o: '<u>', c: '</u>' });
+            if (tag === 'A') {
+                var href = richSafeHref(n.getAttribute('href'));
+                if (href) wraps.push({ o: '<a href="' + richEsc(href) + '">', c: '</a>' });
+            }
+            var col = richHex(st.color || (tag === 'FONT' ? n.getAttribute('color') : ''));
+            if (col) wraps.push({ o: '<span style="color:' + col + '">', c: '</span>' });
+            wraps.forEach(function (w) { cur += w.o; open.push(w); });
+            walk(n);
+            for (var k = wraps.length - 1; k >= 0; k--) { cur += wraps[k].c; open.pop(); }
+        }
+    }
+    walk(box.content);
+    flush();
+    // Tidy empty tags left behind by editing (e.g. <b></b>).
+    return paras.map(function (p) {
+        var prev;
+        do { prev = p; p = p.replace(/<(b|i|u)><\/\1>|<span style="color:#[0-9a-f]{6}"><\/span>|<a href="[^"]*"><\/a>/g, ''); } while (p !== prev);
+        return p;
+    }).filter(function (p) { return p.replace(/<[^>]+>/g, '').replace(/&nbsp;|\s/g, ''); });
+}
+
+/* Old text blocks used **bold**, *italic* and [link](url) in plain text. */
+function richFromText(text) {
+    return String(text || '').split(/\n\s*\n/).filter(function (p) { return p.trim(); }).map(function (p) {
+        var h = richEsc(p.trim());
+        h = h.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function (m, label, url) {
+            var href = richSafeHref(url.replace(/&amp;/g, '&'));
+            return href ? '<a href="' + richEsc(href) + '">' + label + '</a>' : label;
+        });
+        h = h.replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>');
+        h = h.replace(/(^|[^*])\*([^*\s][^*\n]*)\*/g, '$1<i>$2</i>');
+        return h.replace(/\n/g, '<br>');
+    });
+}
+
+/* The text's own look (font, size, colour…) as a style attribute. */
+function richBlockStyle(b) {
+    var s = [];
+    if (b.font && RICH_FONTS[b.font]) s.push('font-family:' + RICH_FONTS[b.font].css.replace(/"/g, "'"));
+    var ts = parseFloat(b.ts);
+    if (ts && ts !== 1) s.push('font-size:calc(var(--fs, 1rem) * ' + Math.max(0.5, Math.min(4, ts)) + ')');
+    var col = richHex(b.color);
+    if (col) s.push('color:' + col);
+    if (b.weight === 'light') s.push('font-weight:300');
+    if (b.weight === 'bold') s.push('font-weight:700');
+    if (b.caps) s.push('text-transform:uppercase', 'letter-spacing:0.12em');
+    if (b.lh === 'tight') s.push('line-height:1.25');
+    if (b.lh === 'airy') s.push('line-height:2.1');
+    return s.length ? ' style="' + s.join(';') + '"' : '';
+}
+
+/* Load any web fonts the given blocks use (once each). */
+function richLoadFonts(blocks) {
+    var fams = [];
+    (blocks || []).forEach(function (b) {
+        var f = b && b.type === 'text' && RICH_FONTS[b.font];
+        if (f && f.google && fams.indexOf(f.google) === -1) fams.push(f.google);
+    });
+    fams.forEach(function (g) {
+        var id = 'rich-font-' + g.split(':')[0].replace(/\W/g, '');
+        if (document.getElementById(id)) return;
+        var l = document.createElement('link');
+        l.id = id; l.rel = 'stylesheet';
+        l.href = 'https://fonts.googleapis.com/css2?family=' + g + '&display=swap';
+        document.head.appendChild(l);
+    });
+}
+
+/* Plain words of a rich text block (for excerpts and the drag preview). */
+function richPlain(paras) {
+    var d = document.createElement('div');
+    return paras.map(function (p) { d.innerHTML = p.replace(/<br>/g, '\n'); return d.textContent; }).join('\n\n');
+}
+
+var LE_PAGE_PX = { standard: 800, wide: 1100, full: 1408 };
+/* The Laptop preview shows the page as it sits on a typical 1440px-wide
+   laptop screen, scaled down to fit the editor, so the three page widths
+   look as different here as they do on the site. Extra wide fills the
+   screen edge to edge (less a 16px margin each side). */
+var LE_LAPTOP_PX = 1440;
+var leResizeTimer = null;
+window.addEventListener('resize', function () {
+    clearTimeout(leResizeTimer);
+    leResizeTimer = setTimeout(function () { if (editForm && editForm.view === 'laptop' && $('leCanvas')) renderBlocks(); }, 200);
+});
 /* Content width the canvas shows for tablet / phone previews (a 768px tablet
    and a 390px phone, less the page's 2rem side padding). */
 var LE_VIEW_PX = { tablet: 704, phone: 326 };
@@ -1741,7 +1885,7 @@ function closeLayoutEditor(holderId) {
 document.addEventListener('keydown', function (e) {
     if (!editForm || !$('leCanvas')) return;
     var tag = (e.target.tagName || '').toLowerCase();
-    if (tag === 'textarea' || tag === 'input' || tag === 'select') return;
+    if (tag === 'textarea' || tag === 'input' || tag === 'select' || e.target.isContentEditable) return;
     var key = (e.key || '').toLowerCase();
     if (key === 'escape' && (editForm.multi || []).length) { leSelect(null); return; }
     if (leKeys(e)) return;
@@ -1850,7 +1994,7 @@ function leInsert(newBlocks, joinRow) {
     var cell = document.querySelector('.le-cell[data-id="' + newBlocks[0]._id + '"]');
     if (cell) {
         cell.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        var ta = cell.querySelector('textarea');
+        var ta = cell.querySelector('.le-rich');
         if (ta) ta.focus();
     }
 }
@@ -1891,15 +2035,15 @@ function renderLayoutBar() {
     var L = editForm.layout;
     bar.innerHTML =
         '<div class="le-set"><span>Page width</span>' +
-            leSeg('width', [['standard', 'Standard', 'Same width as the text column (800px)'], ['wide', 'Wide', 'Up to 1100px'], ['full', 'Extra wide', 'Up to 1400px']], L.width, 'lprop') + '</div>' +
+            leSeg('width', [['standard', 'Standard', 'Same width as the text column (800px)'], ['wide', 'Wide', 'Up to 1100px'], ['full', 'Extra wide', 'Fills the screen, edge to edge']], L.width, 'lprop') + '</div>' +
         '<div class="le-set"><span>Spacing</span>' +
             leSeg('gap', [['none', 'None'], ['tight', 'Tight'], ['normal', 'Normal'], ['roomy', 'Roomy']], L.gap, 'lprop') + '</div>' +
         '<div class="le-set"><span>Rows</span>' +
-            leSeg('align', [['center', 'Centred'], ['left', 'Left']], L.align, 'lprop') + '</div>' +
+            leSeg('align', [['left', 'Left'], ['center', 'Centred'], ['right', 'Right']], L.align, 'lprop') + '</div>' +
         '<div class="le-set"><span>Corners</span>' +
             leSeg('corners', [['rounded', 'Rounded'], ['square', 'Square']], L.corners, 'lprop') + '</div>' +
         (editForm.kind === 'project'
-            ? '<div class="le-set"><span>Cover at top</span>' + leSeg('cover', [['true', 'Show'], ['false', 'Hide']], String(L.cover !== false), 'lprop') + '</div>'
+            ? '<div class="le-set"><span>Title above page</span>' + leSeg('title', [['true', 'Show', 'The project title and subtitle above everything'], ['false', 'Hide', 'Hide them, e.g. when a banner at the top already shows the title']], String(L.title !== false), 'lprop') + '</div>'
             : '') +
         '<div class="le-set le-set-right"><span>Preview</span>' +
             leSeg('view', [['laptop', 'Laptop'], ['tablet', 'Tablet'], ['phone', 'Phone']], editForm.view, 'view') +
@@ -1910,7 +2054,7 @@ function renderLayoutBar() {
     bar.querySelectorAll('[data-lprop]').forEach(function (bt) {
         bt.addEventListener('click', function () {
             var prop = this.getAttribute('data-lprop'), val = this.getAttribute('data-val');
-            if (prop === 'cover') val = val === 'true';
+            if (prop === 'cover' || prop === 'title') val = val === 'true';
             if (editForm.layout[prop] === val) return;
             leSnapshot();
             editForm.layout[prop] = val;
@@ -1923,8 +2067,10 @@ function renderLayoutBar() {
     var note = $('leViewNote');
     var v = editForm.view;
     if (v === 'laptop') {
-        note.className = 'le-viewnote hidden';
-        note.innerHTML = '';
+        note.className = 'le-viewnote';
+        note.innerHTML = '<span>Laptop preview: the page as it sits on a typical laptop screen, scaled to fit here. ' +
+            ({ standard: '<b>Standard</b> is the width of the site\'s text column.', wide: '<b>Wide</b> spreads out past the text column.',
+               full: '<b>Extra wide</b> fills the screen edge to edge.' })[L.width] + '</span>';
     } else {
         var on = !!(L.custom && L.custom[v]);
         note.className = 'le-viewnote' + (on ? ' le-custom-on' : '');
@@ -1951,9 +2097,10 @@ function leBlockInner(b) {
     var inner = '';
     if (b.type === 'text') {
         var ph = { heading: 'Heading', subheading: 'Subheading', quote: 'A quote…', small: 'Small print…' }[b.style] ||
-                 'Write something… (leave a blank line for a new paragraph)';
-        inner = '<textarea class="le-text le-st-' + (b.style || 'body') + ' lay-ta-' + (b.align || 'left') + (b.dropcap ? ' le-dropcap' : '') + '" data-id="' + b._id + '" rows="1" placeholder="' + ph + '">' +
-                escapeHtml(b.text || '') + '</textarea>';
+                 'Write something…';
+        if (b.html == null) b.html = richFromText(b.text).map(function (p) { return '<p>' + p + '</p>'; }).join('');
+        inner = '<div class="le-text le-rich le-st-' + (b.style || 'body') + ' lay-ta-' + (b.align || 'left') + (b.dropcap ? ' le-dropcap' : '') +
+                '" contenteditable="true" spellcheck="true" data-id="' + b._id + '" data-ph="' + ph + '"' + richBlockStyle(b) + '>' + b.html + '</div>';
     } else if (b.type === 'image') {
         inner = '<figure class="lay-figure lay-crop-' + (b.crop || 'original') + '">' +
                     ((b.src || b.file) ? '<img src="' + leImgSrc(b) + '" alt="" draggable="false">' : '<div class="le-slot-empty le-photo-empty">Photo: click, then choose one in the panel →</div>') +
@@ -2002,7 +2149,13 @@ function renderBlocks() {
     var view = editForm.view;
     $('leStage').className = 'le-stage le-view-' + view + (leWProp() ? '' : ' le-auto');
     canvas.className = 'le-canvas lay-gap-' + L.gap + (L.corners === 'square' ? ' lay-square' : '');
-    canvas.style.maxWidth = (view === 'laptop' ? LE_PAGE_PX[L.width] : LE_VIEW_PX[view]) + 'px';
+    if (view === 'laptop') {
+        var stageW = $('leStage').clientWidth - 42;   // less the stage padding and border
+        var scale = Math.min(1, stageW / LE_LAPTOP_PX);
+        canvas.style.maxWidth = Math.floor((LE_PAGE_PX[L.width] || 800) * scale) + 'px';
+    } else {
+        canvas.style.maxWidth = LE_VIEW_PX[view] + 'px';
+    }
 
     var rows = leRows();
     if (!rows.length) {
@@ -2016,7 +2169,7 @@ function renderBlocks() {
         return;
     }
     canvas.innerHTML = rows.map(function (row) {
-        return '<div class="lay-row le-row lay-row-' + (L.align === 'left' ? 'left' : 'center') + '">' +
+        return '<div class="lay-row le-row lay-row-' + (L.align === 'left' || L.align === 'right' ? L.align : 'center') + '">' +
                row.map(leCellHTML).join('') + '</div>';
     }).join('');
 
@@ -2025,16 +2178,25 @@ function renderBlocks() {
         cell.addEventListener('pointerdown', leDragDown);
         cell.addEventListener('focusin', function () { leSelect(id); });
     });
-    canvas.querySelectorAll('textarea.le-text').forEach(function (ta) {
-        var b = editForm.blocks[leIndex(ta.getAttribute('data-id'))];
-        ta.addEventListener('input', function () {
+    canvas.querySelectorAll('.le-rich').forEach(function (el) {
+        var b = editForm.blocks[leIndex(el.getAttribute('data-id'))];
+        el.addEventListener('input', function () {
             // One undo step per burst of typing in a block.
             if (editForm.typing !== b._id) { leSnapshot(); editForm.typing = b._id; leUndoButtons(); }
-            b.text = ta.value;
-            leGrow(ta);
+            leRichSync(el, b);
             leScheduleBackup();
         });
+        // Pasted text arrives as plain words (no outside fonts or colours).
+        el.addEventListener('paste', function (e) {
+            var t = e.clipboardData && e.clipboardData.getData('text/plain');
+            if (t == null) return;
+            e.preventDefault();
+            document.execCommand('insertText', false, t);
+        });
+        el.addEventListener('focus', function () { leFloatShow(el, b); });
+        el.addEventListener('blur', function () { setTimeout(leFloatHideIfIdle, 150); });
     });
+    richLoadFonts(editForm.blocks);
     canvas.querySelectorAll('input.le-caption').forEach(function (inp) {
         var b = editForm.blocks[leIndex(inp.getAttribute('data-id'))];
         inp.addEventListener('input', function () {
@@ -2052,6 +2214,7 @@ function renderBlocks() {
         img.addEventListener('load', function () { leGrowAll(); });
     });
 
+    leMarkSelection();
     requestAnimationFrame(leGrowAll);
     renderInspector();
     leScheduleBackup();
@@ -2709,11 +2872,14 @@ function leDragDown(e) {
         leToggleMulti(id);
         return;
     }
-    var ta = e.target.closest('textarea');
+    var ta = e.target.closest('.le-rich');
     if (ta && cell.classList.contains('le-sel') && !(editForm.multi || []).length) return;
     if (!ta && e.target.closest('input, select, button, .le-resize')) return;
-    leSelect(id);
-    leDrag = { id: id, cell: cell, x0: e.clientX, y0: e.clientY, started: false, pointerId: e.pointerId, ta: ta };
+    // Grabbing one of several selected blocks drags them all together;
+    // a plain click on it (no drag) then selects just that block.
+    var group = (editForm.multi || []).indexOf(id) !== -1 ? editForm.multi.slice() : null;
+    if (!group) leSelect(id);
+    leDrag = { id: id, group: group, cell: cell, x0: e.clientX, y0: e.clientY, started: false, pointerId: e.pointerId, ta: ta };
     document.addEventListener('pointermove', leDragMove);
     document.addEventListener('pointerup', leDragUp);
     document.addEventListener('pointercancel', leDragCancel);
@@ -2762,15 +2928,17 @@ function leDragBegin(e) {
     if (sel && sel.removeAllRanges) sel.removeAllRanges();
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     d.geo = leMeasure();
-    d.cell.classList.add('le-dragsrc');
+    d.cells = d.group ? d.group.map(function (gid) { return document.querySelector('#leCanvas .le-cell[data-id="' + gid + '"]'); }).filter(Boolean) : [d.cell];
+    d.cells.forEach(function (c) { c.classList.add('le-dragsrc'); });
     document.body.classList.add('le-grabbing');
 
     var b = editForm.blocks[leIndex(d.id)];
     var ghost = document.createElement('div');
     ghost.className = 'le-drag-ghost';
     if (b.type === 'image') ghost.innerHTML = '<img src="' + leImgSrc(b) + '" alt="">';
-    else if (b.type === 'text') ghost.textContent = (b.text || 'Text').slice(0, 60);
-    else ghost.textContent = b.type === 'spacer' ? 'Space' : 'Line';
+    else if (b.type === 'text') ghost.textContent = (b.text || richPlain(richClean(b.html)) || 'Text').slice(0, 60);
+    else ghost.textContent = ({ spacer: 'Space', divider: 'Line', carousel: 'Carousel', gallery: 'Gallery', compare: 'Before / after', banner: 'Banner', button: 'Button' })[b.type] || 'Block';
+    if (d.group) ghost.insertAdjacentHTML('beforeend', '<span class="le-ghost-count">' + d.group.length + ' blocks</span>');
     document.body.appendChild(ghost);
     d.ghost = ghost;
 
@@ -2865,7 +3033,7 @@ function leDragEnd() {
     var d = leDrag;
     leDrag = null;
     if (d && d.started) {
-        d.cell.classList.remove('le-dragsrc');
+        (d.cells || [d.cell]).forEach(function (c) { c.classList.remove('le-dragsrc'); });
         if (d.ghost) d.ghost.remove();
         if (d.line) d.line.remove();
     }
@@ -2876,13 +3044,15 @@ function leDragCancel() { leDragEnd(); }
 
 function leDragUp() {
     var d = leDragEnd();
+    if (d && !d.started && d.group) { leSelect(d.id); return; }   // plain click inside a group: just that block
     if (d && !d.started && d.ta) {   // a click on a text block: start editing it
-        var ta = document.querySelector('textarea.le-text[data-id="' + d.id + '"]');
-        if (ta) ta.focus();
+        var ta = document.querySelector('.le-rich[data-id="' + d.id + '"]');
+        if (ta) leFocusAt(ta, d.x0, d.y0);
         return;
     }
     if (!d || !d.started || !d.target) return;
-    leApplyMove(d.id, d.target);
+    if (d.group) leApplyGroupMove(d.group, d.target);
+    else leApplyMove(d.id, d.target);
 }
 
 /* Move block `id` to the target. Works purely on editForm.blocks. */
@@ -2951,6 +3121,68 @@ function leApplyMove(id, t) {
     renderBlocks();
 }
 
+/* Move several selected blocks together. They keep their order and stay
+   together: blocks that shared a line still share one, and a block that
+   started its own line still does (except the first, which goes where it
+   was dropped). Works on a copy of the list and only commits it if every
+   block is still there exactly once. */
+function leApplyGroupMove(ids, t) {
+    if (t.cell && ids.indexOf(t.cell) !== -1) return;   // dropped on itself
+    var state = leState();
+    var flags = {};
+    editForm.blocks.forEach(function (b) { flags[b._id] = !!b.newRow; });
+    var group = editForm.blocks.filter(function (b) { return ids.indexOf(b._id) !== -1; });
+    if (group.length < 2) return;
+    var list = [];
+    editForm.blocks.forEach(function (b, k) {
+        if (ids.indexOf(b._id) !== -1) {
+            // If a removed block started a row, the next remaining block of that row starts it now.
+            if (k === 0 || b.newRow) {
+                for (var n = k + 1; n < editForm.blocks.length; n++) {
+                    var nb = editForm.blocks[n];
+                    if (nb.newRow) break;
+                    if (ids.indexOf(nb._id) === -1) { nb.newRow = true; break; }
+                }
+            }
+            return;
+        }
+        list.push(b);
+    });
+    if (list.length) list[0].newRow = true;
+
+    var at;
+    if (t.cell) {
+        var j = -1;
+        for (var m = 0; m < list.length; m++) if (list[m]._id === t.cell) j = m;
+        if (j === -1) return leRestoreSilently(state);
+        if (t.after) { at = j + 1; group[0].newRow = false; }
+        else { at = j; group[0].newRow = !!list[j].newRow || j === 0; list[j].newRow = false; }
+    } else {
+        var r = -1; at = list.length;
+        for (var q = 0; q < list.length; q++) {
+            if (q === 0 || list[q].newRow) { r++; if (r === t.row) { at = q; break; } }
+        }
+        group[0].newRow = true;
+        if (at < list.length) list[at].newRow = true;
+    }
+    for (var g = 1; g < group.length; g++) group[g].newRow = flags[group[g]._id];
+    Array.prototype.splice.apply(list, [at, 0].concat(group));
+    if (list.length) list[0].newRow = true;
+
+    if (list.length !== editForm.blocks.length) {
+        editForm.blocks.forEach(function (b) { b.newRow = flags[b._id]; });
+        return;
+    }
+    editForm.undo.push(state);
+    if (editForm.undo.length > 60) editForm.undo.shift();
+    editForm.redo = [];
+    editForm.typing = null;
+    editForm.blocks = list;
+    editForm.multi = ids.slice();
+    editForm.sel = ids[ids.length - 1];
+    renderBlocks();
+}
+
 /* Undo any newRow flags touched while working out a move that didn't happen. */
 function leRestoreSilently(state) {
     editForm.blocks.forEach(function (b, k) { b.newRow = state.blocks[k].newRow; });
@@ -3011,11 +3243,11 @@ function renderInspector() {
                 '<li><b>Click</b> a block to change its settings here.</li>' +
                 '<li><b>Drag</b> any block to move it (click text once more to type in it). A <b>bright line</b> shows where it will land: ' +
                     'an upright line puts it <b>beside</b> that block, a flat line gives it a <b>row of its own</b>. Esc cancels.</li>' +
-                '<li><b>Shift- or Ctrl-click</b> several blocks to arrange them together, give them one size, or turn photos into a <b>carousel, gallery or before/after</b>.</li>' +
+                '<li><b>Shift- or Ctrl-click</b> several blocks to arrange them together, give them one size, or turn photos into a <b>carousel, gallery or before/after</b>. Drag any of them to <b>move them all together</b>.</li>' +
                 '<li><b>More blocks…</b> in the Add bar has banners, galleries, carousels, before/after sliders and buttons.</li>' +
                 '<li><b>Drag the right edge</b> of a block to make it wider or narrower.</li>' +
                 '<li>Blocks wrap onto the next line when a row is full, so three photos at ⅓ make a grid.</li>' +
-                '<li>In text, <code>**bold**</code>, <code>*italic*</code> and <code>[link](https://…)</code> work.</li>' +
+                '<li><b>Select words</b> in a text block and a small toolbar appears: bold, italic, underline, link and colour (Ctrl+B / I / U work too). The panel sets the font, size and colour of the whole block.</li>' +
                 '<li><b>Shortcuts:</b> Ctrl+Z undo · Delete removes · Ctrl+D duplicates · Ctrl+C / Ctrl+V copy and paste (even between posts) · Alt+arrows move · Esc deselects.</li>' +
                 '<li>Unsaved changes are backed up in this browser, so a closed tab can be recovered.</li>' +
             '</ul>';
@@ -3051,19 +3283,20 @@ function renderInspector() {
              return '<label class="le-check"><input type="checkbox" data-show="' + LE_HIDE_KEY[v] + '"' +
                     (b[LE_HIDE_KEY[v]] ? '' : ' checked') + '> ' + v.charAt(0).toUpperCase() + v.slice(1) + '</label>';
          }).join('') + '</div></div>';
-    h += '<label class="le-check"><input type="checkbox" id="leNewRow"' + (b.newRow || i === 0 ? ' checked' : '') +
-         (i === 0 ? ' disabled' : '') + '> Start a new row</label>';
+    if (i > 0) {
+        h += '<div class="le-field"><label>Position</label>' +
+             leSeg('newRow', [['join', 'Beside the one before'], ['new', 'On a new line']], b.newRow ? 'new' : 'join', 'rowpos') +
+             '<p class="help">' + (b.newRow
+                 ? 'Always starts a fresh line, even if there is room beside the block before it.'
+                 : 'Sits on the same line as the block before it while there is room (it drops below when the line is full).') + '</p></div>';
+    }
 
     if (b.type === 'text') {
         h += '<div class="le-field"><label>Style</label>' +
              leSeg('style', [['body', 'Paragraph'], ['heading', 'Heading'], ['subheading', 'Subheading'], ['quote', 'Quote'], ['small', 'Small']], b.style || 'body', 'prop') + '</div>';
         h += '<div class="le-field"><label>Alignment</label>' +
              leSeg('align', [['left', 'Left'], ['center', 'Centre'], ['right', 'Right'], ['justify', 'Justify']], b.align || 'left', 'prop') + '</div>';
-        h += '<div class="le-field"><label>Formatting</label><div class="le-seg">' +
-             '<button type="button" class="le-seg-btn" data-fmt="bold"><b>B</b></button>' +
-             '<button type="button" class="le-seg-btn" data-fmt="italic"><i>I</i></button>' +
-             '<button type="button" class="le-seg-btn" data-fmt="link">Link</button></div>' +
-             '<p class="help">Select some words in the block, then press a button.</p></div>';
+        h += leTextLookInspector(b);
         if ((b.style || 'body') === 'body') {
             h += '<label class="le-check"><input type="checkbox" id="leDropcap"' + (b.dropcap ? ' checked' : '') + '> Large first letter (drop cap)</label>';
         }
@@ -3078,7 +3311,8 @@ function renderInspector() {
             h += '<label class="le-check"><input type="checkbox" id="leExif"' + (b.exif ? ' checked' : '') + '> Show camera settings under it</label>';
         }
         h += (b.src || b.file)
-            ? '<div class="le-field"><button type="button" class="secondary le-small" id="leReplace">Replace photo…</button></div>'
+            ? '<div class="le-field"><button type="button" class="secondary le-small" id="leReplace">Replace photo…</button> ' +
+              '<button type="button" class="secondary le-small" id="leToBanner" title="Write a title (and a line) over this photo">Make it a banner</button></div>'
             : lePhotoSlotField('Choose the photo', '');
     } else if (b.type === 'carousel' || b.type === 'gallery') {
         h += renderCarouselInspector(b);
@@ -3102,7 +3336,8 @@ function renderInspector() {
         bt.addEventListener('click', function () {
             var prop = this.getAttribute('data-prop'), val = this.getAttribute('data-val');
             if (prop === 'w' || prop === 'cols') val = parseInt(val, 10);
-            if (prop === 'shade') val = parseFloat(val);
+            if (prop === 'shade' || prop === 'ts') val = parseFloat(val);
+            if (val === '') val = undefined;   // "Site" / "Regular" / "Normal": back to the site's own style
             leSetProp(prop, val);
         });
     });
@@ -3118,10 +3353,19 @@ function renderInspector() {
     box.querySelectorAll('[data-show]').forEach(function (cb) {
         cb.addEventListener('change', function () { leSetProp(this.getAttribute('data-show'), this.checked ? undefined : true); });
     });
-    $('leNewRow').addEventListener('change', function () { leSetProp('newRow', this.checked); });
-    box.querySelectorAll('[data-fmt]').forEach(function (bt) {
-        bt.addEventListener('mousedown', function (e) { e.preventDefault(); });   // keep the text selection
-        bt.addEventListener('click', function () { leFormat(b, this.getAttribute('data-fmt')); });
+    box.querySelectorAll('[data-rowpos]').forEach(function (bt) {
+        bt.addEventListener('click', function () { leSetProp('newRow', this.getAttribute('data-val') === 'new'); });
+    });
+    if (b.type === 'text') wireTextLook(box, b);
+    if ($('leToBanner')) $('leToBanner').addEventListener('click', function () {
+        leSnapshot();
+        var t = (($('prTitle') || $('pfTitle')) || {}).value || '';
+        b.type = 'banner';
+        b.title = t; b.text = (($('prSubtitle') || {}).value) || '';
+        b.place = 'bottom-left'; b.shade = 0.35;
+        b.crop = b.crop && b.crop !== 'original' ? b.crop : 'wide';
+        delete b.caption; delete b.exif; delete b.zoom;
+        renderBlocks();
     });
     if ($('leCaptionIns')) $('leCaptionIns').addEventListener('input', function () {
         if (editForm.typing !== b._id + 'c') { leSnapshot(); editForm.typing = b._id + 'c'; leUndoButtons(); }
@@ -3202,27 +3446,196 @@ function leRemove(b) {
 }
 
 /* Wrap the selected words in **, * or a [link](…). */
-function leFormat(b, kind) {
-    var ta = document.querySelector('textarea.le-text[data-id="' + b._id + '"]');
-    if (!ta) return;
-    var s = ta.selectionStart, e = ta.selectionEnd, v = ta.value;
-    var picked = v.slice(s, e) || (kind === 'link' ? 'link text' : 'text');
-    var out;
-    if (kind === 'link') {
-        var url = prompt('Link to (web address):', 'https://');
-        if (!url || url === 'https://') return;
-        out = '[' + picked + '](' + url.trim() + ')';
-    } else {
-        var mark = kind === 'bold' ? '**' : '*';
-        out = mark + picked + mark;
+/* ---------- rich text editing ---------- */
+
+var LE_COLOURS = [
+    ['#c8b89a', 'Sand (the site accent)'], ['#f0ebe5', 'Bright white'], ['#9a948c', 'Stone grey'],
+    ['#8fa37a', 'Moss green'], ['#c0754a', 'Rust'], ['#8fb3c9', 'Sky blue'], ['#d9a441', 'Gold']
+];
+var leLastRange = null;
+
+try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch (e) {}
+
+/* Keep the block's saved words in step with what is on screen. */
+function leRichSync(el, b) {
+    var paras = richClean(el.innerHTML);
+    b.html = paras.map(function (p) { return '<p>' + p + '</p>'; }).join('');
+    b.text = richPlain(paras);
+}
+
+/* Put the caret where the block was clicked. */
+function leFocusAt(el, x, y) {
+    el.focus();
+    var r = document.caretRangeFromPoint ? document.caretRangeFromPoint(x, y) : null;
+    if (!r && document.caretPositionFromPoint) {
+        var pos = document.caretPositionFromPoint(x, y);
+        if (pos) { r = document.createRange(); r.setStart(pos.offsetNode, pos.offset); r.collapse(true); }
     }
+    if (r && el.contains(r.startContainer)) {
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(r);
+    }
+}
+
+/* Remember the last selection inside a text block, so toolbar buttons and
+   the colour picker (which take focus) still act on the selected words. */
+document.addEventListener('selectionchange', function () {
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    var r = sel.getRangeAt(0);
+    var host = r.commonAncestorContainer.nodeType === 1 ? r.commonAncestorContainer : r.commonAncestorContainer.parentNode;
+    if (host && host.closest && host.closest('#leCanvas .le-rich')) {
+        leLastRange = r.cloneRange();
+        leFloatPlace();
+    }
+});
+
+function leRichHost() {
+    if (!leLastRange) return null;
+    var n = leLastRange.commonAncestorContainer;
+    var host = n.nodeType === 1 ? n : n.parentNode;
+    return host && host.closest ? host.closest('#leCanvas .le-rich') : null;
+}
+
+function leRichCmd(cmd, val) {
+    var el = leRichHost();
+    if (!el) { leToast('Select some words in a text block first'); return; }
+    var b = editForm.blocks[leIndex(el.getAttribute('data-id'))];
+    if (!b) return;
+    el.focus();
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(leLastRange);
     leSnapshot();
-    ta.value = v.slice(0, s) + out + v.slice(e);
-    b.text = ta.value;
-    ta.focus();
-    ta.setSelectionRange(s, s + out.length);
-    leGrow(ta);
+    editForm.typing = null;
+    try { document.execCommand('styleWithCSS', false, false); } catch (e) {}
+    if (cmd === 'link') {
+        var url = prompt('Link to (web address, or a page on your site like /contact.html):', 'https://');
+        if (!url || url === 'https://' || !richSafeHref(url)) { editForm.undo.pop(); return; }
+        if (sel.isCollapsed) document.execCommand('insertHTML', false, '<a href="' + richEsc(url.trim()) + '">' + richEsc(url.trim()) + '</a>');
+        else document.execCommand('createLink', false, url.trim());
+    } else if (cmd === 'unlink') {
+        document.execCommand('unlink');
+    } else if (cmd === 'colour') {
+        document.execCommand('foreColor', false, val);
+    } else {
+        document.execCommand(cmd);   // bold, italic, underline, removeFormat
+    }
+    leRichSync(el, b);
     leUndoButtons();
+    leFloatShow(el, b);
+}
+
+/* The small toolbar that floats above a text block while you type in it. */
+function leFloatEl() {
+    var f = $('leFloat');
+    if (f) return f;
+    f = document.createElement('div');
+    f.id = 'leFloat';
+    f.className = 'le-float hidden';
+    f.innerHTML =
+        '<button type="button" data-rc="bold" title="Bold (Ctrl+B)"><b>B</b></button>' +
+        '<button type="button" data-rc="italic" title="Italic (Ctrl+I)"><i>I</i></button>' +
+        '<button type="button" data-rc="underline" title="Underline (Ctrl+U)"><u>U</u></button>' +
+        '<button type="button" data-rc="link" title="Make the selected words a link">Link</button>' +
+        '<button type="button" data-rc="unlink" title="Remove a link">Unlink</button>' +
+        '<span class="le-float-sep"></span>' +
+        LE_COLOURS.map(function (c) {
+            return '<button type="button" class="le-dot" data-rcol="' + c[0] + '" title="' + c[1] + '" style="background:' + c[0] + '"></button>';
+        }).join('') +
+        '<label class="le-dot le-dot-pick" title="Any colour"><input type="color" id="leFloatPick" value="#c8b89a"></label>' +
+        '<span class="le-float-sep"></span>' +
+        '<button type="button" data-rc="removeFormat" title="Take the selected words back to plain text">Clear</button>';
+    document.body.appendChild(f);
+    f.addEventListener('mousedown', function (e) { if (!e.target.closest('input')) e.preventDefault(); });   // keep the selection
+    f.querySelectorAll('[data-rc]').forEach(function (bt) {
+        bt.addEventListener('click', function () { leRichCmd(this.getAttribute('data-rc')); });
+    });
+    f.querySelectorAll('[data-rcol]').forEach(function (bt) {
+        bt.addEventListener('click', function () { leRichCmd('colour', this.getAttribute('data-rcol')); });
+    });
+    $('leFloatPick').addEventListener('change', function () { leRichCmd('colour', this.value); });
+    window.addEventListener('scroll', leFloatPlace, true);
+    return f;
+}
+
+function leFloatShow(el) {
+    var f = leFloatEl();
+    f._el = el;
+    f.classList.remove('hidden');
+    leFloatPlace();
+}
+
+function leFloatPlace() {
+    var f = $('leFloat');
+    if (!f || f.classList.contains('hidden') || !f._el || !document.body.contains(f._el)) return;
+    var r = f._el.getBoundingClientRect();
+    var top = r.top - f.offsetHeight - 8;
+    if (top < 8) top = r.bottom + 8;
+    f.style.top = top + 'px';
+    f.style.left = Math.max(8, Math.min(window.innerWidth - f.offsetWidth - 8, r.left)) + 'px';
+}
+
+function leFloatHideIfIdle() {
+    var f = $('leFloat');
+    if (!f) return;
+    var a = document.activeElement;
+    if (a && (a.closest && (a.closest('.le-rich') || a.closest('#leFloat')))) return;
+    f.classList.add('hidden');
+}
+
+/* Whole-block look: font, size, colour, weight, spacing, and a reset. */
+function leTextLookInspector(b) {
+    var ts = parseFloat(b.ts) || 1;
+    var custom = ['font', 'ts', 'color', 'weight', 'caps', 'lh'].some(function (k) { return b[k] != null && b[k] !== ''; }) ||
+                 /<span style="color/.test(b.html || '');
+    var fontOpts = [['', 'Site']].concat(Object.keys(RICH_FONTS).map(function (k) {
+        return [k, '<span style="font-family:' + RICH_FONTS[k].css.replace(/"/g, "'") + '">' + RICH_FONTS[k].name + '</span>'];
+    }));
+    return '<div class="le-subhead">Look of this text</div>' +
+        '<div class="le-field"><label>Font</label>' + leSeg('font', fontOpts, b.font || '', 'prop') + '</div>' +
+        '<div class="le-field"><label>Size <span class="le-muted" id="leTsVal">' + Math.round(ts * 100) + '%</span></label>' +
+            leSeg('ts', [['0.8', 'S'], ['1', 'Normal'], ['1.3', 'L'], ['1.7', 'XL'], ['2.4', 'XXL']], String(ts), 'prop') +
+            '<input type="range" min="50" max="400" step="5" value="' + Math.round(ts * 100) + '" id="leTsRange"></div>' +
+        '<div class="le-field"><label>Colour</label><div class="le-dots">' +
+            '<button type="button" class="le-dot le-dot-site' + (b.color ? '' : ' active') + '" data-tcolor="" title="The site\'s own text colour">Site</button>' +
+            LE_COLOURS.map(function (c) {
+                return '<button type="button" class="le-dot' + (b.color === c[0] ? ' active' : '') + '" data-tcolor="' + c[0] + '" title="' + c[1] + '" style="background:' + c[0] + '"></button>';
+            }).join('') +
+            '<label class="le-dot le-dot-pick' + (b.color && !LE_COLOURS.some(function (c) { return c[0] === b.color; }) ? ' active' : '') + '" title="Any colour">' +
+                '<input type="color" id="leTColor" value="' + (richHex(b.color) || '#c8b89a') + '"></label>' +
+        '</div></div>' +
+        '<div class="le-field"><label>Weight</label>' + leSeg('weight', [['light', 'Light'], ['', 'Regular'], ['bold', 'Bold']], b.weight || '', 'prop') + '</div>' +
+        '<div class="le-field"><label>Line spacing</label>' + leSeg('lh', [['tight', 'Tight'], ['', 'Normal'], ['airy', 'Airy']], b.lh || '', 'prop') + '</div>' +
+        '<label class="le-check"><input type="checkbox" id="leCaps"' + (b.caps ? ' checked' : '') + '> Spaced capitals</label>' +
+        '<div class="le-field"><button type="button" class="secondary le-small" id="leTextReset"' + (custom ? '' : ' disabled') + '>Reset to the site\'s text style</button>' +
+            '<p class="help">Clears the font, size, colour and coloured words. Bold, italic and links stay.</p></div>' +
+        '<p class="help">To style a few words, select them in the block: a small toolbar appears above it.</p>';
+}
+
+function wireTextLook(box, b) {
+    var range = $('leTsRange');
+    if (range) {
+        range.addEventListener('input', function () {
+            $('leTsVal').textContent = this.value + '%';
+            var el = document.querySelector('.le-rich[data-id="' + b._id + '"]');
+            if (el) el.style.fontSize = 'calc(var(--fs, 1rem) * ' + (this.value / 100) + ')';
+        });
+        range.addEventListener('change', function () { leSetProp('ts', +this.value === 100 ? undefined : this.value / 100); });
+    }
+    box.querySelectorAll('[data-tcolor]').forEach(function (bt) {
+        bt.addEventListener('click', function () { leSetProp('color', this.getAttribute('data-tcolor') || undefined); });
+    });
+    if ($('leTColor')) $('leTColor').addEventListener('change', function () { leSetProp('color', richHex(this.value) || undefined); });
+    if ($('leCaps')) $('leCaps').addEventListener('change', function () { leSetProp('caps', this.checked ? true : undefined); });
+    if ($('leTextReset')) $('leTextReset').addEventListener('click', function () {
+        leSnapshot();
+        ['font', 'ts', 'color', 'weight', 'caps', 'lh'].forEach(function (k) { delete b[k]; });
+        var paras = richClean((b.html || '').replace(/<span style="color:#[0-9a-f]{6}">|<\/span>/g, ''));
+        b.html = paras.map(function (p) { return '<p>' + p + '</p>'; }).join('');
+        renderBlocks();
+    });
 }
 
 /* What gets saved: rows of real content only, with the editor's temporary
@@ -3240,8 +3653,12 @@ function serializeLayoutBlocks() {
             if (b.hideP) o.hideP = true;
             if (b.valign && b.valign !== 'top') o.valign = b.valign;
             if (b.type === 'text') {
-                if (!(b.text || '').trim()) return null;
-                o.text = b.text;
+                var paras = b.html != null ? richClean(b.html) : richFromText(b.text);
+                var plain = richPlain(paras);
+                if (!plain.trim()) return null;
+                o.text = plain;
+                o.html = paras.map(function (p) { return '<p>' + p + '</p>'; }).join('');
+                ['font', 'ts', 'color', 'weight', 'caps', 'lh'].forEach(function (k) { if (b[k] != null && b[k] !== '') o[k] = b[k]; });
                 if (b.style && b.style !== 'body') o.style = b.style;
                 if (b.align && b.align !== 'left') o.align = b.align;
                 if (b.dropcap && (b.style || 'body') === 'body') o.dropcap = true;
@@ -3895,6 +4312,15 @@ function openProjectForm(index) {
         kind: 'project', index: index, blocks: postToEditBlocks(proj), layout: editLayoutFor(proj),
         cover: proj.cover || '', sel: null, undo: [], redo: [], view: 'laptop', perRow: 2
     };
+    // The cover used to sit above the page on its own, with no settings.
+    // Now it is an ordinary photo block at the top that can be resized,
+    // cropped, turned into a banner or removed; the cover itself is just
+    // the picture used on the Projects page and when the link is shared.
+    if (proj.cover && editForm.layout.cover !== false) {
+        if (editForm.blocks.length) editForm.blocks[0].newRow = true;
+        editForm.blocks.unshift(leCoverBlock(proj.cover));
+    }
+    editForm.layout.cover = false;
 
     $('projFormHolder').innerHTML =
         '<div class="add-form">' +
@@ -3912,8 +4338,10 @@ function openProjectForm(index) {
                         '<option value="published"' + (proj.status !== 'draft' ? ' selected' : '') + '>Published — visible to everyone</option>' +
                     '</select></div>' +
             '</div>' +
-            '<div class="af-row"><label>Cover photo (shown on the Projects page)</label>' +
-                '<div class="proj-cover" id="prCoverBox"></div></div>' +
+            '<div class="af-row"><label>Cover photo</label>' +
+                '<div class="proj-cover" id="prCoverBox"></div>' +
+                '<span class="help">Shown on the Projects page and when the link is shared. Choosing one also puts it at the top of the page below, ' +
+                'as a normal photo: resize it, crop it, turn it into a banner with the title over it, move it or remove it.</span></div>' +
             layoutEditorHTML('project') +
             '<div class="af-actions">' +
                 '<button id="prSave">Save project</button>' +
@@ -3944,11 +4372,39 @@ function renderProjectCover() {
             (cover ? '<button class="secondary" id="prCoverClear">Remove</button>' : '') +
         '</div>';
     $('prCoverPick').addEventListener('click', function () {
-        openLibraryPicker(function (fn) { editForm.cover = fn; renderProjectCover(); }, projectOwnImages());
+        openLibraryPicker(function (fn) { var old = editForm.cover; editForm.cover = fn; renderProjectCover(); leCoverChanged(old, fn); }, projectOwnImages());
     });
     if ($('prCoverClear')) {
         $('prCoverClear').addEventListener('click', function () { editForm.cover = ''; renderProjectCover(); });
     }
+}
+
+function leCoverPath(cover) { return cover.indexOf('/') === -1 ? 'images/Thumb/' + cover : cover; }
+
+function leCoverBlock(cover) {
+    var b = { _id: leId(), type: 'image', src: leCoverPath(cover), crop: 'original', caption: '', w: 12, newRow: true };
+    leFillCustomWidths([b]);
+    return b;
+}
+
+/* A new cover: swap it into the top photo or banner if that was the old
+   cover, otherwise add it at the top (unless it is already on the page). */
+function leCoverChanged(oldCover, newCover) {
+    if (!editForm || !newCover) return;
+    var src = leCoverPath(newCover), first = editForm.blocks[0];
+    var oldSrc = oldCover ? leCoverPath(oldCover) : null;
+    leSnapshot();
+    if (first && (first.type === 'image' || first.type === 'banner') && oldSrc && first.src === oldSrc) {
+        first.src = src;
+    } else if (!editForm.blocks.some(function (b) { return b.src === src; })) {
+        if (first) first.newRow = true;
+        editForm.blocks.unshift(leCoverBlock(newCover));
+    } else {
+        editForm.undo.pop();
+        return;
+    }
+    editForm.sel = editForm.blocks[0]._id;
+    renderBlocks();
 }
 
 /* Images uploaded into THIS project, offered as cover options alongside the
@@ -4162,7 +4618,7 @@ function buildProjectPage(proj) {
 '    <meta name="description" content="' + desc + '">\n' +
 '    <title>' + title + '</title>\n' +
 '\n' +
-'    <link rel="stylesheet" href="css/style.css?v=10">\n' +
+'    <link rel="stylesheet" href="css/style.css?v=7">\n' +
 '\n' +
 '    <link rel="icon" type="image/png" href="/favicon-512.png">\n' +
 '    <link rel="apple-touch-icon" href="/favicon-512.png">\n' +
