@@ -98,6 +98,7 @@ document.addEventListener('DOMContentLoaded', function () {
             populateBlog(content.blog);
             populateProjectsList(content.projects);
             populateProjectDetail(content.projects);
+            initLayoutViewer();
             initInteractivity();
         })
         .catch(function () {
@@ -285,6 +286,180 @@ function blocksToHTML(blocks, alt) {
     return html;
 }
 
+/* ----------------------------------------------------------
+   LAYOUT RENDERER (posts and projects made in the layout editor)
+   A post/project saved by the newer editor carries
+   layout: { v: 2, width, gap, align, corners, cover } and its
+   blocks gain a width in twelfths (w), an optional newRow that
+   starts a fresh row, and per-type options:
+     text    { text, style: body|heading|subheading|quote|small, align }
+     image   { src, crop, caption, zoom }
+     spacer  { size: s|m|l }      divider {}
+   Each row is a wrapping flex line, so a row of 4-wide photos
+   becomes a 3-up grid and an image beside text sits side by side.
+   Tablets and phones adapt automatically, unless layout.custom
+   gives them their own widths (block.tw / block.pw); hideD/T/P
+   hide a block on laptops / tablets / phones.
+   Anything without layout.v === 2 renders the old way above.
+   ---------------------------------------------------------- */
+
+var LAYOUT_PAGE_PX = { standard: 800, wide: 1100, full: 1400 };
+
+function isLayoutV2(item) {
+    return !!(item && item.layout && item.layout.v === 2);
+}
+
+/* **bold**, *italic* and [text](link) inside escaped text. Links may only be
+   web, email, or on-site addresses. */
+function inlineMarkup(s) {
+    var h = esc(s);
+    h = h.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function (m, label, url) {
+        url = url.replace(/&amp;/g, '&');
+        if (/^[a-z][a-z0-9+.-]*:/i.test(url) && !/^(https?|mailto):/i.test(url)) return label;
+        var ext = /^https?:/i.test(url) ? ' target="_blank" rel="noopener"' : '';
+        return '<a href="' + esc(url) + '"' + ext + '>' + label + '</a>';
+    });
+    h = h.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+    h = h.replace(/(^|[^*])\*([^*\s][^*\n]*)\*/g, '$1<em>$2</em>');
+    return h;
+}
+
+function layText(b) {
+    var text = b.text || '';
+    var paras = text.split(/\n\s*\n/).filter(function (p) { return p.trim(); });
+    var cls = 'lay-ta-' + (b.align || 'left');
+    var inner = function (p) { return inlineMarkup(p.trim()).replace(/\n/g, '<br>'); };
+    switch (b.style) {
+        case 'heading':    return '<h2 class="lay-h2 ' + cls + '">' + inner(text) + '</h2>';
+        case 'subheading': return '<h3 class="lay-h3 ' + cls + '">' + inner(text) + '</h3>';
+        case 'quote':
+            return '<blockquote class="lay-quote ' + cls + '">' +
+                   paras.map(function (p) { return '<p>' + inner(p) + '</p>'; }).join('') + '</blockquote>';
+        default:
+            return '<div class="lay-text ' + cls + (b.style === 'small' ? ' lay-small' : '') + '">' +
+                   paras.map(function (p) { return '<p>' + inner(p) + '</p>'; }).join('') + '</div>';
+    }
+}
+
+/* Library photos have a full-size twin; offer it for big or sharp screens. */
+function layImage(b, alt, pagePx) {
+    var src = b.src || (b.filename ? 'images/Blog/' + b.filename : '');
+    if (!src) return '';
+    var full = src.indexOf('images/Thumb/') === 0 ? src.replace('images/Thumb/', 'images/Full res/') : '';
+    var px = Math.round(pagePx * (b.w || 12) / 12);
+    var attrs = 'src="' + encodeURI(src) + '" alt="' + esc(b.caption || alt) + '" loading="lazy"';
+    if (full) {
+        attrs += ' srcset="' + encodeURI(src) + ' 1000w, ' + encodeURI(full) + ' 2400w"' +
+                 ' sizes="(max-width: 700px) 100vw, ' + px + 'px"';
+    }
+    var zoom = b.zoom !== false;
+    if (zoom) attrs += ' data-full="' + encodeURI(full || src) + '"';
+    return '<figure class="lay-figure lay-crop-' + (b.crop || 'original') + (zoom ? ' lay-zoom' : '') + '">' +
+               '<img ' + attrs + '>' +
+               (b.caption ? '<figcaption>' + inlineMarkup(b.caption) + '</figcaption>' : '') +
+           '</figure>';
+}
+
+/* Split the block list into rows: a block with newRow starts a new one. */
+function layoutRows(blocks) {
+    var rows = [];
+    (blocks || []).forEach(function (b, i) {
+        if (i === 0 || b.newRow) rows.push([]);
+        rows[rows.length - 1].push(b);
+    });
+    return rows;
+}
+
+function layoutToHTML(item, alt) {
+    var L = item.layout || {};
+    var width = LAYOUT_PAGE_PX[L.width] ? L.width : 'standard';
+    var pagePx = LAYOUT_PAGE_PX[width];
+    var custom = L.custom || {};
+    var html = '<div class="lay-page lay-w-' + width + ' lay-gap-' + (L.gap || 'normal') +
+               (L.corners === 'square' ? ' lay-square' : '') +
+               (custom.tablet ? ' lay-custom-t' : '') + (custom.phone ? ' lay-custom-p' : '') + '">';
+    layoutRows(item.blocks).forEach(function (row) {
+        html += '<div class="lay-row lay-row-' + (L.align === 'left' ? 'left' : 'center') + '">';
+        row.forEach(function (b) {
+            var w = Math.max(1, Math.min(12, parseInt(b.w, 10) || 12));
+            var inner = '';
+            if (b.type === 'text') inner = layText(b);
+            else if (b.type === 'image') inner = layImage(b, alt, pagePx);
+            else if (b.type === 'spacer') inner = '<div class="lay-spacer lay-sp-' + (b.size || 'm') + '"></div>';
+            else if (b.type === 'divider') inner = '<hr class="lay-divider">';
+            if (!inner) return;
+            // tw / pw: widths on tablets / phones, used only when that size has
+            // its own layout (layout.custom); otherwise those sizes adapt by themselves.
+            var style = '--w:' + w;
+            if (custom.tablet && b.tw) style += ';--wt:' + b.tw;
+            if (custom.phone && b.pw) style += ';--wp:' + b.pw;
+            html += '<div class="lay-cell lay-' + b.type + ' lay-v-' + (b.valign || 'top') +
+                    (b.type === 'image' && w <= 4 ? ' lay-narrow' : '') +
+                    (b.hideD ? ' lay-hide-d' : '') + (b.hideT ? ' lay-hide-t' : '') + (b.hideP ? ' lay-hide-p' : '') +
+                    '" style="' + style + '">' + inner + '</div>';
+        });
+        html += '</div>';
+    });
+    return html + '</div>';
+}
+
+/* Either renderer, whichever the item was saved with. */
+function itemBodyHTML(item, alt) {
+    return isLayoutV2(item) ? layoutToHTML(item, alt) : blocksToHTML(asBlocks(item), alt);
+}
+
+/* Click a photo in a post or project to see it large; arrows/keys step
+   through that page's photos. Built on demand so pages without one pay nothing. */
+function initLayoutViewer() {
+    var figs = document.querySelectorAll('.lay-zoom img');
+    if (!figs.length) return;
+    var viewer = null, list = [], at = 0;
+
+    function show(i) {
+        at = (i + list.length) % list.length;
+        var img = list[at];
+        viewer.querySelector('img').src = img.getAttribute('data-full');
+        var cap = img.parentNode.querySelector('figcaption');
+        viewer.querySelector('.lay-viewer-cap').innerHTML = cap ? cap.innerHTML : '';
+    }
+    function close() { viewer.classList.remove('active'); document.body.style.overflow = ''; }
+    function build() {
+        viewer = document.createElement('div');
+        viewer.className = 'lay-viewer';
+        viewer.innerHTML = '<button class="lay-viewer-close" aria-label="Close">&times;</button>' +
+            '<button class="lay-viewer-prev" aria-label="Previous">&#8249;</button>' +
+            '<figure><img alt=""><figcaption class="lay-viewer-cap"></figcaption></figure>' +
+            '<button class="lay-viewer-next" aria-label="Next">&#8250;</button>';
+        document.body.appendChild(viewer);
+        viewer.addEventListener('click', function (e) { if (e.target === viewer) close(); });
+        viewer.querySelector('.lay-viewer-close').addEventListener('click', close);
+        viewer.querySelector('.lay-viewer-prev').addEventListener('click', function () { show(at - 1); });
+        viewer.querySelector('.lay-viewer-next').addEventListener('click', function () { show(at + 1); });
+        document.addEventListener('keydown', function (e) {
+            if (!viewer.classList.contains('active')) return;
+            if (e.key === 'Escape') close();
+            else if (e.key === 'ArrowLeft') show(at - 1);
+            else if (e.key === 'ArrowRight') show(at + 1);
+        });
+    }
+    Array.prototype.forEach.call(figs, function (img) {
+        img.addEventListener('click', function () {
+            if (!viewer) build();
+            // Step through the photos of this one post/project only.
+            var page = img.closest('.lay-page');
+            list = Array.prototype.slice.call(page.querySelectorAll('.lay-zoom img')).filter(function (el) {
+                return el.offsetParent !== null;   // skip photos hidden at this screen size
+            });
+            var multi = list.length > 1;
+            viewer.querySelector('.lay-viewer-prev').style.display = multi ? '' : 'none';
+            viewer.querySelector('.lay-viewer-next').style.display = multi ? '' : 'none';
+            show(list.indexOf(img));
+            viewer.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+    });
+}
+
 /* Build blog post list on blog.html from the blog array in content.json.
    Renders nothing if the array is empty. */
 function populateBlog(blog) {
@@ -299,7 +474,7 @@ function populateBlog(blog) {
 
         var html = '<h2>' + esc(post.title) + '</h2>';
         if (post.date) html += '<span class="blog-date">' + esc(post.date) + '</span>';
-        html += blocksToHTML(asBlocks(post), post.title);
+        html += itemBodyHTML(post, post.title);
 
         article.innerHTML = html;
         container.appendChild(article);
@@ -409,13 +584,15 @@ function populateProjectDetail(projects) {
             '</header>';
 
     var cover = projectImageSrc(project.cover);
-    if (cover) {
+    // The layout editor can turn the cover off at the top of the page (it
+    // still shows on the Projects page card).
+    if (cover && !(isLayoutV2(project) && project.layout.cover === false)) {
         html += '<img class="project-cover" src="' + encodeURI(cover) +
                 '" alt="' + esc(project.title) + '">';
     }
 
     html += '<div class="project-body blog-post">' +
-                blocksToHTML(asBlocks(project), project.title) +
+                itemBodyHTML(project, project.title) +
             '</div>';
     html += '<p class="project-back"><a href="/projects.html">&#8249; All projects</a></p>';
 
