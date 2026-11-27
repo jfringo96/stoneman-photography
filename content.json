@@ -702,10 +702,153 @@
       "aperture": "f/10",
       "iso": "4000",
       "date": "17 Feb 2025"
+    },
+    {
+      "filename": "shells-1.jpg",
+      "title": "Shells 1",
+      "category": "shells",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "Olympus 300mm F4.0",
+      "focal": "300mm",
+      "shutter": "1/1600",
+      "aperture": "f/4",
+      "iso": "200",
+      "date": "20 Nov 2026"
+    },
+    {
+      "filename": "shells-2.jpg",
+      "title": "Shells 2",
+      "category": "shells",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "Olympus 300mm F4.0",
+      "focal": "300mm",
+      "shutter": "1/1250",
+      "aperture": "f/5.6",
+      "iso": "200",
+      "date": "21 Nov 2026"
+    },
+    {
+      "filename": "shells-3.jpg",
+      "title": "Shells 3",
+      "category": "shells",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "Olympus 300mm F4.0",
+      "focal": "300mm",
+      "shutter": "1/2500",
+      "aperture": "f/4",
+      "iso": "400",
+      "date": "21 Nov 2026"
+    },
+    {
+      "filename": "shells-4.jpg",
+      "title": "Shells 4",
+      "category": "shells",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "Olympus 300mm F4.0",
+      "focal": "300mm",
+      "shutter": "1/1000",
+      "aperture": "f/7.1",
+      "iso": "400",
+      "date": "21 Nov 2026"
+    },
+    {
+      "filename": "shells-5.jpg",
+      "title": "Shells 5",
+      "category": "shells",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "Olympus 300mm F4.0",
+      "focal": "300mm",
+      "shutter": "1/1000",
+      "aperture": "f/7.1",
+      "iso": "640",
+      "date": "21 Nov 2026"
+    },
+    {
+      "filename": "shells-6.jpg",
+      "title": "Shells 6",
+      "category": "shells",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "Olympus 300mm F4.0",
+      "focal": "300mm",
+      "shutter": "1/1000",
+      "aperture": "f/6.3",
+      "iso": "320",
+      "date": "21 Nov 2026"
+    },
+    {
+      "filename": "shells-7.jpg",
+      "title": "Shells 7",
+      "category": "shells",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "Olympus 300mm F4.0",
+      "focal": "300mm",
+      "shutter": "1/1000",
+      "aperture": "f/7.1",
+      "iso": "400",
+      "date": "21 Nov 2026"
     }
   ],
   "blog": [],
   "projects": [
+    {
+      "slug": "shells",
+      "title": "Shells",
+      "subtitle": "",
+      "cover": "",
+      "status": "draft",
+      "blocks": [
+        {
+          "type": "image",
+          "src": "images/Thumb/shells-1.jpg",
+          "size": "medium",
+          "align": "center"
+        },
+        {
+          "type": "image",
+          "src": "images/Thumb/shells-2.jpg",
+          "size": "medium",
+          "align": "center"
+        },
+        {
+          "type": "image",
+          "src": "images/Thumb/shells-3.jpg",
+          "size": "medium",
+          "align": "center"
+        },
+        {
+          "type": "image",
+          "src": "images/Thumb/shells-4.jpg",
+          "size": "medium",
+          "align": "center"
+        },
+        {
+          "type": "image",
+          "src": "images/Thumb/shells-5.jpg",
+          "size": "medium",
+          "align": "center"
+        },
+        {
+          "type": "image",
+          "src": "images/Thumb/shells-6.jpg",
+          "size": "medium",
+          "align": "center"
+        },
+        {
+          "type": "image",
+          "src": "images/Thumb/shells-7.jpg",
+          "size": "medium",
+          "align": "center"
+        }
+      ],
+      "photo_category": "shells"
+    },
     {
       "slug": "brecon-beacons",
       "title": "The Brecon Beacons",
@@ -727,6 +870,11 @@
     {
       "key": "landscape",
       "label": "Landscape and City"
+    },
+    {
+      "key": "shells",
+      "label": "Shells",
+      "hidden": true
     }
   ]
 }
