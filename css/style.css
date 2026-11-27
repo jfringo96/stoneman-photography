@@ -1045,7 +1045,7 @@ body.home-page .featured-item {
     margin: 1rem 0 0 calc((100% - var(--pw)) / 2);   /* wider pages spread evenly past the text column */
 }
 .lay-w-wide { --pw: min(1100px, calc(100vw - 4rem)); }
-.lay-w-full { --pw: min(1400px, calc(100vw - 4rem)); }
+.lay-w-full { --pw: calc(100vw - 2rem); }   /* edge to edge, less a small margin */
 .lay-gap-none   { --gap: 0px; }
 .lay-gap-tight  { --gap: 6px; }
 .lay-gap-roomy  { --gap: 36px; }
@@ -1054,6 +1054,7 @@ body.home-page .featured-item {
 .lay-row { display: flex; flex-wrap: wrap; gap: var(--gap); }
 .lay-row + .lay-row { margin-top: var(--gap); }
 .lay-row-center { justify-content: center; }
+.lay-row-right  { justify-content: flex-end; }
 
 .lay-cell {
     flex: 0 0 auto;
@@ -1073,7 +1074,14 @@ body.home-page .featured-item {
 .lay-crop-panorama img { aspect-ratio: 21 / 9; object-fit: cover; }
 .lay-figure figcaption { font-size: 0.8rem; margin-top: 0.45rem; opacity: 0.6; line-height: 1.5; }
 
-.lay-text { line-height: 1.75; }
+.lay-text { line-height: 1.75; --fs: 1rem; }
+.lay-small { --fs: 0.85rem; }
+.lay-h2 { --fs: 1.7rem; }
+.lay-h3 { --fs: 0.95rem; }
+.lay-quote { --fs: 1.2rem; }
+/* A text block given its own colour: its paragraphs follow it */
+.lay-cell .lay-tc.lay-tc p { color: inherit; }
+.lay-text u, .lay-quote u, .lay-h2 u, .lay-h3 u { text-underline-offset: 3px; }
 .lay-text p:last-child, .lay-quote p:last-child { margin-bottom: 0; }
 .lay-small { font-size: 0.85rem; }
 .blog-post .lay-h2, .lay-h2 { font-size: 1.7rem; font-weight: 300; letter-spacing: 0.02em; line-height: 1.3; margin: 0; }
