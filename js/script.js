@@ -99,6 +99,7 @@ document.addEventListener('DOMContentLoaded', function () {
             populateProjectsList(content.projects);
             populateProjectDetail(content.projects);
             initLayoutViewer();
+            initCarousels();
             initInteractivity();
         })
         .catch(function () {
@@ -295,6 +296,7 @@ function blocksToHTML(blocks, alt) {
      text    { text, style: body|heading|subheading|quote|small, align }
      image   { src, crop, caption, zoom }
      spacer  { size: s|m|l }      divider {}
+     carousel { slides: [{ src, caption }], crop, fit, autoplay }
    Each row is a wrapping flex line, so a row of 4-wide photos
    becomes a 3-up grid and an image beside text sits side by side.
    Tablets and phones adapt automatically, unless layout.custom
@@ -360,6 +362,53 @@ function layImage(b, alt, pagePx) {
            '</figure>';
 }
 
+/* A carousel: one photo at a time, swipe or arrows, optional autoplay. */
+function layCarousel(b, alt, pagePx) {
+    var slides = (b.slides || []).filter(function (s) { return s.src; });
+    if (!slides.length) return '';
+    var html = '<div class="lay-car lay-crop-' + (b.crop || 'landscape') + (b.fit === 'contain' ? ' lay-fit-contain' : '') + '"' +
+               (b.autoplay ? ' data-autoplay="1"' : '') + '>' +
+               '<div class="lay-car-track">' +
+               slides.map(function (s) {
+                   return '<div class="lay-car-slide">' + layImage({ src: s.src, caption: s.caption, w: b.w, crop: b.crop || 'landscape' }, alt, pagePx) + '</div>';
+               }).join('') + '</div>';
+    if (slides.length > 1) {
+        html += '<button class="lay-car-btn lay-car-prev" aria-label="Previous photo">&#8249;</button>' +
+                '<button class="lay-car-btn lay-car-next" aria-label="Next photo">&#8250;</button>' +
+                '<div class="lay-car-dots">' + slides.map(function (s, i) {
+                    return '<button aria-label="Photo ' + (i + 1) + '"' + (i === 0 ? ' class="on"' : '') + '></button>';
+                }).join('') + '</div>';
+    }
+    return html + '</div>';
+}
+
+function initCarousels() {
+    document.querySelectorAll('.lay-car').forEach(function (car) {
+        var track = car.querySelector('.lay-car-track');
+        var slides = track.children, dots = car.querySelectorAll('.lay-car-dots button');
+        if (slides.length < 2) return;
+        var at = 0, timer = null;
+        function go(i) {
+            at = (i + slides.length) % slides.length;
+            track.scrollTo({ left: slides[at].offsetLeft, behavior: 'smooth' });
+        }
+        track.addEventListener('scroll', function () {
+            var i = Math.round(track.scrollLeft / track.clientWidth);
+            if (i !== at && i >= 0 && i < slides.length) at = i;
+            dots.forEach(function (d, k) { d.classList.toggle('on', k === i); });
+        }, { passive: true });
+        car.querySelector('.lay-car-prev').addEventListener('click', function () { stop(); go(at - 1); });
+        car.querySelector('.lay-car-next').addEventListener('click', function () { stop(); go(at + 1); });
+        dots.forEach(function (d, k) { d.addEventListener('click', function () { stop(); go(k); }); });
+        function stop() { if (timer) { clearInterval(timer); timer = null; } }
+        if (car.getAttribute('data-autoplay') && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+            timer = setInterval(function () { go(at + 1); }, 5000);
+            car.addEventListener('pointerenter', stop);
+            track.addEventListener('touchstart', stop, { passive: true });
+        }
+    });
+}
+
 /* Split the block list into rows: a block with newRow starts a new one. */
 function layoutRows(blocks) {
     var rows = [];
@@ -387,6 +436,7 @@ function layoutToHTML(item, alt) {
             else if (b.type === 'image') inner = layImage(b, alt, pagePx);
             else if (b.type === 'spacer') inner = '<div class="lay-spacer lay-sp-' + (b.size || 'm') + '"></div>';
             else if (b.type === 'divider') inner = '<hr class="lay-divider">';
+            else if (b.type === 'carousel') inner = layCarousel(b, alt, pagePx);
             if (!inner) return;
             // tw / pw: widths on tablets / phones, used only when that size has
             // its own layout (layout.custom); otherwise those sizes adapt by themselves.
