@@ -312,6 +312,7 @@
         .le-resize::after { content: ''; position: absolute; top: 50%; left: 5px; width: 4px; height: 36px; max-height: 70%; transform: translateY(-50%); border-radius: 3px; background: var(--accent); opacity: 0; transition: opacity 0.12s ease; }
         .le-cell:hover .le-resize::after, .le-cell.le-sel .le-resize::after, .le-resizing .le-resize::after { opacity: 1; }
 
+        .le-cell:not(.le-sel) .le-text { cursor: grab; }
         .le .le-text { display: block; background: transparent; border: none; padding: 0; color: inherit; resize: none; overflow: hidden; line-height: 1.75; font-size: 1rem; min-height: 1.75em; border-radius: 0; }
         .le-text:focus { outline: none; }
         .le-text::placeholder { color: rgba(224,219,213,0.35); }
@@ -330,11 +331,35 @@
         .le-spacer.lay-sp-s { height: 1.25rem; }
         .le-spacer.lay-sp-l { height: 6rem; }
 
-        /* Drop zones between rows: a hairline normally, a clear target while dragging */
-        .le-slot { min-height: var(--gap); border-radius: 6px; transition: min-height 0.12s ease, background 0.12s ease; }
-        .le-canvas > .le-slot:first-child, .le-canvas > .le-slot:last-child { min-height: 6px; }
-        .le-dragging .le-slot { min-height: 34px; margin: 4px 0; border: 1px dashed rgba(200,184,154,0.55); background: rgba(200,184,154,0.06); }
-        .le-slot .le-cell { width: 100% !important; opacity: 0.6; }
+        /* Dragging: the source dims in place, a copy follows the pointer, a line shows the drop spot */
+        .le-canvas .lay-row + .lay-row { margin-top: var(--gap); }
+        .le-dragsrc { opacity: 0.3; }
+        body.le-grabbing, body.le-grabbing * { cursor: grabbing !important; user-select: none !important; }
+        .le-drag-ghost { position: fixed; left: 0; top: 0; z-index: 1000; pointer-events: none; width: 130px; max-height: 110px; overflow: hidden; border-radius: 6px; background: var(--panel-2); color: var(--text); font-size: 0.75rem; padding: 0.4rem 0.5rem; box-shadow: 0 8px 24px rgba(0,0,0,0.5); opacity: 0.92; }
+        .le-drag-ghost img { display: block; width: calc(100% + 1rem); margin: -0.4rem -0.5rem; }
+        .le-drop-line { position: fixed; z-index: 999; pointer-events: none; background: var(--accent); border-radius: 3px; box-shadow: 0 0 0 3px rgba(200,184,154,0.25); transition: left 0.08s ease, top 0.08s ease, width 0.08s ease, height 0.08s ease; }
+        .le-grip { pointer-events: auto; cursor: grab; touch-action: none; }
+
+        /* Carousel block in the editor */
+        .le-car { position: relative; }
+        .le-canvas .lay-fit-contain img { object-fit: contain; background: #1b1917; }
+        .le-car-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: #fff; font-size: 1.4rem; line-height: 1; padding: 0.3rem 0.65rem; border-radius: 50%; }
+        .le-car-prev { left: 8px; } .le-car-next { right: 8px; }
+        .le-car-badge { position: absolute; right: 8px; bottom: 8px; background: rgba(0,0,0,0.6); color: #fff; font-size: 0.7rem; padding: 0.1rem 0.5rem; border-radius: 10px; pointer-events: none; }
+        .le-car-cap { font-size: 0.8rem; color: rgba(240,235,229,0.6); padding-top: 0.35rem; }
+        .le-car-empty { border: 1px dashed var(--border); border-radius: 6px; padding: 2.5rem 1rem; text-align: center; color: var(--muted); font-size: 0.85rem; }
+        .le-slides { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.5rem; max-height: 320px; overflow-y: auto; }
+        .le-slide { display: grid; grid-template-columns: 48px 1fr auto; gap: 0.4rem; align-items: center; padding: 3px; border-radius: 6px; }
+        .le-slide-on { background: var(--bg); }
+        .le-slide img { width: 48px; height: 36px; object-fit: cover; border-radius: 4px; cursor: pointer; }
+        .le-slide input { padding: 0.25rem 0.4rem; font-size: 0.75rem; }
+        .le-slide-btns { display: flex; gap: 2px; }
+        .le-slide-btns button { background: var(--bg); color: var(--muted); padding: 2px 5px; font-size: 0.6rem; }
+        .le-slide-btns button:disabled { opacity: 0.3; }
+        .le-btnrow { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+        .le-btnrow .btn-like.le-small { padding: 0.35rem 0.7rem; font-size: 0.78rem; }
+        .le-btncol { display: flex; flex-direction: column; align-items: flex-start; gap: 0.45rem; }
+        .le-seg-lbl { font-size: 0.72rem; color: var(--muted); padding: 0.28rem 0.4rem; }
 
         /* Settings panel */
         .le-inspector { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 0.9rem; position: sticky; top: 1rem; font-size: 0.85rem; }
@@ -428,6 +453,6 @@
     <!-- EXIF reading + drag-to-reorder (loaded from CDN) -->
     <script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-    <script src="js/admin.js?v=20"></script>
+    <script src="js/admin.js?v=21"></script>
 </body>
 </html>

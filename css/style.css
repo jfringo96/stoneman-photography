@@ -1120,6 +1120,27 @@ body.dark-page .lay-text a, body.dark-page .lay-quote a { color: var(--colour-ac
     .lay-hide-p { display: none; }
 }
 
+/* Carousel */
+.lay-car { position: relative; }
+.lay-car-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; border-radius: var(--radius); }
+.lay-car-track::-webkit-scrollbar { display: none; }
+.lay-car-slide { flex: 0 0 100%; scroll-snap-align: start; }
+.lay-car .lay-figure img { border-radius: 0; }
+.lay-fit-contain img { object-fit: contain !important; background: rgba(0,0,0,0.25); }
+.lay-car-btn {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 2.6rem; height: 2.6rem; border-radius: 50%; border: none; cursor: pointer;
+    background: rgba(20,18,16,0.55); color: #f0ebe5; font-size: 1.6rem; line-height: 1;
+    opacity: 0.8; transition: opacity 0.2s ease;
+}
+.lay-car-btn:hover { opacity: 1; }
+.lay-car-prev { left: 0.75rem; }
+.lay-car-next { right: 0.75rem; }
+.lay-car:has(figcaption) .lay-car-btn { top: calc(50% - 0.9rem); }
+.lay-car-dots { display: flex; justify-content: center; gap: 0.45rem; margin-top: 0.7rem; }
+.lay-car-dots button { width: 8px; height: 8px; padding: 0; border-radius: 50%; border: none; background: currentColor; opacity: 0.3; cursor: pointer; }
+.lay-car-dots button.on { opacity: 0.9; }
+
 /* Full-screen photo viewer */
 .lay-viewer {
     position: fixed; inset: 0; z-index: 1000;

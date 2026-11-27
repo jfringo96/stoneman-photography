@@ -31,7 +31,7 @@ var THUMB_QUALITY  = 0.82;
 var BLOG_MAX_EDGE  = 1600;         // blog images are resized down to this
 var BLOG_QUALITY   = 0.85;
 var MAX_FEATURED   = 3;            // home page shows 3 featured photos
-var SCRIPT_VERSION = 15;           // script.js?v=N used by generated project pages —
+var SCRIPT_VERSION = 16;           // script.js?v=N used by generated project pages —
                                    // keep in step with the HTML pages when script.js changes
 
 
@@ -1456,6 +1456,7 @@ function firstPostImage(post) {
     var blocks = post.blocks || [];
     for (var i = 0; i < blocks.length; i++) {
         var b = blocks[i];
+        if (b.type === 'carousel' && b.slides && b.slides[0] && b.slides[0].src) return rawSrc(b.slides[0].src);
         if (b.type !== 'image') continue;
         if (b.src) return rawSrc(b.src);
         if (b.filename) return blogSrc(b.filename);
@@ -1678,6 +1679,7 @@ function layoutEditorHTML(kind) {
                 '</select></label>' +
                 '<button class="secondary" data-add="spacer">Space</button>' +
                 '<button class="secondary" data-add="divider">Line</button>' +
+                '<button class="secondary" data-add="carousel">Carousel</button>' +
             '</div>' +
             '<p class="help upload-note">' + note + '</p>' +
             '<div class="library-picker hidden" id="libraryPicker"></div>' +
@@ -1716,6 +1718,7 @@ document.addEventListener('keydown', function (e) {
     var tag = (e.target.tagName || '').toLowerCase();
     if (tag === 'textarea' || tag === 'input' || tag === 'select') return;
     var key = (e.key || '').toLowerCase();
+    if (key === 'escape' && (editForm.multi || []).length) { leSelect(null); return; }
     if ((e.ctrlKey || e.metaKey) && key === 'z') { e.preventDefault(); e.shiftKey ? leRedo() : leUndo(); }
     else if ((e.ctrlKey || e.metaKey) && key === 'y') { e.preventDefault(); leRedo(); }
 });
@@ -1731,7 +1734,9 @@ function leSnapshot() {
 function leState() {
     return {
         blocks: editForm.blocks.map(function (b) {
-            var c = {}; Object.keys(b).forEach(function (k) { c[k] = b[k]; }); return c;
+            var c = {}; Object.keys(b).forEach(function (k) { c[k] = b[k]; });
+            if (b.slides) c.slides = b.slides.map(function (sl) { var o = {}; Object.keys(sl).forEach(function (k) { o[k] = sl[k]; }); return o; });
+            return c;
         }),
         layout: JSON.parse(JSON.stringify(editForm.layout))
     };
@@ -1791,6 +1796,7 @@ function leNewBlock(kind) {
     else if (kind === 'quote') { b.type = 'text'; b.style = 'quote'; b.align = 'left'; b.text = ''; }
     else if (kind === 'spacer') { b.type = 'spacer'; b.size = 'm'; }
     else if (kind === 'divider') { b.type = 'divider'; }
+    else if (kind === 'carousel') { b.type = 'carousel'; b.crop = 'landscape'; b.slides = []; }
     else { b.type = 'text'; b.style = 'body'; b.align = 'left'; b.text = ''; }
     return b;
 }
@@ -1924,12 +1930,15 @@ function leCellHTML(b) {
         inner = '<div class="le-spacer lay-sp-' + (b.size || 'm') + '"><span>Space</span></div>';
     } else if (b.type === 'divider') {
         inner = '<div class="le-divider"><hr class="lay-divider"></div>';
+    } else if (b.type === 'carousel') {
+        inner = leCarouselHTML(b);
     }
     var w = leEffW(b);
     var hidden = b[LE_HIDE_KEY[editForm.view]];
     return '<div class="lay-cell le-cell le-' + b.type + ' lay-v-' + (b.valign || 'top') +
                (hidden ? ' le-hidden' : '') +
-               (editForm.sel === b._id ? ' le-sel' : '') + '" data-id="' + b._id + '" style="--w:' + w + '">' +
+               (((editForm.multi || []).length ? editForm.multi.indexOf(b._id) !== -1 : editForm.sel === b._id) ? ' le-sel' : '') +
+               '" data-id="' + b._id + '" style="--w:' + w + '">' +
                '<div class="le-tools"><span class="le-grip" title="Drag to move">⠿</span><span class="le-wl">' + leWidthLabel(w) + '</span>' +
                    (hidden ? '<span class="le-wl le-hid">Hidden on ' + editForm.view + '</span>' : '') + '</div>' +
                inner +
@@ -1955,15 +1964,14 @@ function renderBlocks() {
         renderInspector();
         return;
     }
-    var slot = '<div class="le-slot" title="Drop here for a row of its own"></div>';
-    canvas.innerHTML = slot + rows.map(function (row) {
+    canvas.innerHTML = rows.map(function (row) {
         return '<div class="lay-row le-row lay-row-' + (L.align === 'left' ? 'left' : 'center') + '">' +
-               row.map(leCellHTML).join('') + '</div>' + slot;
+               row.map(leCellHTML).join('') + '</div>';
     }).join('');
 
     canvas.querySelectorAll('.le-cell').forEach(function (cell) {
         var id = cell.getAttribute('data-id');
-        cell.addEventListener('mousedown', function () { leSelect(id); });
+        cell.addEventListener('pointerdown', leDragDown);
         cell.addEventListener('focusin', function () { leSelect(id); });
     });
     canvas.querySelectorAll('textarea.le-text').forEach(function (ta) {
@@ -1985,28 +1993,13 @@ function renderBlocks() {
         });
     });
     canvas.querySelectorAll('.le-resize').forEach(function (h) { h.addEventListener('pointerdown', leResizeStart); });
+    canvas.querySelectorAll('.le-car-nav').forEach(function (bt) {
+        bt.addEventListener('click', function () { leCarouselStep(this.getAttribute('data-car'), +this.getAttribute('data-step')); });
+    });
     canvas.querySelectorAll('.le-canvas img').forEach(function (img) {
         img.addEventListener('load', function () { leGrowAll(); });
     });
 
-    if (typeof Sortable !== 'undefined') {
-        canvas.querySelectorAll('.le-row, .le-slot').forEach(function (list) {
-            Sortable.create(list, {
-                group: 'layout',
-                draggable: '.le-cell',
-                filter: 'textarea, input, select, button, .le-resize',
-                preventOnFilter: false,
-                animation: 150,
-                delay: 150,
-                delayOnTouchOnly: true,
-                ghostClass: 'le-ghost',
-                forceFallback: true,       // same feel with mouse, pen and touch
-                fallbackTolerance: 4,
-                onStart: function () { canvas.classList.add('le-dragging'); },
-                onEnd: leDropped
-            });
-        });
-    }
     requestAnimationFrame(leGrowAll);
     renderInspector();
 }
@@ -2019,48 +2012,533 @@ function leUndoButtons() {
 }
 
 function leSelect(id) {
-    if (editForm.sel === id) return;
+    if (editForm.sel === id && !(editForm.multi || []).length) return;
     editForm.sel = id;
-    document.querySelectorAll('#leCanvas .le-cell').forEach(function (c) {
-        c.classList.toggle('le-sel', c.getAttribute('data-id') === id);
-    });
+    editForm.multi = [];
+    leMarkSelection();
     renderInspector();
 }
 
-/* After a drag: read the new arrangement straight off the canvas. A block
-   dropped into a row that it no longer fits in shares the line equally with
-   the others there, so "drop it beside" always gives side by side. */
-function leDropped(evt) {
-    var canvas = $('leCanvas');
-    canvas.classList.remove('le-dragging');
-    if (evt.from === evt.to && evt.oldIndex === evt.newIndex) return;
-    leSnapshot();
-    var byId = {};
-    editForm.blocks.forEach(function (b) { byId[b._id] = b; });
-    var moved = byId[evt.item.getAttribute('data-id')];
+/* ---------- selecting several blocks ----------
+   Shift- or Ctrl-click (Cmd on a Mac) adds or removes a block from the
+   selection. With two or more selected, the panel offers group actions:
+   put them side by side, make a grid, give them one width or shape,
+   turn photos into a carousel, or remove them. */
 
-    var rows = [];
-    Array.prototype.forEach.call(canvas.children, function (el) {
-        var ids = Array.prototype.map.call(el.querySelectorAll('.le-cell'), function (c) { return c.getAttribute('data-id'); });
-        if (ids.length) rows.push({ el: el, blocks: ids.map(function (id) { return byId[id]; }) });
+function leToggleMulti(id) {
+    var m = editForm.multi || [];
+    if (!m.length && editForm.sel && editForm.sel !== id) m = [editForm.sel];
+    var at = m.indexOf(id);
+    if (at === -1) m.push(id); else m.splice(at, 1);
+    editForm.multi = m.length > 1 ? m : [];
+    editForm.sel = m.length === 1 ? m[0] : (m.length ? id : null);
+    leMarkSelection();
+    renderInspector();
+}
+
+function leMarkSelection() {
+    var m = editForm.multi || [];
+    document.querySelectorAll('#leCanvas .le-cell').forEach(function (c) {
+        var id = c.getAttribute('data-id');
+        c.classList.toggle('le-sel', m.length ? m.indexOf(id) !== -1 : id === editForm.sel);
     });
+}
 
-    var prop = leWProp();
-    if (prop && evt.from !== evt.to && evt.to.classList.contains('le-row')) {
-        var row = rows.filter(function (r) { return r.el === evt.to; })[0];
-        if (row) {
-            var total = row.blocks.reduce(function (s, b) { return s + leEffW(b); }, 0);
-            if (total > 12 && total - leEffW(moved) <= 12 && row.blocks.length <= 6) leEqualise(row.blocks, prop);
+/* The selected blocks, in page order. */
+function leMultiBlocks() {
+    var m = editForm.multi || [];
+    return editForm.blocks.filter(function (b) { return m.indexOf(b._id) !== -1; });
+}
+
+/* Take the given blocks out and put them back as one row of their own, where
+   the first of them was. Works on rows of the block list, so nothing can go
+   missing. Returns false if something didn't add up. */
+function leGatherRow(group) {
+    var before = editForm.blocks.length;
+    var rows = leRows(), out = [];
+    rows.forEach(function (row) {
+        var p = row.indexOf(group[0]);
+        var keep = row.filter(function (b) { return group.indexOf(b) === -1; });
+        if (p === -1) { if (keep.length) out.push(keep); return; }
+        var head = row.slice(0, p).filter(function (b) { return group.indexOf(b) === -1; });
+        var tail = row.slice(p).filter(function (b) { return group.indexOf(b) === -1; });
+        if (head.length) out.push(head);
+        out.push(group.slice());
+        if (tail.length) out.push(tail);
+    });
+    var flat = [];
+    out.forEach(function (row) { row.forEach(function (b, k) { b.newRow = k === 0; flat.push(b); }); });
+    if (flat.length !== before) return false;
+    editForm.blocks = flat;
+    return true;
+}
+
+function leGroupAction(kind, n) {
+    var group = leMultiBlocks();
+    if (group.length < 2) return;
+    var prop = leWProp() || 'w';
+    leSnapshot();
+    if (kind === 'row' || kind === 'grid') {
+        if (!leGatherRow(group)) { leRestore(editForm.undo.pop()); return; }
+        if (kind === 'row') leEqualise(group, prop);
+        else group.forEach(function (b) { b[prop] = Math.round(12 / n); });
+    } else if (kind === 'width') {
+        group.forEach(function (b) { b[prop] = n; });
+    } else if (kind === 'crop') {
+        group.forEach(function (b) { if (b.type === 'image' || b.type === 'carousel') b.crop = n; });
+    } else if (kind === 'valign') {
+        group.forEach(function (b) { b.valign = n; });
+    } else if (kind === 'carousel') {
+        var photos = group.filter(function (b) { return b.type === 'image'; });
+        if (!leGatherRow(photos)) { leRestore(editForm.undo.pop()); return; }
+        var car = {
+            _id: leId(), type: 'carousel', newRow: true, w: 12, crop: 'landscape',
+            slides: photos.map(function (p) {
+                var s = { src: p.src, caption: p.caption || '' };
+                if (p.file) { s.file = p.file; s.previewUrl = p.previewUrl; }
+                return s;
+            })
+        };
+        leFillCustomWidths([car]);
+        var at = editForm.blocks.indexOf(photos[0]);
+        editForm.blocks = editForm.blocks.filter(function (b) { return photos.indexOf(b) === -1; });
+        editForm.blocks.splice(at, 0, car);
+        editForm.multi = [];
+        editForm.sel = car._id;
+    } else if (kind === 'remove') {
+        group.slice().forEach(function (b) {
+            var i = editForm.blocks.indexOf(b), nx = editForm.blocks[i + 1];
+            if ((b.newRow || i === 0) && nx && !nx.newRow) nx.newRow = true;
+            editForm.blocks.splice(i, 1);
+        });
+        editForm.multi = [];
+        editForm.sel = null;
+    }
+    renderBlocks();
+}
+
+function renderMultiInspector(box) {
+    var group = leMultiBlocks();
+    var photos = group.filter(function (b) { return b.type === 'image'; }).length;
+    var wProp = leWProp();
+    var h = '<div class="le-ins-title">' + group.length + ' blocks selected</div>' +
+        '<p class="help" style="margin-top:-0.4rem">Shift- or Ctrl-click blocks to add or remove them. Click one on its own to go back.</p>';
+    h += '<div class="le-field"><label>Arrange</label><div class="le-btncol">' +
+         '<button type="button" class="secondary le-small" data-group="row">Side by side in one row</button>' +
+         '<div class="le-seg"><span class="le-seg-lbl">Grid</span>' +
+             [2, 3, 4].map(function (n) { return '<button type="button" class="le-seg-btn" data-group="grid" data-n="' + n + '">' + n + ' per row</button>'; }).join('') +
+         '</div></div>' +
+         '<p class="help">They move together to where the first one is, in their current order.</p></div>';
+    if (wProp) {
+        h += '<div class="le-field"><label>Same width' + (editForm.view === 'laptop' ? '' : ' on ' + editForm.view) + '</label><div class="le-seg">' +
+             [[3, '¼'], [4, '⅓'], [6, '½'], [8, '⅔'], [12, 'Full']].map(function (o) {
+                 return '<button type="button" class="le-seg-btn" data-group="width" data-n="' + o[0] + '">' + o[1] + '</button>';
+             }).join('') + '</div></div>';
+    }
+    if (photos) {
+        h += '<div class="le-field"><label>Same shape</label><div class="le-seg">' +
+             [['original', 'Original'], ['square', 'Square'], ['landscape', '3:2'], ['portrait', '4:5'], ['wide', '16:9']].map(function (o) {
+                 return '<button type="button" class="le-seg-btn" data-group="crop" data-n="' + o[0] + '">' + o[1] + '</button>';
+             }).join('') + '</div></div>';
+    }
+    h += '<div class="le-field"><label>Line up</label><div class="le-seg">' +
+         [['top', 'Top'], ['center', 'Middle'], ['bottom', 'Bottom']].map(function (o) {
+             return '<button type="button" class="le-seg-btn" data-group="valign" data-n="' + o[0] + '">' + o[1] + '</button>';
+         }).join('') + '</div></div>';
+    if (photos >= 2) {
+        h += '<div class="le-field"><button type="button" class="le-small" data-group="carousel">Make a carousel from ' + photos + ' photos</button>' +
+             '<p class="help">A slideshow visitors swipe or click through. Only the photos are used.</p></div>';
+    }
+    h += '<div class="le-actions"><button type="button" class="le-small le-danger" data-group="remove">Remove ' + group.length + ' blocks</button></div>';
+    box.innerHTML = h;
+    box.querySelectorAll('[data-group]').forEach(function (bt) {
+        bt.addEventListener('click', function () {
+            var n = this.getAttribute('data-n');
+            leGroupAction(this.getAttribute('data-group'), /^\d+$/.test(n || '') ? parseInt(n, 10) : n);
+        });
+    });
+}
+
+/* ---------- carousels ---------- */
+
+function leCarouselHTML(b) {
+    var slides = b.slides || [];
+    var at = Math.min(b._at || 0, Math.max(0, slides.length - 1));
+    if (!slides.length) {
+        return '<div class="le-car-empty">Carousel: add photos in the panel on the right →</div>';
+    }
+    var s = slides[at];
+    return '<div class="le-car lay-crop-' + (b.crop || 'landscape') + (b.fit === 'contain' ? ' lay-fit-contain' : '') + '">' +
+               '<figure class="lay-figure"><img src="' + leImgSrc(s) + '" alt="" draggable="false"></figure>' +
+               (slides.length > 1
+                   ? '<button type="button" class="le-car-nav le-car-prev" data-car="' + b._id + '" data-step="-1">‹</button>' +
+                     '<button type="button" class="le-car-nav le-car-next" data-car="' + b._id + '" data-step="1">›</button>'
+                   : '') +
+               '<span class="le-car-badge">Carousel · ' + (at + 1) + ' of ' + slides.length + '</span>' +
+           '</div>' +
+           (s.caption ? '<div class="le-car-cap">' + escapeHtml(s.caption) + '</div>' : '');
+}
+
+function leCarouselStep(id, step) {
+    var b = editForm.blocks[leIndex(id)];
+    if (!b || !(b.slides || []).length) return;
+    b._at = ((b._at || 0) + step + b.slides.length) % b.slides.length;
+    renderBlocks();
+}
+
+function renderCarouselInspector(b) {
+    var slides = b.slides || [];
+    var h = '<div class="le-field"><label>Shape</label>' +
+        leSeg('crop', [['landscape', '3:2'], ['wide', '16:9'], ['panorama', 'Panorama'], ['square', 'Square'], ['portrait', '4:5']], b.crop || 'landscape', 'prop') + '</div>';
+    h += '<label class="le-check"><input type="checkbox" id="leCarFit"' + (b.fit === 'contain' ? ' checked' : '') + '> Show whole photos (no cropping)</label>';
+    h += '<label class="le-check"><input type="checkbox" id="leCarAuto"' + (b.autoplay ? ' checked' : '') + '> Play automatically</label>';
+    h += '<div class="le-field"><label>Photos (' + slides.length + ')</label><div class="le-slides">' +
+        slides.map(function (s, k) {
+            return '<div class="le-slide' + (k === (b._at || 0) ? ' le-slide-on' : '') + '">' +
+                '<img src="' + leImgSrc(s) + '" alt="" data-slide-show="' + k + '">' +
+                '<input type="text" data-slide-cap="' + k + '" value="' + escapeHtml(s.caption || '') + '" placeholder="Caption">' +
+                '<span class="le-slide-btns">' +
+                    '<button type="button" data-slide-move="' + k + '" data-step="-1" title="Earlier"' + (k === 0 ? ' disabled' : '') + '>◀</button>' +
+                    '<button type="button" data-slide-move="' + k + '" data-step="1" title="Later"' + (k === slides.length - 1 ? ' disabled' : '') + '>▶</button>' +
+                    '<button type="button" data-slide-del="' + k + '" title="Remove from carousel">✕</button>' +
+                '</span></div>';
+        }).join('') + '</div>' +
+        '<div class="le-btnrow">' +
+            '<button type="button" class="secondary le-small" id="leCarLib">Add from library</button>' +
+            '<label class="btn-like le-small">Upload<input type="file" id="leCarUpload" accept="image/jpeg,image/png" multiple hidden></label>' +
+        '</div></div>';
+    if (slides.length) h += '<div class="le-field"><button type="button" class="secondary le-small" id="leCarSplit">Split into separate photos</button></div>';
+    return h;
+}
+
+function wireCarouselInspector(box, b) {
+    var edit = function (fn) { leSnapshot(); fn(); renderBlocks(); };
+    $('leCarFit').addEventListener('change', function () { var on = this.checked; edit(function () { if (on) b.fit = 'contain'; else delete b.fit; }); });
+    $('leCarAuto').addEventListener('change', function () { var on = this.checked; edit(function () { if (on) b.autoplay = true; else delete b.autoplay; }); });
+    box.querySelectorAll('[data-slide-show]').forEach(function (img) {
+        img.addEventListener('click', function () { b._at = +this.getAttribute('data-slide-show'); renderBlocks(); });
+    });
+    box.querySelectorAll('[data-slide-cap]').forEach(function (inp) {
+        inp.addEventListener('input', function () {
+            var k = +this.getAttribute('data-slide-cap');
+            if (editForm.typing !== b._id + 's' + k) { leSnapshot(); editForm.typing = b._id + 's' + k; leUndoButtons(); }
+            b.slides[k].caption = this.value;
+        });
+        inp.addEventListener('change', function () { renderBlocks(); });
+    });
+    box.querySelectorAll('[data-slide-move]').forEach(function (bt) {
+        bt.addEventListener('click', function () {
+            var k = +this.getAttribute('data-slide-move'), j = k + (+this.getAttribute('data-step'));
+            edit(function () { var t = b.slides[k]; b.slides[k] = b.slides[j]; b.slides[j] = t; b._at = j; });
+        });
+    });
+    box.querySelectorAll('[data-slide-del]').forEach(function (bt) {
+        bt.addEventListener('click', function () {
+            var k = +this.getAttribute('data-slide-del');
+            edit(function () { b.slides.splice(k, 1); b._at = Math.max(0, Math.min(b._at || 0, b.slides.length - 1)); });
+        });
+    });
+    $('leCarLib').addEventListener('click', function () {
+        openLibraryPicker(function (fn) {
+            leSnapshot();
+            b.slides.push({ src: fn.indexOf('/') === -1 ? 'images/Thumb/' + fn : fn, caption: '' });
+            b._at = b.slides.length - 1;
+            renderBlocks();
+        }, null, true);
+    });
+    $('leCarUpload').addEventListener('change', function (e) {
+        var files = Array.prototype.slice.call(e.target.files);
+        e.target.value = '';
+        if (!files.length) return;
+        edit(function () {
+            files.forEach(function (f) { b.slides.push({ file: f, previewUrl: URL.createObjectURL(f), caption: '' }); });
+            b._at = b.slides.length - files.length;
+        });
+    });
+    if ($('leCarSplit')) $('leCarSplit').addEventListener('click', function () {
+        leSnapshot();
+        var at = editForm.blocks.indexOf(b), nx = editForm.blocks[at + 1];
+        var per = Math.max(1, Math.min(4, b.slides.length));
+        var photos = b.slides.map(function (s, k) {
+            var p = { _id: leId(), type: 'image', crop: b.crop || 'landscape', caption: s.caption || '', w: Math.round(12 / per), newRow: k === 0 };
+            if (s.file) { p.file = s.file; p.previewUrl = s.previewUrl; } else p.src = s.src;
+            return p;
+        });
+        leFillCustomWidths(photos);
+        if (nx && !nx.newRow) nx.newRow = true;
+        Array.prototype.splice.apply(editForm.blocks, [at, 1].concat(photos));
+        editForm.sel = photos[0]._id;
+        renderBlocks();
+    });
+}
+
+/* ---------- dragging blocks ----------
+   Nothing on the page moves while a block is being dragged: the block stays
+   where it is (dimmed), a small copy follows the pointer, and a bright line
+   shows exactly where it will land:
+     - a vertical line beside a block: it joins that row, before/after it
+     - a horizontal line between rows: it gets a row of its own there
+   Where it lands is worked out from the block list itself, never read back
+   off the screen, so a block can't be lost or duplicated. */
+
+var leDrag = null;
+
+function leDragDown(e) {
+    if (e.button !== undefined && e.button !== 0) return;
+    var cell = e.currentTarget;
+    var id = cell.getAttribute('data-id');
+    // Text works like most design tools: the first click on a text block
+    // selects it (and can drag it); once selected, clicking in it edits.
+    if (e.shiftKey || e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        leToggleMulti(id);
+        return;
+    }
+    var ta = e.target.closest('textarea');
+    if (ta && cell.classList.contains('le-sel') && !(editForm.multi || []).length) return;
+    if (!ta && e.target.closest('input, select, button, .le-resize')) return;
+    leSelect(id);
+    leDrag = { id: id, cell: cell, x0: e.clientX, y0: e.clientY, started: false, pointerId: e.pointerId, ta: ta };
+    document.addEventListener('pointermove', leDragMove);
+    document.addEventListener('pointerup', leDragUp);
+    document.addEventListener('pointercancel', leDragCancel);
+    document.addEventListener('keydown', leDragKey);
+    // Stop the browser selecting text or starting its own image drag.
+    e.preventDefault();
+}
+
+/* Positions of every block and row, measured once when the drag starts
+   (in page coordinates, so scrolling during the drag doesn't upset them). */
+function leMeasure() {
+    var sx = window.scrollX, sy = window.scrollY;
+    var rows = leRows().map(function (row) {
+        var cells = row.map(function (b) {
+            var el = document.querySelector('#leCanvas .le-cell[data-id="' + b._id + '"]');
+            var r = el.getBoundingClientRect();
+            return { id: b._id, left: r.left + sx, right: r.right + sx, top: r.top + sy, bottom: r.bottom + sy };
+        });
+        return {
+            cells: cells,
+            top: Math.min.apply(Math, cells.map(function (c) { return c.top; })),
+            bottom: Math.max.apply(Math, cells.map(function (c) { return c.bottom; }))
+        };
+    });
+    var cr = $('leCanvas').getBoundingClientRect();
+    return { rows: rows, left: cr.left + sx, right: cr.right + sx };
+}
+
+function leDragMove(e) {
+    var d = leDrag;
+    if (!d) return;
+    d.px = e.pageX; d.py = e.pageY; d.cx = e.clientX; d.cy = e.clientY;
+    if (!d.started) {
+        if (Math.abs(e.clientX - d.x0) + Math.abs(e.clientY - d.y0) < 6) return;
+        leDragBegin(e);
+    }
+    d.ghost.style.transform = 'translate(' + (e.clientX + 14) + 'px,' + (e.clientY + 14) + 'px)';
+    leDragTarget();
+    leAutoScroll();
+}
+
+function leDragBegin(e) {
+    var d = leDrag;
+    d.started = true;
+    var sel = window.getSelection && window.getSelection();
+    if (sel && sel.removeAllRanges) sel.removeAllRanges();
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    d.geo = leMeasure();
+    d.cell.classList.add('le-dragsrc');
+    document.body.classList.add('le-grabbing');
+
+    var b = editForm.blocks[leIndex(d.id)];
+    var ghost = document.createElement('div');
+    ghost.className = 'le-drag-ghost';
+    if (b.type === 'image') ghost.innerHTML = '<img src="' + leImgSrc(b) + '" alt="">';
+    else if (b.type === 'text') ghost.textContent = (b.text || 'Text').slice(0, 60);
+    else ghost.textContent = b.type === 'spacer' ? 'Space' : 'Line';
+    document.body.appendChild(ghost);
+    d.ghost = ghost;
+
+    var line = document.createElement('div');
+    line.className = 'le-drop-line';
+    document.body.appendChild(line);
+    d.line = line;
+}
+
+/* Work out the drop target under the pointer and draw the line for it. */
+function leDragTarget() {
+    var d = leDrag, g = d.geo, x = d.px, y = d.py;
+    var rows = g.rows, t = null;
+    var EDGE = 16;   // px from a row's top/bottom edge that means "a new row here"
+
+    if (!rows.length) t = { row: 0 };
+    else if (y < rows[0].top + EDGE) t = { row: 0 };
+    else if (y > rows[rows.length - 1].bottom - EDGE) t = { row: rows.length };
+    else {
+        for (var r = 0; r < rows.length; r++) {
+            var R = rows[r];
+            if (y < R.top) { t = { row: r }; break; }                 // in the gap above row r
+            if (y <= R.bottom) {
+                var edge = Math.min(EDGE, (R.bottom - R.top) / 4);
+                if (y < R.top + edge) { t = { row: r }; break; }
+                if (y > R.bottom - edge) { t = { row: r + 1 }; break; }
+                // Inside the row: the nearest block on the same line.
+                var line = R.cells.filter(function (c) { return y >= c.top && y <= c.bottom; });
+                if (!line.length) line = R.cells;
+                var best = null, bestD = Infinity;
+                line.forEach(function (c) {
+                    var dx = x < c.left ? c.left - x : (x > c.right ? x - c.right : 0);
+                    var dy = y < c.top ? c.top - y : (y > c.bottom ? y - c.bottom : 0);
+                    var dist = dx + dy * 2;
+                    if (dist < bestD) { bestD = dist; best = c; }
+                });
+                t = { cell: best.id, after: x > (best.left + best.right) / 2, box: best };
+                break;
+            }
         }
+        if (!t) t = { row: rows.length };
+    }
+    d.target = t;
+
+    // Draw the line (page coordinates -> fixed position on screen).
+    var sx = window.scrollX, sy = window.scrollY, s = d.line.style;
+    if (t.cell) {
+        var c = t.box, gap = 8;
+        var lx = t.after ? c.right + gap / 2 : c.left - gap / 2;
+        d.line.className = 'le-drop-line le-drop-v';
+        s.left = (lx - 2 - sx) + 'px'; s.top = (c.top - sy) + 'px';
+        s.width = '4px'; s.height = (c.bottom - c.top) + 'px';
+    } else {
+        var ly;
+        if (!rows.length) ly = y;
+        else if (t.row === 0) ly = rows[0].top - 6;
+        else if (t.row >= rows.length) ly = rows[rows.length - 1].bottom + 6;
+        else ly = (rows[t.row - 1].bottom + rows[t.row].top) / 2;
+        d.line.className = 'le-drop-line le-drop-h';
+        s.left = (g.left - sx) + 'px'; s.top = (ly - 2 - sy) + 'px';
+        s.width = (g.right - g.left) + 'px'; s.height = '4px';
+    }
+}
+
+/* Scroll the page when dragging near the top or bottom of the window. */
+function leAutoScroll() {
+    var d = leDrag;
+    if (!d || d.scrolling) return;
+    var step = function () {
+        if (!leDrag || !leDrag.started) { if (d) d.scrolling = false; return; }
+        var y = leDrag.cy, h = window.innerHeight, v = 0;
+        if (y < 70) v = -Math.ceil((70 - y) / 5);
+        else if (y > h - 70) v = Math.ceil((y - (h - 70)) / 5);
+        if (!v) { leDrag.scrolling = false; return; }
+        window.scrollBy(0, v);
+        leDrag.py += v;
+        leDragTarget();
+        requestAnimationFrame(step);
+    };
+    d.scrolling = true;
+    requestAnimationFrame(step);
+}
+
+function leDragKey(e) { if (e.key === 'Escape') leDragCancel(); }
+
+function leDragEnd() {
+    document.removeEventListener('pointermove', leDragMove);
+    document.removeEventListener('pointerup', leDragUp);
+    document.removeEventListener('pointercancel', leDragCancel);
+    document.removeEventListener('keydown', leDragKey);
+    document.body.classList.remove('le-grabbing');
+    var d = leDrag;
+    leDrag = null;
+    if (d && d.started) {
+        d.cell.classList.remove('le-dragsrc');
+        if (d.ghost) d.ghost.remove();
+        if (d.line) d.line.remove();
+    }
+    return d;
+}
+
+function leDragCancel() { leDragEnd(); }
+
+function leDragUp() {
+    var d = leDragEnd();
+    if (d && !d.started && d.ta) {   // a click on a text block: start editing it
+        var ta = document.querySelector('textarea.le-text[data-id="' + d.id + '"]');
+        if (ta) ta.focus();
+        return;
+    }
+    if (!d || !d.started || !d.target) return;
+    leApplyMove(d.id, d.target);
+}
+
+/* Move block `id` to the target. Works purely on editForm.blocks. */
+function leApplyMove(id, t) {
+    var before = editForm.blocks.map(function (b) { return b._id + (b.newRow ? '|' : ''); }).join(',');
+    var list = editForm.blocks.slice();
+    var i = -1;
+    for (var k = 0; k < list.length; k++) if (list[k]._id === id) i = k;
+    if (i === -1) return;
+    var state = leState();
+    var moved = list[i];
+    var wasRowStart = i === 0 || moved.newRow;
+    var next = list[i + 1];
+    list.splice(i, 1);
+    // If it started its row, the block after it now starts that row.
+    if (wasRowStart && next && !next.newRow) next.newRow = true;
+    if (list.length) list[0].newRow = true;
+
+    var joined = null;
+    if (t.cell) {
+        if (t.cell === id) return leRestoreSilently(state);
+        var j = -1;
+        for (var m = 0; m < list.length; m++) if (list[m]._id === t.cell) j = m;
+        if (j === -1) return leRestoreSilently(state);
+        var target = list[j];
+        if (t.after) {
+            moved.newRow = false;
+            list.splice(j + 1, 0, moved);
+        } else {
+            moved.newRow = !!target.newRow || j === 0;
+            target.newRow = false;
+            list.splice(j, 0, moved);
+        }
+        joined = target;
+    } else {
+        // Index of the first block of row t.row in the shortened list.
+        var r = -1, at = list.length;
+        for (var n = 0; n < list.length; n++) {
+            if (n === 0 || list[n].newRow) { r++; if (r === t.row) { at = n; break; } }
+        }
+        moved.newRow = true;
+        if (at < list.length) list[at].newRow = true;
+        list.splice(at, 0, moved);
     }
 
-    var blocks = [];
-    rows.forEach(function (r) {
-        r.blocks.forEach(function (b, k) { b.newRow = k === 0; blocks.push(b); });
-    });
-    editForm.blocks = blocks;
+    var after = list.map(function (b) { return b._id + (b.newRow ? '|' : ''); }).join(',');
+    if (after === before) return leRestoreSilently(state);   // dropped where it already was
+
+    // Never lose or duplicate a block.
+    if (list.length !== editForm.blocks.length) return leRestoreSilently(state);
+
+    editForm.undo.push(state);
+    if (editForm.undo.length > 60) editForm.undo.shift();
+    editForm.redo = [];
+    editForm.typing = null;
+    editForm.blocks = list;
+
+    // Dropped beside something in a row that is now too full: share the line equally.
+    var prop = leWProp();
+    if (joined && prop) {
+        var row = leRows().filter(function (rw) { return rw.indexOf(moved) !== -1; })[0];
+        var total = row.reduce(function (s, b) { return s + leEffW(b); }, 0);
+        if (total > 12 && total - leEffW(moved) <= 12 && row.length <= 6) leEqualise(row, prop);
+    }
     editForm.sel = moved._id;
     renderBlocks();
+}
+
+/* Undo any newRow flags touched while working out a move that didn't happen. */
+function leRestoreSilently(state) {
+    editForm.blocks.forEach(function (b, k) { b.newRow = state.blocks[k].newRow; });
 }
 
 /* Drag a block's right edge: snaps to twelfths of the row. */
@@ -2109,14 +2587,16 @@ function renderInspector() {
     var box = $('leInspector');
     if (!box) return;
     leUndoButtons();
+    if ((editForm.multi || []).length > 1) { renderMultiInspector(box); return; }
     var b = leSelected();
     if (!b) {
         box.innerHTML =
             '<div class="le-ins-title">How it works</div>' +
             '<ul class="le-tips">' +
                 '<li><b>Click</b> a block to change its settings here.</li>' +
-                '<li><b>Drag</b> a block to move it. Drop it <b>beside</b> another to sit side by side, or on a ' +
-                    '<b>dashed line</b> between rows to give it a row of its own.</li>' +
+                '<li><b>Drag</b> any block to move it (click text once more to type in it). A <b>bright line</b> shows where it will land: ' +
+                    'an upright line puts it <b>beside</b> that block, a flat line gives it a <b>row of its own</b>. Esc cancels.</li>' +
+                '<li><b>Shift- or Ctrl-click</b> several blocks to arrange them together, give them one size, or turn photos into a <b>carousel</b>.</li>' +
                 '<li><b>Drag the right edge</b> of a block to make it wider or narrower.</li>' +
                 '<li>Blocks wrap onto the next line when a row is full, so three photos at ⅓ make a grid.</li>' +
                 '<li>In text, <code>**bold**</code>, <code>*italic*</code> and <code>[link](https://…)</code> work.</li>' +
@@ -2129,7 +2609,7 @@ function renderInspector() {
     var myRow = rows.filter(function (r) { return r.indexOf(b) !== -1; })[0] || [b];
     var w = leEffW(b);
     var wProp = leWProp();
-    var typeName = { text: 'Text', image: 'Photo', spacer: 'Space', divider: 'Line' }[b.type];
+    var typeName = { text: 'Text', image: 'Photo', spacer: 'Space', divider: 'Line', carousel: 'Carousel' }[b.type];
     var h = '<div class="le-ins-title">' + typeName + '</div>';
 
     var sizeWord = editForm.view === 'laptop' ? '' : ' on ' + editForm.view;
@@ -2174,6 +2654,8 @@ function renderInspector() {
              '<input type="text" id="leCaptionIns" value="' + escapeHtml(b.caption || '') + '" placeholder="Optional"></div>';
         h += '<label class="le-check"><input type="checkbox" id="leZoom"' + (b.zoom !== false ? ' checked' : '') + '> Click to view full screen</label>';
         h += '<div class="le-field"><button type="button" class="secondary le-small" id="leReplace">Replace photo…</button></div>';
+    } else if (b.type === 'carousel') {
+        h += renderCarouselInspector(b);
     } else if (b.type === 'spacer') {
         h += '<div class="le-field"><label>Height</label>' +
              leSeg('size', [['s', 'Small'], ['m', 'Medium'], ['l', 'Large']], b.size || 'm', 'prop') +
@@ -2219,6 +2701,7 @@ function renderInspector() {
         if (inp) inp.value = this.value;
     });
     if ($('leZoom')) $('leZoom').addEventListener('change', function () { leSetProp('zoom', this.checked ? undefined : false); });
+    if (b.type === 'carousel') wireCarouselInspector(box, b);
     if ($('leReplace')) $('leReplace').addEventListener('click', function () {
         openLibraryPicker(function (fn) {
             leSnapshot();
@@ -2232,6 +2715,7 @@ function renderInspector() {
     $('leDup').addEventListener('click', function () {
         var c = {};
         Object.keys(b).forEach(function (k) { c[k] = b[k]; });
+        if (b.slides) c.slides = b.slides.map(function (sl) { var o = {}; Object.keys(sl).forEach(function (k) { o[k] = sl[k]; }); return o; });
         c._id = leId();
         leInsert([c], true);
     });
@@ -2332,6 +2816,16 @@ function serializeLayoutBlocks() {
                 if (b.crop && b.crop !== 'original') o.crop = b.crop;
                 if ((b.caption || '').trim()) o.caption = b.caption.trim();
                 if (b.zoom === false) o.zoom = false;
+            } else if (b.type === 'carousel') {
+                o.slides = (b.slides || []).map(function (sl) {
+                    var so = { src: sl.file ? sl._finalSrc : sl.src };
+                    if ((sl.caption || '').trim()) so.caption = sl.caption.trim();
+                    return so;
+                }).filter(function (sl) { return sl.src; });
+                if (!o.slides.length) return null;
+                o.crop = b.crop || 'landscape';
+                if (b.fit === 'contain') o.fit = 'contain';
+                if (b.autoplay) o.autoplay = true;
             } else if (b.type === 'spacer') {
                 o.size = b.size || 'm';
             } else if (b.type !== 'divider') {
@@ -2355,7 +2849,7 @@ var libFilter = 'all';
    item hands back either a bare portfolio filename or a full repo path, both of
    which projCoverSrc and the site's projectImageSrc already understand.
    Category buttons along the top narrow the grid to one category. */
-function openLibraryPicker(onPick, extras) {
+function openLibraryPicker(onPick, extras, keepOpen) {
     var holder = $('libraryPicker');
     var photos = state.content.portfolio || [];
     // Only offer categories that actually have photos in them.
@@ -2376,7 +2870,7 @@ function openLibraryPicker(onPick, extras) {
     })).join('');
 
     holder.innerHTML =
-        '<div class="lib-head"><span>' + (onPick ? 'Choose a photo' : 'Click photos to add them, in order — then Done') + '</span>' +
+        '<div class="lib-head"><span>' + (onPick && !keepOpen ? 'Choose a photo' : 'Click photos to add them, in order — then Done') + '</span>' +
             '<button class="link" id="libClose">Close</button></div>' +
         (extraItems ? '<div class="lib-sub">From this project</div><div class="lib-grid">' + extraItems + '</div>' +
                       '<div class="lib-sub">From the library</div>' : '') +
@@ -2411,6 +2905,12 @@ function openLibraryPicker(onPick, extras) {
     holder.querySelectorAll('.lib-item').forEach(function (bt) {
         bt.addEventListener('click', function () {
             var fn = this.getAttribute('data-fn');
+            if (onPick && keepOpen) {
+                onPick(fn);
+                this.classList.add('lib-picked');
+                $('libClose').textContent = 'Done';
+                return;
+            }
             if (onPick) { holder.classList.add('hidden'); holder.innerHTML = ''; onPick(fn); return; }
             var src = fn.indexOf('/') === -1 ? 'images/Thumb/' + fn : fn;
             leInsert([leImageBlock({ src: src }, picked)], picked > 0);
@@ -2475,7 +2975,7 @@ function lastPhotoNumber(title) {
    when there was nothing new to upload). */
 function addUploadsToLibrary(title, prevKey, upserts, status) {
     // A duplicated photo block shares its file with the original: upload it once.
-    var withFile = editForm.blocks.filter(function (b) { return b.type === 'image' && b.file; });
+    var withFile = leFileItems();
     var uploads = withFile.filter(function (b, i) {
         for (var j = 0; j < i; j++) if (withFile[j].file === b.file) return false;
         return true;
@@ -2525,6 +3025,16 @@ function addUploadsToLibrary(title, prevKey, upserts, status) {
     });
 }
 
+/* Every photo waiting to be uploaded: photo blocks and carousel slides. */
+function leFileItems() {
+    var out = [];
+    editForm.blocks.forEach(function (b) {
+        if (b.type === 'image' && b.file) out.push(b);
+        if (b.type === 'carousel') (b.slides || []).forEach(function (sl) { if (sl.file) out.push(sl); });
+    });
+    return out;
+}
+
 /* A failed save may already have added photos/categories to the in-memory
    content. Re-read what is really saved so a retry starts clean; the open
    form (and its not-yet-uploaded images) is left as it is. */
@@ -2539,7 +3049,7 @@ function restoreAfterFailedSave() {
         ensureCategories();
     }).catch(function () {}).then(function () {
         editForm = holder;
-        if (editForm) editForm.blocks.forEach(function (b) { delete b._finalSrc; });
+        if (editForm) leFileItems().forEach(function (b) { delete b._finalSrc; });
     });
 }
 
@@ -3182,7 +3692,7 @@ function buildProjectPage(proj) {
 '    <meta name="description" content="' + desc + '">\n' +
 '    <title>' + title + '</title>\n' +
 '\n' +
-'    <link rel="stylesheet" href="css/style.css?v=2">\n' +
+'    <link rel="stylesheet" href="css/style.css?v=3">\n' +
 '\n' +
 '    <link rel="icon" type="image/png" href="/favicon-512.png">\n' +
 '    <link rel="apple-touch-icon" href="/favicon-512.png">\n' +
