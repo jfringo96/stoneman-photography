@@ -1111,7 +1111,7 @@
       "slug": "brecon-beacons",
       "title": "Abergavenny & The Brecon Beacons",
       "subtitle": "",
-      "cover": "the-brecon-beacons-1.jpg",
+      "cover": "the-brecon-beacons-14.jpg",
       "status": "draft",
       "layout": {
         "v": 2,
@@ -1130,7 +1130,7 @@
         {
           "type": "banner",
           "w": 12,
-          "src": "images/Thumb/the-brecon-beacons-1.jpg",
+          "src": "images/Thumb/the-brecon-beacons-14.jpg",
           "title": "Abergavenny & The Brecon Beacons",
           "place": "top-left",
           "shade": 0,
@@ -1139,8 +1139,97 @@
         {
           "type": "text",
           "w": 12,
-          "text": "I've recently moved to the area around Abergavenny so I've been exploring it for things to photograph ",
-          "html": "<p>I've recently moved to the area around Abergavenny so I've been exploring it for things to photograph </p>",
+          "text": "I've recently moved to the area around Abergavenny so I've been exploring it for things to photograph. Usually I like taking photos of wildlife so I've been trying to scope out spots that I can visit regularly. The Usk and some other rivers are great for egrets and kingfishers but they're not always easiest the subjects to photograph, and they're a lot more skittish than they might be on a reserve where people are walking through regularly. Whilst I'm still looking for good wildlife subjects I've been trying to photograph other things around the area, and this project has formed out of that. ",
+          "html": "<p>I've recently moved to the area around Abergavenny so I've been exploring it for things to photograph. Usually I like taking photos of wildlife so I've been trying to scope out spots that I can visit regularly. The Usk and some other rivers are great for egrets and kingfishers but they're not always easiest the subjects to photograph, and they're a lot more skittish than they might be on a reserve where people are walking through regularly. Whilst I'm still looking for good wildlife subjects I've been trying to photograph other things around the area, and this project has formed out of that. </p>",
+          "newRow": true
+        },
+        {
+          "type": "carousel",
+          "w": 8,
+          "slides": [
+            {
+              "src": "images/Thumb/the-brecon-beacons-3.jpg"
+            },
+            {
+              "src": "images/Thumb/the-brecon-beacons-1.jpg"
+            }
+          ],
+          "crop": "landscape",
+          "newRow": true
+        },
+        {
+          "type": "text",
+          "w": 4,
+          "text": "To my surprise some of my favorite subjects have been the livestock and farm animals that are found throughout the Brecon Beacons National Park. Although the sheep and horses are not wild, they roam much further than they would in most English fields, and when you spot one appearing out of the bracken whilst on a hike, as this ram did pictured here, it feels more like an encounter with a wild animal than being on a farm. ",
+          "html": "<p>To my surprise some of my favorite subjects have been the livestock and farm animals that are found throughout the Brecon Beacons National Park. Although the sheep and horses are not wild, they roam much further than they would in most English fields, and when you spot one appearing out of the bracken whilst on a hike, as this ram did pictured here, it feels more like an encounter with a wild animal than being on a farm. </p>"
+        },
+        {
+          "type": "text",
+          "w": 12,
+          "text": "Most people coming to the area are here for the hiking and landscapes, although I've been less interested in landscape photography recently, it's hard to ignore the opportunity to photograph the hills and mountains. ",
+          "html": "<p>Most people coming to the area are here for the hiking and landscapes, although I've been less interested in landscape photography recently, it's hard to ignore the opportunity to photograph the hills and mountains. </p>",
+          "newRow": true
+        },
+        {
+          "type": "carousel",
+          "w": 12,
+          "slides": [
+            {
+              "src": "images/Thumb/the-brecon-beacons-7.jpg"
+            },
+            {
+              "src": "images/Thumb/the-brecon-beacons-2.jpg"
+            }
+          ],
+          "crop": "landscape",
+          "fit": "contain",
+          "newRow": true
+        },
+        {
+          "type": "text",
+          "w": 12,
+          "text": "Whilst it's not been super easy to photograph wildlife here, as there aren't loads of areas with very high concentrations of animals, I have started find places where I can get a bit closer to subjects and have taken a few shots that I'm happy with. ",
+          "html": "<p>Whilst it's not been super easy to photograph wildlife here, as there aren't loads of areas with very high concentrations of animals, I have started find places where I can get a bit closer to subjects and have taken a few shots that I'm happy with. </p>",
+          "newRow": true
+        },
+        {
+          "type": "carousel",
+          "w": 12,
+          "slides": [
+            {
+              "src": "images/Thumb/the-brecon-beacons-10.jpg"
+            },
+            {
+              "src": "images/Thumb/the-brecon-beacons-11.jpg"
+            },
+            {
+              "src": "images/Thumb/the-brecon-beacons-12.jpg"
+            }
+          ],
+          "crop": "landscape",
+          "fit": "contain",
+          "newRow": true
+        },
+        {
+          "type": "text",
+          "w": 12,
+          "text": "There are also some beautiful buildings and villages which I'm keen to continue exploring and adding to this project over time. ",
+          "html": "<p>There are also some beautiful buildings and villages which I'm keen to continue exploring and adding to this project over time. </p>",
+          "newRow": true
+        },
+        {
+          "type": "carousel",
+          "w": 12,
+          "slides": [
+            {
+              "src": "images/Thumb/the-brecon-beacons-4.jpg"
+            },
+            {
+              "src": "images/Thumb/the-brecon-beacons-13.jpg"
+            }
+          ],
+          "crop": "landscape",
+          "fit": "contain",
           "newRow": true
         }
       ],
