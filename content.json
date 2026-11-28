@@ -975,6 +975,19 @@
       "aperture": "f/4",
       "iso": "2000",
       "date": "14 Nov 2026"
+    },
+    {
+      "filename": "shells-8.jpg",
+      "title": "Shells 8",
+      "category": "shells",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "Olympus 300mm F4.0",
+      "focal": "300mm",
+      "shutter": "1/3200",
+      "aperture": "f/4",
+      "iso": "200",
+      "date": "21 Nov 2026"
     }
   ],
   "blog": [],
@@ -1069,6 +1082,13 @@
           "pw": 12,
           "text": "It's a work in progress so I'll be looking out for more sights where I can find good shells or interesting backgrounds or locations in which to photograph them.",
           "html": "<p>It's a work in progress so I'll be looking out for more sights where I can find good shells or interesting backgrounds or locations in which to photograph them.</p>",
+          "newRow": true
+        },
+        {
+          "type": "image",
+          "w": 12,
+          "pw": 12,
+          "src": "images/Thumb/shells-8.jpg",
           "newRow": true
         }
       ],
