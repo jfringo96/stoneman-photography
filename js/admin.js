@@ -4024,7 +4024,7 @@ function deletePost(index) {
    live in content.json settings and are injected by script.js.
    ---------------------------------------------------------- */
 
-var PRINTS_FILE = 'prints-preview.html';
+var PRINTS_FILE = 'prints.html';
 var RICH_HELP = 'Leave a blank line between paragraphs. Write **words** for bold, and [link text](contact.html) for a link.';
 
 var TEXT_FIELDS = [
@@ -4039,7 +4039,7 @@ var TEXT_FIELDS = [
       help: 'The Contact link below this text is kept automatically.' },
     { id: 'projects_intro', label: 'Projects page intro', kind: 'html', file: 'projects.html', marker: 'projects-intro', multiline: true, rows: 3 },
 
-    // Prints page. Until it goes live the page is prints-preview.html (hidden from the menu).
+    // Prints page
     { id: 'prints_sub', label: 'Prints page subheading', kind: 'html', file: PRINTS_FILE, marker: 'prints-sub' },
     { id: 'prints_intro', label: 'Prints page intro', kind: 'html', file: PRINTS_FILE, marker: 'prints-intro', multiline: true, rich: true, rows: 12,
       help: RICH_HELP },

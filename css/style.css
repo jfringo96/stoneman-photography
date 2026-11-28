@@ -1733,3 +1733,12 @@ footer a:hover {
     background-color: var(--colour-accent);
     color: #2c2926;
 }
+
+/* Tablet widths: seven menu links plus the logo on one line */
+@media (min-width: 768px) and (max-width: 1000px) {
+    .nav-links { gap: 1.2rem; }
+    .logo { white-space: nowrap; }
+}
+@media (min-width: 768px) and (max-width: 860px) {
+    .nav-links { gap: 0.9rem; }
+}

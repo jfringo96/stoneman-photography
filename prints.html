@@ -1,39 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- PREVIEW PAGE for the planned Prints page (its own tab; contact.html stays as it is).
-         Not linked from anywhere, not in sitemap.xml, and marked noindex (here and in _headers).
-         Its styles and script live in this file so the live site is untouched until it goes live. -->
+    <!-- Prints page. Its styles and script live in this file. The text between
+         <!-- edit:... --> markers is edited in the Site Manager (Page text tab). -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="robots" content="noindex, nofollow">
     <meta name="description" content="Order prints from Stoneman Photography: sizes, paper types and prices.">
-    <title>Prints (preview) | Stoneman Photography</title>
+    <title>Prints | Stoneman Photography</title>
 
-    <link rel="stylesheet" href="css/style.css?v=12">
+    <link rel="stylesheet" href="css/style.css?v=13">
     <link rel="icon" type="image/png" href="/favicon-512.png">
     <link rel="apple-touch-icon" href="/favicon-512.png">
 
-    <style>
-        /* ---- Preview-only banner (remove when the page goes live) ---- */
-        .preview-banner {
-            background: rgba(200,184,154,0.12);
-            border-bottom: 1px solid rgba(200,184,154,0.3);
-            color: var(--colour-accent);
-            text-align: center;
-            font-size: 0.8rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            padding: 0.5rem 1rem;
-            position: fixed;
-            left: 0; right: 0; bottom: 0;
-            z-index: 50;
-            background: #3a352f;
-            border-bottom: 0;
-            border-top: 1px solid rgba(200,184,154,0.3);
-        }
-        footer { padding-bottom: 4rem; }
+    <!-- Open Graph -->
+    <meta property="og:title" content="Prints | Stoneman Photography">
+    <meta property="og:description" content="Order prints from Stoneman Photography: sizes, paper types and prices.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://stonemanphotography.co.uk/prints">
+    <link rel="canonical" href="https://stonemanphotography.co.uk/prints">
 
+    <style>
         /* ---- Prints section ---- */
         .prints-section {
             max-width: 1100px;
@@ -252,8 +238,6 @@
 </head>
 <body class="dark-page">
 
-    <div class="preview-banner">Preview only: not linked from the site or shown to search engines.</div>
-
     <!-- ======== NAVIGATION ======== -->
     <nav>
         <div class="nav-container">
@@ -265,7 +249,7 @@
                 <li><a href="projects.html">Projects</a></li>
                 <li><a href="blog.html">Blog</a></li>
                 <li><a href="about.html">About</a></li>
-                <li><a href="prints-preview.html" class="active">Prints</a></li>
+                <li><a href="prints.html" class="active">Prints</a></li>
                 <li><a href="contact.html">Contact</a></li>
             </ul>
         </div>
@@ -313,7 +297,7 @@
 
         <div class="prices-note">
             <!-- edit:prints-note -->
-            <p>Prices include printing. <strong>£5 postage</strong> is added to the total of your order for each type of paper, as Standard and Fine Art prints come from different print shops. For example, an order of Standard prints only has £5 postage, and an order with both papers has £10.</p>
+            <p><strong>£5 postage</strong> is added to the total of your order for each type of paper, as Standard and Fine Art prints come from different print shops. For example, an order of Standard prints only has £5 postage, and an order with both papers has £10.</p>
             <p>Other sizes may be possible on request.</p>
             <!-- /edit:prints-note -->
         </div>
