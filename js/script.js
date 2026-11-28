@@ -79,6 +79,8 @@ var galleryLoader = null;   // batch loader for the Portfolio gallery (set up wi
    ---------------------------------------------------------- */
 
 document.addEventListener('DOMContentLoaded', function () {
+    initNavigation();
+
     // Cache-bust so edits made in the Site Manager show up immediately rather than
     // waiting for the CDN/browser cache of content.json to expire.
     fetch('content.json?t=' + Date.now())
@@ -1039,13 +1041,12 @@ function projectsUnavailable() {
 
 
 /* ----------------------------------------------------------
-   SECTIONS 1–6 — INTERACTIVE FEATURES
-   Runs after content has been populated so that event
-   listeners are attached to the correct final DOM state.
+   NAVIGATION (menu button + current-page underline)
+   Set up straight away, not after content.json has loaded,
+   so the menu works even on a slow connection.
    ---------------------------------------------------------- */
 
-function initInteractivity() {
-
+function initNavigation() {
 
     // ==============================================
     // 1. MOBILE MENU TOGGLE
@@ -1101,30 +1102,38 @@ function initInteractivity() {
     // link in the navigation bar.
     // ==============================================
 
-    // Get the current page filename from the URL
-    var currentPath = window.location.pathname;
-    var currentPage = currentPath.split('/').pop();
-
-    // If we're at the root with no filename, it's the home page
-    if (currentPage === '' || currentPage === '/') {
-        currentPage = 'index.html';
+    // Cloudflare serves pages without .html (/portfolio), while the menu links
+    // say portfolio.html, so compare both with any .html and index dropped.
+    function pageKey(path) {
+        var page = (path || '').split('?')[0].split('#')[0].split('/').pop();
+        page = page.replace(/\.html$/, '');
+        return page === 'index' ? '' : page;
     }
+    var currentPath = window.location.pathname;
+    var currentPage = pageKey(currentPath);
 
-    // A project page is /project/<slug>/, which ends in a slash and would
-    // otherwise look like the home page. Both it and the preview renderer
-    // should light up the Projects link.
-    if (currentPage === 'project.html' || /\/project\/[^/]+\/?$/.test(currentPath)) {
-        currentPage = 'projects.html';
+    // A project page is /project/<slug>/ and the preview renderer is project.html:
+    // both light up the Projects link.
+    if (currentPage === 'project' || /\/project\/[^/]+\/?$/.test(currentPath)) {
+        currentPage = 'projects';
     }
 
     // Find all nav links and mark the one that matches the current page
-    var allNavLinks = document.querySelectorAll('.nav-links a');
-    allNavLinks.forEach(function (link) {
-        var linkPage = link.getAttribute('href');
-        if (linkPage === currentPage) {
+    document.querySelectorAll('.nav-links a').forEach(function (link) {
+        if (pageKey(link.getAttribute('href')) === currentPage) {
             link.classList.add('active');
         }
     });
+}
+
+
+/* ----------------------------------------------------------
+   SECTIONS 1–6 — INTERACTIVE FEATURES
+   Runs after content has been populated so that event
+   listeners are attached to the correct final DOM state.
+   ---------------------------------------------------------- */
+
+function initInteractivity() {
 
 
     // ==============================================
