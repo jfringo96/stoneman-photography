@@ -43,5 +43,11 @@
     <priority>0.8</priority>
   </url>
   <!-- projects:start -->
+  <url>
+    <loc>https://stonemanphotography.co.uk/project/shells/</loc>
+    <lastmod>2026-11-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
   <!-- projects:end -->
 </urlset>
