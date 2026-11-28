@@ -4024,6 +4024,9 @@ function deletePost(index) {
    live in content.json settings and are injected by script.js.
    ---------------------------------------------------------- */
 
+var PRINTS_FILE = 'prints-preview.html';
+var RICH_HELP = 'Leave a blank line between paragraphs. Write **words** for bold, and [link text](contact.html) for a link.';
+
 var TEXT_FIELDS = [
     { id: 'site_name', label: 'Home page title (hero)', kind: 'setting', key: 'site_name',
       help: 'The large title on the home page.' },
@@ -4034,7 +4037,22 @@ var TEXT_FIELDS = [
       help: 'Leave a blank line between paragraphs.' },
     { id: 'portfolio_blurb', label: 'Portfolio blurb', kind: 'html', file: 'portfolio.html', marker: 'portfolio-blurb', multiline: true, rows: 4,
       help: 'The Contact link below this text is kept automatically.' },
-    { id: 'projects_intro', label: 'Projects page intro', kind: 'html', file: 'projects.html', marker: 'projects-intro', multiline: true, rows: 3 }
+    { id: 'projects_intro', label: 'Projects page intro', kind: 'html', file: 'projects.html', marker: 'projects-intro', multiline: true, rows: 3 },
+
+    // Prints page. Until it goes live the page is prints-preview.html (hidden from the menu).
+    { id: 'prints_sub', label: 'Prints page subheading', kind: 'html', file: PRINTS_FILE, marker: 'prints-sub' },
+    { id: 'prints_intro', label: 'Prints page intro', kind: 'html', file: PRINTS_FILE, marker: 'prints-intro', multiline: true, rich: true, rows: 12,
+      help: RICH_HELP },
+    { id: 'prints_paper_standard', label: 'Prints: Standard paper description', kind: 'html', file: PRINTS_FILE, marker: 'prints-paper-standard',
+      help: 'Shown under the Paper buttons when Standard is picked.' },
+    { id: 'prints_paper_fine_art', label: 'Prints: Fine Art paper description', kind: 'html', file: PRINTS_FILE, marker: 'prints-paper-fine-art',
+      help: 'Shown under the Paper buttons when Fine Art is picked.' },
+    { id: 'prints_recrop', label: 'Prints: note in the Square and Panoramic lists', kind: 'html', file: PRINTS_FILE, marker: 'prints-recrop', rich: true, multiline: false, rows: 3,
+      textarea: true, help: 'Shown when someone opens a size list for a shape most photos weren\'t taken in. ' + RICH_HELP },
+    { id: 'prints_note', label: 'Prints: postage and prices note', kind: 'html', file: PRINTS_FILE, marker: 'prints-note', multiline: true, rich: true, rows: 5,
+      help: 'Shown under the price lists. ' + RICH_HELP },
+    { id: 'prints_order', label: 'Prints: order form text', kind: 'html', file: PRINTS_FILE, marker: 'prints-order',
+      help: 'Shown under the "Order a print" heading.' }
 ];
 
 function textFlash(msg, type) { var el = $('textStatus'); if (el) showStatus(el, msg, type); }
@@ -4054,25 +4072,60 @@ function replaceRegion(text, marker, inner) {
     return text.replace(re, function (_, open, close) { return open + inner + close; });
 }
 
-/* HTML region -> plain text for editing. */
-function regionToPlain(inner, multiline) {
-    if (multiline) {
-        var paras = [], re = /<p[^>]*>([\s\S]*?)<\/p>/gi, m;
-        while ((m = re.exec(inner))) paras.push(unescapeHtml(stripTags(m[1])).trim());
-        if (paras.length) return paras.join('\n\n');
+/* One paragraph of HTML -> plain text. Line wrapping in the HTML file is
+   ignored (only <br> becomes a new line). With 'rich', bold and links are
+   kept as **bold** and [text](address) instead of being dropped. */
+function htmlToPlain(html, rich) {
+    var s = html.replace(/\s+/g, ' ').replace(/\s*<br\s*\/?>\s*/gi, '\n');
+    if (rich) {
+        s = s.replace(/<(strong|b)\b[^>]*>([\s\S]*?)<\/\1>/gi, '**$2**')
+             .replace(/<a\b[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, function (_, href, text) {
+                 return '[' + text + '](' + unescapeHtml(href) + ')';
+             });
     }
-    return unescapeHtml(stripTags(inner)).trim();
+    return unescapeHtml(stripTags(s)).trim();
 }
 
-/* Plain text -> HTML region for saving. */
-function plainToRegion(plain, multiline) {
-    if (multiline) {
-        var paras = plain.split(/\n\n+/).map(function (p) { return p.trim(); }).filter(Boolean);
-        return '\n        ' + paras.map(function (p) {
-            return '<p>' + escapeHtml(p).replace(/\n/g, '<br>') + '</p>';
-        }).join('\n        ') + '\n        ';
+/* Plain text -> HTML, the reverse of htmlToPlain. Only ordinary addresses
+   (pages, #sections, https:, mailto:) become links. */
+function plainToHtml(text, rich) {
+    var s = escapeHtml(text.trim());
+    if (rich) {
+        s = s.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>')
+             .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function (all, label, href) {
+                 if (!/^(https?:\/\/|mailto:|#|[\w\-.\/]+(#[\w\-]*)?$)/i.test(href)) return all;
+                 return '<a href="' + href + '">' + label + '</a>';
+             });
     }
-    return escapeHtml(plain.trim());
+    return s.replace(/\n/g, '<br>');
+}
+
+/* HTML region -> plain text for editing. */
+function regionToPlain(inner, multiline, rich) {
+    if (multiline) {
+        var paras = [], re = /<p[^>]*>([\s\S]*?)<\/p>/gi, m;
+        while ((m = re.exec(inner))) paras.push(htmlToPlain(m[1], rich));
+        if (paras.length) return paras.join('\n\n');
+    }
+    return htmlToPlain(inner, rich);
+}
+
+/* Plain text -> HTML region for saving. Indented to match the file. */
+function plainToRegion(plain, multiline, rich, indent) {
+    if (multiline) {
+        var pad = indent == null ? '        ' : indent;
+        var paras = plain.split(/\n\s*\n+/).map(function (p) { return p.trim(); }).filter(Boolean);
+        return '\n' + pad + paras.map(function (p) {
+            return '<p>' + plainToHtml(p, rich) + '</p>';
+        }).join('\n' + pad) + '\n' + pad;
+    }
+    return plainToHtml(plain, rich);
+}
+
+/* The indentation of the line the region's opening marker sits on. */
+function regionIndent(text, marker) {
+    var m = text.match(new RegExp('\\n([ \\t]*)<!-- edit:' + marker + ' -->'));
+    return m ? m[1] : null;
 }
 
 function textFilePaths() {
@@ -4093,7 +4146,7 @@ function loadTextPanel() {
                 values[f.id] = (state.content.settings && state.content.settings[f.key]) || '';
             } else {
                 var inner = extractRegion(files[f.file], f.marker);
-                values[f.id] = inner == null ? '' : regionToPlain(inner, f.multiline);
+                values[f.id] = inner == null ? '' : regionToPlain(inner, f.multiline, f.rich);
             }
         });
         renderTextPanel(values);
@@ -4104,7 +4157,7 @@ function loadTextPanel() {
 
 function renderTextPanel(values) {
     var fields = TEXT_FIELDS.map(function (f) {
-        var input = f.multiline
+        var input = (f.multiline || f.textarea)
             ? '<textarea id="tf_' + f.id + '" rows="' + (f.rows || 5) + '">' + escapeHtml(values[f.id]) + '</textarea>'
             : '<input type="text" id="tf_' + f.id + '" value="' + escapeHtml(values[f.id]) + '">';
         return '<div class="tf-field"><label for="tf_' + f.id + '">' + f.label + '</label>' + input +
@@ -4131,7 +4184,9 @@ function saveText() {
         TEXT_FIELDS.forEach(function (f) {
             var val = $('tf_' + f.id).value;
             if (f.kind === 'html') {
-                files[f.file] = replaceRegion(files[f.file], f.marker, plainToRegion(val, f.multiline));
+                if (extractRegion(files[f.file], f.marker) == null) return;   // marker missing: leave the file alone
+                files[f.file] = replaceRegion(files[f.file], f.marker,
+                    plainToRegion(val, f.multiline, f.rich, regionIndent(files[f.file], f.marker)));
             } else {
                 if (!state.content.settings) state.content.settings = {};
                 state.content.settings[f.key] = val.trim();

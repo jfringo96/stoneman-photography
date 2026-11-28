@@ -132,11 +132,15 @@
         }
 
         .prices-note {
-            margin-top: 1.5rem;
+            max-width: 620px;
+            margin: 1.5rem auto 0;
             font-size: 0.85rem;
-            color: rgba(240,235,229,0.45);
+            line-height: 1.6;
+            color: rgba(240,235,229,0.5);
             text-align: center;
         }
+        .prices-note p { margin: 0 0 0.5rem; }
+        .prices-note strong { color: #f0ebe5; font-weight: 500; }
 
         /* ---- Size groups: one drop-down per aspect ratio ---- */
         .size-groups {
@@ -271,31 +275,18 @@
     <!-- ======== PRINTS ======== -->
     <header class="page-header">
         <h1>Prints</h1>
-        <p>Sizes, papers and prices for prints of my photos.</p>
+        <p><!-- edit:prints-sub -->Sizes, papers and prices for prints of my photos.<!-- /edit:prints-sub --></p>
     </header>
 
 
     <section class="prints-section" id="prints">
         <div class="prints-intro">
-            <p>Below you'll find the sizes, papers and prices for prints. To order one, send me a
-            message using the <a href="#order">contact form below</a> or on the
-            <a href="contact.html">Contact page</a>, with the <strong>title of the photo</strong>, the
-            <strong>size</strong> and the <strong>paper</strong> you'd like, and I'll get back to you.</p>
-
-            <p>When you open a photo on the <a href="portfolio.html">Portfolio page</a>, you'll see a
-            suggested print ratio: the one closest to the original photo. That's only a guide, and
-            you're welcome to order any size you like.</p>
-
-            <p>Choose from the sizes below, and use the toggle to switch between landscape and
-            portrait. A print may be cropped slightly differently from the version shown on the site
-            to fit the size you pick. If the crop would change the photo significantly, I'll let you know
-            and either send you a preview so you can see the difference or suggest an alternative
-            ratio.</p>
-
-            <p>There are two papers to choose from. <strong>Standard</strong> is good-quality
-            photographic paper and is suitable for most prints. <strong>Fine Art</strong> is closer
-            to the paper used for gallery art prints: higher quality, for special prints you want to
-            display as a centrepiece.</p>
+            <!-- edit:prints-intro -->
+            <p>Below you'll find the sizes, papers and prices for prints. To order one, send me a message using the <a href="#order">contact form below</a> or on the <a href="contact.html">Contact page</a>, with the <strong>title of the photo</strong>, the <strong>size</strong> and the <strong>paper</strong> you'd like, and I'll get back to you.</p>
+            <p>When you open a photo on the <a href="portfolio.html">Portfolio page</a>, you'll see a suggested print ratio: the one closest to the original photo. That's only a guide, and you're welcome to order any size you like.</p>
+            <p>Choose from the sizes below, and use the toggle to switch between landscape and portrait. A print may be cropped slightly differently from the version shown on the site to fit the size you pick. If the crop would change the photo significantly, I'll let you know and either send you a preview so you can see the difference or suggest an alternative ratio.</p>
+            <p>There are two papers to choose from. <strong>Standard</strong> is good-quality photographic paper and is suitable for most prints. <strong>Fine Art</strong> is closer to the paper used for gallery art prints: higher quality, for special prints you want to display as a centrepiece.</p>
+            <!-- /edit:prints-intro -->
         </div>
 
         <div class="prints-controls">
@@ -320,14 +311,26 @@
 
         <div class="size-groups" id="size-groups" aria-live="polite"></div>
 
-        <p class="prices-note">Prices include printing. Postage is quoted when you order. Other sizes may be possible on request.</p>
+        <div class="prices-note">
+            <!-- edit:prints-note -->
+            <p>Prices include printing. <strong>£5 postage</strong> is added to the total of your order for each type of paper, as Standard and Fine Art prints come from different print shops. For example, an order of Standard prints only has £5 postage, and an order with both papers has £10.</p>
+            <p>Other sizes may be possible on request.</p>
+            <!-- /edit:prints-note -->
+        </div>
+
+        <!-- Text used by the script below (kept here so the Site Manager can edit it) -->
+        <div hidden>
+            <p id="paper-text-standard"><!-- edit:prints-paper-standard -->Fujifilm Lustre: good-quality photographic paper with a subtle sheen, suitable for most prints.<!-- /edit:prints-paper-standard --></p>
+            <p id="paper-text-fine-art"><!-- edit:prints-paper-fine-art -->Hahnemühle Photo Rag 308: a matte cotton art paper, for special prints to display as a centrepiece.<!-- /edit:prints-paper-fine-art --></p>
+            <p id="recrop-text"><!-- edit:prints-recrop -->If there's a photo you'd like in this format, let me know through the <a href="#order">contact form</a> and I can send you a preview. Most of the photos on this site weren't taken in this shape, but many can be recropped to fit it.<!-- /edit:prints-recrop --></p>
+        </div>
     </section>
 
 
     <!-- ======== ORDER / CONTACT FORM (same form as contact.html) ======== -->
     <section class="order-section" id="order">
         <h2>Order a print</h2>
-        <p>Let me know the title of the photo, the size and the paper you'd like.</p>
+        <p><!-- edit:prints-order -->Let me know the title of the photo, the size and the paper you'd like.<!-- /edit:prints-order --></p>
     </section>
 
     <div class="contact-form-container">
@@ -431,10 +434,9 @@
         { key: 'other', title: 'Other sizes', r: null, recrop: true }
     ];
 
-    // Shown inside the groups marked 'recrop: true' when they are opened
-    var RECROP_NOTE = 'If there\'s a photo you\'d like in this format, let me know through the ' +
-        '<a href="#order">contact form</a> and I can send you a preview. Most of the photos on ' +
-        'this site weren\'t taken in this shape, but many can be recropped to fit it.';
+    // Shown inside the groups marked 'recrop: true' when they are opened.
+    // The wording lives in the hidden #recrop-text paragraph above (editable in the Site Manager).
+    var RECROP_NOTE = document.getElementById('recrop-text').innerHTML;
 
     var A_SIZES_MM = { A0: [1189, 841], A1: [841, 594], A2: [594, 420], A3: [420, 297],
                        A4: [297, 210], A5: [210, 148], A6: [148, 105] };
@@ -460,13 +462,13 @@
         {
             key: 'standard',
             name: 'Standard',
-            description: 'Fujifilm Lustre: good-quality photographic paper with a subtle sheen, suitable for most prints.',
+            description: document.getElementById('paper-text-standard').textContent.trim(),
             sizes: STANDARD_SIZES
         },
         {
             key: 'fine-art',
             name: 'Fine Art',
-            description: 'Hahnemühle Photo Rag 308: a matte cotton art paper, for special prints to display as a centrepiece.',
+            description: document.getElementById('paper-text-fine-art').textContent.trim(),
             sizes: FINE_ART_SIZES
         }
     ];
