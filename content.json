@@ -988,6 +988,19 @@
       "aperture": "f/4",
       "iso": "200",
       "date": "21 Nov 2026"
+    },
+    {
+      "filename": "shells-9.jpg",
+      "title": "Shells 9",
+      "category": "shells",
+      "featured": false,
+      "camera": "OM System OM-1 Mark II",
+      "lens": "Olympus 300mm F4.0",
+      "focal": "300mm",
+      "shutter": "1/3200",
+      "aperture": "f/4",
+      "iso": "200",
+      "date": "21 Nov 2026"
     }
   ],
   "blog": [],
@@ -1088,7 +1101,7 @@
           "type": "image",
           "w": 12,
           "pw": 12,
-          "src": "images/Thumb/shells-8.jpg",
+          "src": "images/Thumb/shells-9.jpg",
           "newRow": true
         }
       ],
